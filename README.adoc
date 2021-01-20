@@ -1,0 +1,28 @@
+= Go Service components
+ifdef::env-github[]
+:imagesdir:
+https://raw.githubusercontent.com/leaf-ai/go-service/main/docs/artwork
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+ifndef::env-github[]
+:imagesdir: ./
+endif::[]
+
+:toc:
+:toc-placement!:
+
+This document describes a number of components exportted by this package related to the implementation of services within a service mesh or managed computer platform.
+
+This document is aimed at an audience with development and deployment skills who desire to implement services using the Go computer language.
+
+toc::[]
+
+== Setup
+
+:source-highlighter: coderay
+
+Copyright © 2021 The Go Service components Authors.
