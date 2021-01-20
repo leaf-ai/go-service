@@ -15,6 +15,8 @@ endif::[]
 :toc:
 :toc-placement!:
 
+Version: <repo-version>0.0.1-main-aaaagpzkwzq</repo-version>
+
 This document describes a number of components exportted by this package related to the implementation of services within a service mesh or managed computer platform.
 
 This document is aimed at an audience with development and deployment skills who desire to implement services using the Go computer language.
