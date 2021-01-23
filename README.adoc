@@ -1,4 +1,4 @@
-= Go Service components
+= Go Service Components
 ifdef::env-github[]
 :imagesdir:
 https://raw.githubusercontent.com/leaf-ai/go-service/main/docs/artwork
@@ -12,12 +12,12 @@ ifndef::env-github[]
 :imagesdir: ./
 endif::[]
 
+:Revision: 0.0.1-main-aaaagqacvoy
+
 :toc:
 :toc-placement!:
 
-Version: <repo-version>0.0.1-main-aaaagpzkwzq</repo-version>
-
-This document describes a number of components exportted by this package related to the implementation of services within a service mesh or managed computer platform.
+This document describes a number of components exported by this package that are intended for use in the implementation of services within a service mesh or managed computer platform.
 
 This document is aimed at an audience with development and deployment skills who desire to implement services using the Go computer language.
 
@@ -27,4 +27,34 @@ toc::[]
 
 :source-highlighter: coderay
 
-Copyright © 2021 The Go Service components Authors.
+[source,bash]
+ ---------------------------------------------------------------------
+ mkdir ~/project
+ cd ~/project
+ export GOPATH=`pwd`
+ export PATH=$GOPATH/bin:$PATH
+ mkdir -p src/github.com/leaf-ai
+ cd src/github.com/leaf-ai
+ git clone https://github.com/leaf-ai/go-service.git
+ cd go-service
+ ---------------------------------------------------------------------
+
+== Developer Setup
+
+[source,bash]
+ ---------------------------------------------------------------------
+apt-get install source-highlight
+mkdir -p $GOPATH/bin
+go get github.com/karlmutch/petname
+go install github.com/karlmutch/petname/cmd/petname
+wget -O $GOPATH/bin/semver https://github.com/karlmutch/duat/releases/download/0.15.0/semver-linux-amd64
+wget -O $GOPATH/bin/stencil https://github.com/karlmutch/duat/releases/download/0.15.0/stencil-linux-amd64
+wget -O $GOPATH/bin/github-release https://github.com/karlmutch/duat/releases/download/0.15.0/github-release-linux-amd64
+wget -O $GOPATH/bin/git-watch https://github.com/karlmutch/duat/releases/download/0.15.0/git-watch-linux-amd64
+chmod +x $GOPATH/bin/semver
+chmod +x $GOPATH/bin/stencil
+chmod +x $GOPATH/bin/github-release
+chmod +x $GOPATH/bin/git-watch
+ ---------------------------------------------------------------------
+
+Copyright © 2021 The Go Service Components Authors.
