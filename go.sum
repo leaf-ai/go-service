@@ -388,6 +388,8 @@ github.com/karlmutch/base62 v0.0.0-20150408093626-b80cdc656a7a/go.mod h1:zte37q2
 github.com/karlmutch/ccache v2.0.3-0.20180726214243-573f5233780c+incompatible/go.mod h1:dxs17KQLgMPakKlVm75suDoSFUVb20+jJQE0dl8EX8Q=
 github.com/karlmutch/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:Qt7npjuWnHIOc3fM6mHwpy6q3PpvWh2FV+gSzg51GMU=
 github.com/karlmutch/duat v0.0.0-20200918224055-5162d53e3510/go.mod h1:dkOB/M7MD8kBFOLR9e44LzwTJbfTCrUcaY7QxsT/J7E=
+github.com/karlmutch/enumer v0.0.0-20180611091743-6bcfe2edaac3 h1:YXDVjtBmjpw1W8rjf+wPFRNFVNr5aweCfugle9lyKzo=
+github.com/karlmutch/enumer v0.0.0-20180611091743-6bcfe2edaac3/go.mod h1:hYoETojVZnAg5HJId8CLMjb6H+dq4TbOmlvAshfdQqY=
 github.com/karlmutch/envflag v0.0.0-20160830095501-ae3268980a29 h1:zslk9Yb2Q3Ipq3Yc43sVHfL0stE7HvZLqrYaxAE9k0w=
 github.com/karlmutch/envflag v0.0.0-20160830095501-ae3268980a29/go.mod h1:HCSJtRcU+YI1lWzCbrzb+9uAbwuAjGQ+g73Xznrnm/4=
 github.com/karlmutch/go-cache v2.0.0+incompatible/go.mod h1:a64tGVLqNn45TJENiHRCuW2LzxTYSKOSdvZ9cD4cPXc=
@@ -581,6 +583,8 @@ github.com/otiai10/mint v1.3.1/go.mod h1:/yxELlJQ0ufhjUwhshSj+wFjZ78CnZ48/1wtmBH
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
+github.com/pascaldekloe/name v1.0.1 h1:9lnXOHeqeHHnWLbKfH6X98+4+ETVqFqxN09UXSjcMb0=
+github.com/pascaldekloe/name v1.0.1/go.mod h1:Z//MfYJnH4jVpQ9wkclwu2I2MkHmXTlT9wR5UZScttM=
 github.com/pborman/getopt v0.0.0-20180729010549-6fdd0a2c7117/go.mod h1:85jBQOZwpVEaDAr341tbn15RS4fCAsIst0qp7i8ex1o=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-buffruneio v0.2.0/go.mod h1:JkE26KsDizTr40EUHkXVtNPvgGtbSNq5BcowyYOWdKo=
