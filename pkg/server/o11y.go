@@ -7,17 +7,18 @@ package server // import "github.com/leaf-ai/go-service/pkg/server"
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/leaf-ai/studio-go-runner/pkg/log"
 	"github.com/leaf-ai/studio-go-runner/pkg/network"
 
 	"github.com/honeycombio/opentelemetry-exporter-go/honeycomb"
 
-	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/label"
-
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/go-stack/stack"
@@ -57,14 +58,11 @@ func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, se
 		return ctx, kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
 
-	tp, errGo := sdktrace.NewProvider(
+	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithConfig(sdktrace.Config{DefaultSampler: sdktrace.AlwaysSample()}),
 		sdktrace.WithSyncer(hny),
 	)
-	if errGo != nil {
-		return ctx, kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
-	}
-	global.SetTraceProvider(tp)
+	otel.SetTracerProvider(tp)
 
 	labels := []label.KeyValue{
 		hostKey.String(hostName),
@@ -73,7 +71,7 @@ func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, se
 		labels = append(labels, nodeKey.String(nodeName))
 	}
 
-	ctx, span := global.Tracer(serviceName).Start(ctx, "test-run")
+	ctx, span := otel.Tracer(serviceName).Start(ctx, "test-run")
 	span.SetAttributes(labels...)
 
 	go func() {
@@ -82,8 +80,12 @@ func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, se
 		span.End()
 
 		// Allow other processing to terminate before forcably stopping OpenTelemetry collection
-		time.Sleep(10 * time.Second)
-		hny.Close()
+		shutCtx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
+		defer cancel()
+
+		if errGo := hny.Shutdown(shutCtx); errGo != nil {
+			fmt.Println(spew.Sdump(errGo), "stack", stack.Trace().TrimRuntime())
+		}
 	}()
 
 	return ctx, nil

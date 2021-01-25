@@ -29,7 +29,7 @@ import (
 
 	"github.com/jjeffery/kv" // MIT License
 
-	"github.com/leaf-ai/studio-go-runner/internal/types"
+	"github.com/leaf-ai/go-service/internal/types"
 )
 
 var (
