@@ -16,10 +16,10 @@ RUN \
     apt-get autoremove
 
 RUN mkdir -p /usr/local/bin && \
-    wget -O /usr/local/bin/semver https://github.com/karlmutch/duat/releases/download/0.15.1/semver-linux-amd64 && \
-    wget -O /usr/local/bin/stencil https://github.com/karlmutch/duat/releases/download/0.15.1/stencil-linux-amd64 && \
-    wget -O /usr/local/bin/github-release https://github.com/karlmutch/duat/releases/download/0.15.1/github-release-linux-amd64 && \
-    wget -O /usr/local/bin/git-watch https://github.com/karlmutch/duat/releases/download/0.15.1/git-watch-linux-amd64 && \
+    wget -O /usr/local/bin/semver https://github.com/karlmutch/duat/releases/download/0.15.2/semver-linux-amd64 && \
+    wget -O /usr/local/bin/stencil https://github.com/karlmutch/duat/releases/download/0.15.2/stencil-linux-amd64 && \
+    wget -O /usr/local/bin/github-release https://github.com/karlmutch/duat/releases/download/0.15.2/github-release-linux-amd64 && \
+    wget -O /usr/local/bin/git-watch https://github.com/karlmutch/duat/releases/download/0.15.2/git-watch-linux-amd64 && \
     chmod +x /usr/local/bin/semver && \
     chmod +x /usr/local/bin/stencil && \
     chmod +x /usr/local/bin/github-release && \
