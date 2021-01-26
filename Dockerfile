@@ -50,7 +50,7 @@ RUN \
     tar xzf /tmp/go.tgz && \
     rm /tmp/go.tgz
 
-CMD cd /project/src/github.com/leaf-ai/go-service ; go get github.com/karlmutch/enumer ; go mod vendor ; go mod tidy ; go test -ldflags="-extldflags=-static" -tags="osusergo netgo" -v ./internal/test/...
+CMD cd /project/src/github.com/leaf-ai/go-service ; go get github.com/alvaroloes/enumer@455e9a94796c0e108c38e253b67307736fc4b200 ; go mod vendor ; go mod tidy ; go test -ldflags="-extldflags=-static" -tags="osusergo netgo" -v ./internal/test/...
 
 # Done last to prevent lots of disruption when bumping versions
 LABEL vendor="The Go Service Components authors" \

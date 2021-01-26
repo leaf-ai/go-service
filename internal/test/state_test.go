@@ -4,7 +4,6 @@ package service_test
 
 import (
 	"context"
-	"flag"
 	"testing"
 	"time"
 
@@ -15,10 +14,6 @@ import (
 
 	"github.com/go-stack/stack"
 	"github.com/jjeffery/kv" // MIT License
-)
-
-var (
-	skipCheckK8s = flag.Bool("skip-k8s", false, "Skip Kubernetes liveness checks for tests that can run with or without it")
 )
 
 // This file contains the implementation of a test that will simulate a state change
@@ -45,7 +40,9 @@ func TestBroadcast(t *testing.T) {
 		make(chan server.K8sStateUpdate, 1),
 	}
 	for _, listener := range listeners {
-		l.Add(listener)
+		if _, err := l.Add(listener); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	failed := false
