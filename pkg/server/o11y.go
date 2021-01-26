@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/leaf-ai/studio-go-runner/pkg/log"
-	"github.com/leaf-ai/studio-go-runner/pkg/network"
+	"github.com/leaf-ai/go-service/pkg/log"
+	"github.com/leaf-ai/go-service/pkg/network"
 
 	"github.com/honeycombio/opentelemetry-exporter-go/honeycomb"
 

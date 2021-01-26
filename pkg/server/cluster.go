@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/leaf-ai/studio-go-runner/pkg/log"
+	"github.com/leaf-ai/go-service/pkg/log"
 
 	"github.com/go-stack/stack"
 	"github.com/jjeffery/kv" // MIT License

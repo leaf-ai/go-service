@@ -13,7 +13,6 @@ require (
 	github.com/karlmutch/go-fqdn v0.0.0-20160909083404-2501cdd51ef4
 	github.com/karlmutch/k8s v1.2.1-0.20200715200931-d87bc94d5dd7
 	github.com/karlmutch/logxi v0.0.0-20210126195415-2f02ee1dbe8d
-	github.com/leaf-ai/studio-go-runner v0.0.0-20210125184323-de37d6602072
 	github.com/lthibault/jitterbug v2.0.0+incompatible
 	github.com/minio/minio v0.0.0-20210125181503-eb6871ecd960
 	github.com/minio/minio-go/v7 v7.0.7
@@ -25,4 +24,6 @@ require (
 	go.uber.org/atomic v1.7.0
 	golang.org/x/net v0.0.0-20201216054612-986b41b23924
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
+	golang.org/x/text v0.3.4 // indirect
+	gopkg.in/ini.v1 v1.62.0 // indirect
 )

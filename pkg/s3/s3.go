@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leaf-ai/studio-go-runner/pkg/archive"
-	"github.com/leaf-ai/studio-go-runner/pkg/mime"
+	"github.com/leaf-ai/go-service/pkg/archive"
+	"github.com/leaf-ai/go-service/pkg/mime"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/leaf-ai/studio-go-runner/pkg/network"
+	"github.com/leaf-ai/go-service/pkg/network"
 
 	"github.com/dustin/go-humanize"
 	"github.com/go-stack/stack"

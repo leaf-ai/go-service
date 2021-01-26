@@ -26,7 +26,7 @@ import (
 	"github.com/go-stack/stack"
 	"github.com/jjeffery/kv" // MIT License
 
-	"github.com/leaf-ai/studio-go-runner/pkg/network"
+	"github.com/leaf-ai/go-service/pkg/network"
 
 	"go.uber.org/atomic"
 

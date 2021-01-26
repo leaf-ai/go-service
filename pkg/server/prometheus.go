@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/leaf-ai/studio-go-runner/pkg/log"
-	"github.com/leaf-ai/studio-go-runner/pkg/network"
+	"github.com/leaf-ai/go-service/pkg/log"
+	"github.com/leaf-ai/go-service/pkg/network"
 
 	"github.com/go-stack/stack"
 	"github.com/jjeffery/kv" // MIT License
