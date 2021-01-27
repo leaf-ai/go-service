@@ -2,7 +2,7 @@
 
 // Copyright 2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package types
+package types // import "github.com/leaf-ai/go-service/pkg/types"
 
 // This package contains the go code for a enumeration that represents the application
 // state for the go runner.  This code will be scanned and used by the enumer code generator
