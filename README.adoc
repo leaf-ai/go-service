@@ -12,7 +12,7 @@ ifndef::env-github[]
 :imagesdir: ./
 endif::[]
 
-:Revision: 0.0.1-main-aaaagqacvoy
+:Revision: 0.0.1-main-aaaagqcsivq
 
 :source-highlighter: coderay
 :source-language: sh
