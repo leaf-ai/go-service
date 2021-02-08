@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/aws/aws-sdk-go v1.35.20
 	github.com/davecgh/go-spew v1.1.1
-	github.com/dsnet/compress v0.0.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-stack/stack v1.8.0
 	github.com/honeycombio/opentelemetry-exporter-go v0.16.0
