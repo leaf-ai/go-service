@@ -69,7 +69,8 @@ github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 github.com/golang/protobuf/ptypes/wrappers
-# github.com/google/uuid v1.1.2
+# github.com/google/uuid v1.2.0
+## explicit
 github.com/google/uuid
 # github.com/honeycombio/libhoney-go v1.12.4
 github.com/honeycombio/libhoney-go
@@ -93,7 +94,7 @@ github.com/karlmutch/envflag
 # github.com/karlmutch/go-fqdn v0.0.0-20160909083404-2501cdd51ef4
 ## explicit
 github.com/karlmutch/go-fqdn
-# github.com/karlmutch/k8s v1.2.1-0.20200715200931-d87bc94d5dd7
+# github.com/karlmutch/k8s v1.2.1-0.20210224003752-d750059a3836
 ## explicit
 github.com/karlmutch/k8s
 github.com/karlmutch/k8s/apis/core/v1
@@ -102,7 +103,7 @@ github.com/karlmutch/k8s/apis/resource
 github.com/karlmutch/k8s/runtime
 github.com/karlmutch/k8s/runtime/schema
 github.com/karlmutch/k8s/util/intstr
-# github.com/karlmutch/logxi v0.0.0-20210126195415-2f02ee1dbe8d
+# github.com/karlmutch/logxi v0.0.0-20210224022201-37f10c8b71ed
 ## explicit
 github.com/karlmutch/logxi/v1
 # github.com/klauspost/compress v1.11.7
@@ -111,8 +112,8 @@ github.com/klauspost/compress/huff0
 github.com/klauspost/compress/snappy
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
-# github.com/klauspost/cpuid v1.3.1
-github.com/klauspost/cpuid
+# github.com/klauspost/cpuid/v2 v2.0.4
+github.com/klauspost/cpuid/v2
 # github.com/lthibault/jitterbug v2.0.0+incompatible
 ## explicit
 github.com/lthibault/jitterbug
@@ -124,12 +125,13 @@ github.com/mattn/go-isatty
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 github.com/mgutz/ansi
-# github.com/minio/md5-simd v1.1.0
+# github.com/minio/md5-simd v1.1.2
+## explicit
 github.com/minio/md5-simd
-# github.com/minio/minio v0.0.0-20210125181503-eb6871ecd960
+# github.com/minio/minio v0.0.0-20210223203459-67b20125e4e1
 ## explicit
 github.com/minio/minio/pkg/disk
-# github.com/minio/minio-go/v7 v7.0.7
+# github.com/minio/minio-go/v7 v7.0.10
 ## explicit
 github.com/minio/minio-go/v7
 github.com/minio/minio-go/v7/pkg/credentials
@@ -142,7 +144,7 @@ github.com/minio/minio-go/v7/pkg/set
 github.com/minio/minio-go/v7/pkg/signer
 github.com/minio/minio-go/v7/pkg/sse
 github.com/minio/minio-go/v7/pkg/tags
-# github.com/minio/sha256-simd v0.1.1
+# github.com/minio/sha256-simd v1.0.0
 github.com/minio/sha256-simd
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
@@ -210,10 +212,11 @@ go.opentelemetry.io/otel/sdk/trace
 # go.uber.org/atomic v1.7.0
 ## explicit
 go.uber.org/atomic
-# golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+# golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+## explicit
 golang.org/x/crypto/argon2
 golang.org/x/crypto/blake2b
-# golang.org/x/net v0.0.0-20201216054612-986b41b23924
+# golang.org/x/net v0.0.0-20210222171744-9060382bd457
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
@@ -221,14 +224,12 @@ golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/publicsuffix
-# golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
-## explicit
+# golang.org/x/sys v0.0.0-20210223212115-eede4237b368
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.5
-## explicit
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi

@@ -1,7 +1,7 @@
-//+build !noasm,!appengine
+// +build !linux,!netbsd,!freebsd,!darwin,!openbsd
 
 /*
- * Minio Cloud Storage, (C) 2016 Minio, Inc.
+ * Minio Cloud Storage, (C) 2020 Minio, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,13 @@
  * limitations under the License.
  */
 
-package sha256
+package disk
 
-//go:noescape
-func blockAvx(h []uint32, message []uint8, reserved0, reserved1, reserved2, reserved3 uint64)
+import (
+	"os"
+)
+
+// Fdatasync is a no-op
+func Fdatasync(f *os.File) error {
+	return nil
+}

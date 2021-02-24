@@ -1,7 +1,7 @@
-//+build !noasm,!appengine
+// +build windows
 
 /*
- * Minio Cloud Storage, (C) 2016 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2021 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  * limitations under the License.
  */
 
-package sha256
+package disk
 
-//go:noescape
-func blockAvx2(h []uint32, message []uint8)
+// SameDisk reports whether di1 and di2 describe the same disk.
+func SameDisk(disk1, disk2 string) (bool, error) {
+	return false, nil
+}

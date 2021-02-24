@@ -1,7 +1,7 @@
-//+build !noasm,!appengine
+// +build !windows
 
 /*
- * Minio Cloud Storage, (C) 2016 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2021 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,24 @@
  * limitations under the License.
  */
 
-package sha256
+package disk
 
-//go:noescape
-func blockSsse(h []uint32, message []uint8, reserved0, reserved1, reserved2, reserved3 uint64)
+import (
+	"syscall"
+)
+
+// SameDisk reports whether di1 and di2 describe the same disk.
+func SameDisk(disk1, disk2 string) (bool, error) {
+	st1 := syscall.Stat_t{}
+	st2 := syscall.Stat_t{}
+
+	if err := syscall.Stat(disk1, &st1); err != nil {
+		return false, err
+	}
+
+	if err := syscall.Stat(disk2, &st2); err != nil {
+		return false, err
+	}
+
+	return st1.Dev == st2.Dev, nil
+}
