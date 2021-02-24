@@ -46,7 +46,7 @@ func (comps *Components) doUpdate() {
 
 	// Is the sever entirely up or not
 	up := true
-	for k, v := range comps.components {
+	for _, v := range comps.components {
 		if !v {
 			up = false
 			break
