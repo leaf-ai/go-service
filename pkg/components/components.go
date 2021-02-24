@@ -44,17 +44,12 @@ func (comps *Components) doUpdate() {
 	comps.Lock()
 	defer comps.Unlock()
 
-	downModules := make([]string, 0, len(comps.components))
-	upModules := make([]string, 0, len(comps.components))
-
 	// Is the sever entirely up or not
 	up := true
 	for k, v := range comps.components {
 		if !v {
 			up = false
-			downModules = append(downModules, k)
-		} else {
-			upModules = append(upModules, k)
+			break
 		}
 	}
 
