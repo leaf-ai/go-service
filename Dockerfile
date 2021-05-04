@@ -1,7 +1,7 @@
 # Copyright © 2021 The Go Service Components Authors. All rights reserved. Issued under the Apache 2.0 License.
 FROM ubuntu:18.04
 
-MAINTAINER karlmutch@cognizant.com, karlmutch@gmail.com
+LABEL maintainer="karlmutch@cognizant.com, karlmutch@gmail.com"
 
 ENV LANG C.UTF-8
 
@@ -43,6 +43,8 @@ ENV PATH=$GOPATH/bin:$PATH
 ENV PATH=$PATH:/home/${USER}/.local/bin:/home/${USER}/go/bin
 ENV GOROOT=/home/${USER}/go
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:
+
+HEALTHCHECK NONE
 
 RUN \
     mkdir -p /home/${USER}/go && \
