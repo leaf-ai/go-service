@@ -3,7 +3,7 @@ module github.com/leaf-ai/go-service
 go 1.16
 
 require (
-	github.com/aws/aws-sdk-go v1.38.30
+	github.com/aws/aws-sdk-go v1.38.31
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-stack/stack v1.8.0
@@ -25,6 +25,6 @@ require (
 	go.opentelemetry.io/otel/sdk v0.16.0
 	go.uber.org/atomic v1.7.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
-	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
+	golang.org/x/net v0.0.0-20210504132125-bbd867fde50d
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )
