@@ -25,7 +25,7 @@ RUN mkdir -p /usr/local/bin && \
     chmod +x /usr/local/bin/github-release && \
     chmod +x /usr/local/bin/git-watch
 
-ENV GO_VERSION 1.16
+ENV GO_VERSION 1.16.4
 
 ENV USER {{.duat.userName}}
 ENV USER_ID {{.duat.userID}}
