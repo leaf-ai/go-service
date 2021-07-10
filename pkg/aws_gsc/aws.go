@@ -73,7 +73,7 @@ func GetCredentials() (creds *credentials.Value, err kv.Error) {
 }
 
 // AWSCred is used to encapsulate the credentials that are to be used to access an AWS resource
-// suhc as an S3 bucket for example.
+// such as an S3 bucket for example.
 //
 type AWSCred struct {
 	Project string
@@ -84,7 +84,7 @@ type AWSCred struct {
 // AWSExtractCreds can be used to populate a set of credentials from a pair of config and
 // credentials files typically found in the ~/.aws directory by AWS clients
 //
-func AWSExtractCreds(filenames []string) (cred *AWSCred, err kv.Error) {
+func AWSExtractCreds(filenames []string, profile string) (cred *AWSCred, err kv.Error) {
 
 	cred = &AWSCred{
 		Project: "aws_" + filepath.Base(filepath.Dir(filenames[0])),
@@ -117,7 +117,7 @@ func AWSExtractCreds(filenames []string) (cred *AWSCred, err kv.Error) {
 		}()
 
 		if !credsDone && !wasConfig {
-			cred.Creds = credentials.NewSharedCredentials(aFile, "default")
+			cred.Creds = credentials.NewSharedCredentials(aFile, profile)
 			credsDone = true
 		}
 	}
@@ -127,7 +127,7 @@ func AWSExtractCreds(filenames []string) (cred *AWSCred, err kv.Error) {
 	}
 
 	if !credsDone {
-		return nil, kv.NewError("credentials never loaded").With("stack", stack.Trace().TrimRuntime()).With("files", filenames)
+		return nil, kv.NewError("credentials not found").With("stack", stack.Trace().TrimRuntime()).With("profile", profile, "files", filenames)
 	}
 	return cred, nil
 }

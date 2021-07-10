@@ -7,6 +7,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-stack/stack v1.8.0
+	github.com/go-test/deep v1.0.2-0.20181118220953-042da051cf31
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/honeycombio/opentelemetry-exporter-go v0.16.0
 	github.com/jjeffery/kv v0.8.1
