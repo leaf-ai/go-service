@@ -25,7 +25,7 @@ RUN mkdir -p /usr/local/bin && \
     chmod +x /usr/local/bin/github-release && \
     chmod +x /usr/local/bin/git-watch
 
-ENV GO_VERSION 1.16.4
+ENV GO_VERSION 1.17
 
 ENV USER {{.duat.userName}}
 ENV USER_ID {{.duat.userID}}
@@ -52,7 +52,7 @@ RUN \
     tar xzf /tmp/go.tgz && \
     rm /tmp/go.tgz
 
-CMD cd /project/src/github.com/leaf-ai/go-service ; go get github.com/alvaroloes/enumer@455e9a94796c0e108c38e253b67307736fc4b200 ; go mod vendor ; go mod tidy ; go test -ldflags="-extldflags=-static" -tags="osusergo netgo" -v ./internal/test/...
+CMD cd /project/src/github.com/leaf-ai/go-service && go mod vendor && go install github.com/alvaroloes/enumer@455e9a94796c0e108c38e253b67307736fc4b200 && go mod vendor && go mod tidy && go test -ldflags="-extldflags=-static" -tags="osusergo netgo" -v ./internal/test/...
 
 # Done last to prevent lots of disruption when bumping versions
 LABEL vendor="The Go Service Components authors" \
