@@ -3,7 +3,7 @@ module github.com/leaf-ai/go-service
 go 1.17
 
 require (
-	github.com/aws/aws-sdk-go v1.40.34
+	github.com/aws/aws-sdk-go v1.40.41
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-stack/stack v1.8.1
@@ -19,13 +19,13 @@ require (
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/prometheus/client_golang v1.10.0
 	github.com/rs/xid v1.3.0
-	github.com/shirou/gopsutil v3.21.7+incompatible
+	github.com/shirou/gopsutil v3.21.8+incompatible
 	go.opentelemetry.io/otel v0.20.0
 	go.opentelemetry.io/otel/exporters/otlp v0.20.0
 	go.opentelemetry.io/otel/sdk v0.20.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
-	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
+	golang.org/x/net v0.0.0-20210908191846-a5e095526f91
 	google.golang.org/grpc v1.40.0
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )
