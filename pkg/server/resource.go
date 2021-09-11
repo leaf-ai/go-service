@@ -33,6 +33,8 @@ func (rsc Resource) String() (serialized string) {
 // Fit determines is a supplied resource description acting as a request can
 // be satisfied by the receiver resource
 //
+// Asks the question does rsc fit into r
+//
 func (rsc *Resource) Fit(r *Resource) (didFit bool, err kv.Error) {
 
 	lRam, errGo := humanize.ParseBytes(rsc.Ram)
