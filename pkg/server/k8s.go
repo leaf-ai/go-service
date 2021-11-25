@@ -16,6 +16,7 @@ package server // import "github.com/leaf-ai/go-service/pkg/server"
 import (
 	"context"
 	"fmt"
+	"github.com/leaf-ai/go-service/pkg/log"
 	"os"
 	"sync"
 	"time"
@@ -228,7 +229,7 @@ type K8sStateUpdate struct {
 // This is a blocking function that will return either upon an error in API calls
 // to the cluster API or when the ctx is Done().
 //
-func ListenK8s(ctx context.Context, namespace string, globalMap string, podMap string, updateC chan<- K8sStateUpdate, errC chan<- kv.Error) (err kv.Error) {
+func ListenK8s(ctx context.Context, namespace string, globalMap string, podMap string, updateC chan<- K8sStateUpdate, errC chan<- kv.Error, logger *log.Logger) (err kv.Error) {
 
 	// If k8s is not being used ignore this feature
 	if err = IsAliveK8s(); err != nil {
@@ -270,6 +271,11 @@ func ListenK8s(ctx context.Context, namespace string, globalMap string, podMap s
 				fmt.Println("k8s watcher channel closed", namespace)
 				return
 			}
+
+			if logger != nil {
+				logger.Debug("DETECTED ConfigMap update: ", "configMap: ", *cm)
+			}
+
 			if *cm.Metadata.Namespace == namespace && (*cm.Metadata.Name == globalMap || *cm.Metadata.Name == podMap) {
 				currentState = processState(cm, currentState, updateC, errC)
 			}

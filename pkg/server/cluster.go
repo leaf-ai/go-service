@@ -56,7 +56,7 @@ func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC ch
 			// If k8s is specified we need to start a listener for lifecycle
 			// states being set in the k8s config map or within a config map
 			// that matches our pod/hostname
-			if err := ListenK8s(ctx, namespace, cfgMap, podMap, listeners.Master, errorC); err != nil {
+			if err := ListenK8s(ctx, namespace, cfgMap, podMap, listeners.Master, errorC, logger); err != nil {
 				logger.Warn("k8s monitoring offline", "error", err.Error())
 			}
 		case <-ctx.Done():
