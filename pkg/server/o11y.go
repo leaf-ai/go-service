@@ -1,6 +1,6 @@
-// Copyright 2020-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2020-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package server // import "github.com/leaf-ai/go-service/pkg/server"
+package server // import "github.com/karlmutch/go-service/pkg/server"
 
 // This file contains an open telemetry based exporter for the
 // honeycomb observability service
@@ -11,9 +11,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/leaf-ai/go-service/pkg/log"
-	"github.com/leaf-ai/go-service/pkg/network"
+	"github.com/karlmutch/go-service/pkg/log"
+	"github.com/karlmutch/go-service/pkg/network"
 
 	"google.golang.org/grpc/credentials"
 
@@ -23,16 +22,17 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv"
+	"github.com/karlmutch/kv"
 )
 
 var (
-	hostKey  = "studio.ml/host"
-	nodeKey  = "studio.ml/node"
+	hostKey  = "service/host"
+	nodeKey  = "service/node"
 	hostName = network.GetHostName()
 )
 
@@ -65,9 +65,9 @@ func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, se
 
 	// Create a new tracer provider with a batch span processor and the otlp exporter.
 	// Add a resource attribute service.name that identifies the service in the Honeycomb UI.
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp),
-		sdktrace.WithResource(resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))),
+	tp := trace.NewTracerProvider(
+		trace.WithBatcher(exp),
+		trace.WithResource(resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))),
 	)
 
 	// Set the Tracer Provider and the W3C Trace Context propagator as globals

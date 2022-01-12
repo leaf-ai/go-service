@@ -1,6 +1,6 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package server // import "github.com/leaf-ai/go-service/pkg/server"
+package server // import "github.com/karlmutch/go-service/pkg/server"
 
 // This file contains functions related to Kubernetes (k8s) support for pod based servers.
 // The server can use k8s to watch and load ConfigMap information that it can use
@@ -20,16 +20,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/karlmutch/k8s"
 	core "github.com/karlmutch/k8s/apis/core/v1"
 
-	"github.com/go-stack/stack"
 	"github.com/lthibault/jitterbug"
 
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/davecgh/go-spew/spew"
+	"github.com/go-stack/stack"
+	"github.com/karlmutch/kv" // MIT License
 
-	"github.com/leaf-ai/go-service/pkg/types"
+	"github.com/karlmutch/go-service/pkg/types"
 )
 
 var (

@@ -1,6 +1,6 @@
-// Copyright 2020-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2020-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package server // import "github.com/leaf-ai/go-service/pkg/server"
+package server // import "github.com/karlmutch/go-service/pkg/server"
 
 // This file contains the implementation of a set of functions that will on a
 // regular basis output information about the runner that could be useful to observers
@@ -14,11 +14,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/leaf-ai/go-service/pkg/log"
-	"github.com/leaf-ai/go-service/pkg/network"
+	"github.com/karlmutch/go-service/pkg/log"
+	"github.com/karlmutch/go-service/pkg/network"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

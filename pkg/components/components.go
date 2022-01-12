@@ -1,6 +1,6 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package components // import "github.com/leaf-ai/go-service/pkg/components"
+package components // import "github.com/karlmutch/go-service/pkg/components"
 
 // This file contains the implementation of a map of strings and booleans that are updated
 // by a servers critical components.  Clients can also request that if any of the components goes into

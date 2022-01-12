@@ -1,6 +1,6 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package log // import "github.com/leaf-ai/go-service/pkg/log"
+package log // import "github.com/karlmutch/go-service/pkg/log"
 
 // This file contains the implementation of a logger that adorns the logxi package with
 // some common information not by default supplied by the generic code
@@ -9,6 +9,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/go-stack/stack"
 	logxi "github.com/karlmutch/logxi/v1"
 )
 
@@ -24,7 +25,9 @@ func init() {
 // as a receiver that has the logging methods
 //
 type Logger struct {
-	log logxi.Logger
+	log        logxi.Logger // The base implementation that is being encapsulated
+	debugStack bool         // Should a debug stack be produced with the message
+	hostName   string       // An optional host name to be used with the message
 	sync.Mutex
 }
 
@@ -35,7 +38,9 @@ func NewLogger(component string) (log *Logger) {
 	logxi.DisableCallstack()
 
 	return &Logger{
-		log: logxi.New(component),
+		log:        logxi.New(component),
+		hostName:   hostName,
+		debugStack: true,
 	}
 }
 
@@ -46,8 +51,30 @@ func NewErrLogger(component string) (log *Logger) {
 	logxi.DisableCallstack()
 
 	return &Logger{
-		log: logxi.NewLogger(logxi.NewConcurrentWriter(os.Stderr), component),
+		log:        logxi.NewLogger(logxi.NewConcurrentWriter(os.Stderr), component),
+		hostName:   hostName,
+		debugStack: true,
 	}
+}
+
+// IncludeStack is used to enable a small function call stack to be included with messages
+//
+func (l *Logger) IncludeStack(included bool) (log *Logger) {
+	l.Lock()
+	defer l.Unlock()
+
+	l.debugStack = included
+	return l
+}
+
+// HostName is used to add an optional host name to messages, if empty then the host name will not be output
+//
+func (l *Logger) HostName(hostName string) (log *Logger) {
+	l.Lock()
+	defer l.Unlock()
+
+	l.hostName = hostName
+	return l
 }
 
 // Trace is a method for output of trace level messages
@@ -55,12 +82,25 @@ func NewErrLogger(component string) (log *Logger) {
 // as label and then the value in a single list
 //
 func (l *Logger) Trace(msg string, args ...interface{}) {
+	if !l.IsTrace() {
+		return
+	}
+
 	allArgs := append([]interface{}{}, args...)
-	allArgs = append(allArgs, "host")
-	allArgs = append(allArgs, hostName)
 
 	l.Lock()
 	defer l.Unlock()
+
+	if l.debugStack {
+		allArgs = append(allArgs, "stack")
+		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
+	}
+
+	if len(l.hostName) != 0 {
+		allArgs = append(allArgs, "host")
+		allArgs = append(allArgs, hostName)
+	}
+
 	l.log.Trace(msg, allArgs)
 }
 
@@ -69,12 +109,25 @@ func (l *Logger) Trace(msg string, args ...interface{}) {
 // as label and then the value in a single list
 //
 func (l *Logger) Debug(msg string, args ...interface{}) {
+	if !l.IsDebug() {
+		return
+	}
+
 	allArgs := append([]interface{}{}, args...)
-	allArgs = append(allArgs, "host")
-	allArgs = append(allArgs, hostName)
 
 	l.Lock()
 	defer l.Unlock()
+
+	if l.debugStack {
+		allArgs = append(allArgs, "stack")
+		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
+	}
+
+	if len(l.hostName) != 0 {
+		allArgs = append(allArgs, "host")
+		allArgs = append(allArgs, hostName)
+	}
+
 	l.log.Debug(msg, allArgs)
 }
 
@@ -83,12 +136,25 @@ func (l *Logger) Debug(msg string, args ...interface{}) {
 // as label and then the value in a single list
 //
 func (l *Logger) Info(msg string, args ...interface{}) {
+	if !l.IsInfo() {
+		return
+	}
+
 	allArgs := append([]interface{}{}, args...)
-	allArgs = append(allArgs, "host")
-	allArgs = append(allArgs, hostName)
 
 	l.Lock()
 	defer l.Unlock()
+
+	if l.debugStack {
+		allArgs = append(allArgs, "stack")
+		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
+	}
+
+	if len(l.hostName) != 0 {
+		allArgs = append(allArgs, "host")
+		allArgs = append(allArgs, hostName)
+	}
+
 	l.log.Info(msg, allArgs)
 }
 
@@ -97,12 +163,25 @@ func (l *Logger) Info(msg string, args ...interface{}) {
 // as label and then the value in a single list
 //
 func (l *Logger) Warn(msg string, args ...interface{}) error {
+	if !l.IsWarn() {
+		return nil
+	}
+
 	allArgs := append([]interface{}{}, args...)
-	allArgs = append(allArgs, "host")
-	allArgs = append(allArgs, hostName)
 
 	l.Lock()
 	defer l.Unlock()
+
+	if l.debugStack {
+		allArgs = append(allArgs, "stack")
+		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
+	}
+
+	if len(l.hostName) != 0 {
+		allArgs = append(allArgs, "host")
+		allArgs = append(allArgs, hostName)
+	}
+
 	return l.log.Warn(msg, allArgs)
 }
 
@@ -111,12 +190,20 @@ func (l *Logger) Warn(msg string, args ...interface{}) error {
 // as label and then the value in a single list
 //
 func (l *Logger) Error(msg string, args ...interface{}) error {
+
 	allArgs := append([]interface{}{}, args...)
-	allArgs = append(allArgs, "host")
-	allArgs = append(allArgs, hostName)
 
 	l.Lock()
 	defer l.Unlock()
+
+	allArgs = append(allArgs, "stack")
+	allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
+
+	if len(l.hostName) != 0 {
+		allArgs = append(allArgs, "host")
+		allArgs = append(allArgs, hostName)
+	}
+
 	return l.log.Error(msg, allArgs)
 }
 
@@ -126,11 +213,18 @@ func (l *Logger) Error(msg string, args ...interface{}) error {
 //
 func (l *Logger) Fatal(msg string, args ...interface{}) {
 	allArgs := append([]interface{}{}, args...)
-	allArgs = append(allArgs, "host")
-	allArgs = append(allArgs, hostName)
 
 	l.Lock()
 	defer l.Unlock()
+
+	allArgs = append(allArgs, "stack")
+	allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
+
+	if len(l.hostName) != 0 {
+		allArgs = append(allArgs, "host")
+		allArgs = append(allArgs, hostName)
+	}
+
 	l.log.Fatal(msg, allArgs)
 }
 
@@ -140,11 +234,20 @@ func (l *Logger) Fatal(msg string, args ...interface{}) {
 //
 func (l *Logger) Log(level int, msg string, args []interface{}) {
 	allArgs := append([]interface{}{}, args...)
-	allArgs = append(allArgs, "host")
-	allArgs = append(allArgs, hostName)
 
 	l.Lock()
 	defer l.Unlock()
+
+	if level < logxi.LevelWarn {
+		allArgs = append(allArgs, "stack")
+		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
+	}
+
+	if len(l.hostName) != 0 {
+		allArgs = append(allArgs, "host")
+		allArgs = append(allArgs, hostName)
+	}
+
 	l.log.Log(level, msg, allArgs)
 }
 

@@ -1,6 +1,6 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package minio_local // import "github.com/leaf-ai/go-service/pkg/minio_local"
+package minio_local // import "github.com/karlmutch/go-service/pkg/minio_local"
 
 // This file contains a skeleton wrapper for running a minio
 // server in-situ and is principally useful for when testing
@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 
-	"github.com/leaf-ai/go-service/pkg/network"
+	"github.com/karlmutch/go-service/pkg/network"
 
 	"go.uber.org/atomic"
 

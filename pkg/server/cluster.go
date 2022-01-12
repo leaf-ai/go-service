@@ -1,6 +1,6 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package server // import "github.com/leaf-ai/go-service/pkg/server"
+package server // import "github.com/karlmutch/go-service/pkg/server"
 
 import (
 	"context"
@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/leaf-ai/go-service/pkg/log"
+	"github.com/karlmutch/go-service/pkg/log"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 )
 
 var (

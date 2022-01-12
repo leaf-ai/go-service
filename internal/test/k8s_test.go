@@ -1,4 +1,4 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package service_test
 
@@ -13,15 +13,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leaf-ai/go-service/pkg/server"
-	"github.com/leaf-ai/go-service/pkg/types"
+	"github.com/karlmutch/go-service/pkg/server"
+	"github.com/karlmutch/go-service/pkg/types"
 
 	"github.com/karlmutch/k8s"
 	core "github.com/karlmutch/k8s/apis/core/v1"
 	meta "github.com/karlmutch/k8s/apis/meta/v1"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 )
 
 var (

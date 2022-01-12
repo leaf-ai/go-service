@@ -1,16 +1,16 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package server // import "github.com/leaf-ai/go-service/pkg/server"
+package server // import "github.com/karlmutch/go-service/pkg/server"
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/leaf-ai/go-service/pkg/network"
+	"github.com/karlmutch/go-service/pkg/network"
 
 	"github.com/dustin/go-humanize"
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -21,28 +21,28 @@ import (
 var (
 	cpuFree = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "runner_resource_cpu_free_slots",
+			Name: "resource_cpu_free_slots",
 			Help: "The number of CPU slots available on a host.",
 		},
 		[]string{"host"},
 	)
 	ramFree = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "runner_resource_cpu_ram_free_bytes",
+			Name: "resource_cpu_ram_free_bytes",
 			Help: "The amount of CPU accessible RAM available on a host.",
 		},
 		[]string{"host"},
 	)
 	diskFree = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "runner_resource_disk_free_bytes",
+			Name: "resource_disk_free_bytes",
 			Help: "The amount of free space on the working disk of a host.",
 		},
 		[]string{"host"},
 	)
 	gpuFree = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "runner_resource_gpu_free_slots",
+			Name: "resource_gpu_free_slots",
 			Help: "The the number of GPU slots available on a host.",
 		},
 		[]string{"host"},

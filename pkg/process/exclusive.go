@@ -1,6 +1,6 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package process // import "github.com/leaf-ai/go-service/pkg/process"
+package process // import "github.com/karlmutch/go-service/pkg/process"
 
 // This file contains the implementation of code that checks to ensure
 // that the local machine only has one entity accessing a named resource.
@@ -13,7 +13,7 @@ import (
 	"net"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 )
 
 // Exclusive is a data structure used to tracking and ensure only one

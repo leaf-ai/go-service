@@ -1,13 +1,13 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package network // import "github.com/leaf-ai/go-service/pkg/network"
+package network // import "github.com/karlmutch/go-service/pkg/network"
 
 import (
 	"net"
 	"os"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 
 	"github.com/karlmutch/go-fqdn"
 )

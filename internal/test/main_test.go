@@ -1,4 +1,4 @@
-// Copyright 2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2021-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package service_test
 
@@ -10,14 +10,14 @@ import (
 	"testing"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv"
 	"github.com/karlmutch/envflag"
+	"github.com/karlmutch/kv"
 
-	"github.com/leaf-ai/go-service/pkg/log"
+	"github.com/karlmutch/go-service/pkg/log"
 )
 
 var (
-	logger = log.NewLogger("runner")
+	logger = log.NewLogger("go-service")
 
 	topDir = flag.String("top-dir", "../..", "The location of the top level source directory for locating test files")
 

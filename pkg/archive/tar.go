@@ -1,6 +1,6 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package archive // import "github.com/leaf-ai/go-service/pkg/archive"
+package archive // import "github.com/karlmutch/go-service/pkg/archive"
 
 // This file contains implementations of some tar handling functions and methods to add a little
 // structure around tar file handling when specifically writing files into archives on streaming
@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 )
 
 // TarWriter encapsulates a writer of tar files that stores the source dir and the headers that

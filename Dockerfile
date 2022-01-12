@@ -1,4 +1,4 @@
-# Copyright © 2021 The Go Service Components Authors. All rights reserved. Issued under the Apache 2.0 License.
+# Copyright © 2021-2022 The Go Service Components Authors. All rights reserved. Issued under the Apache 2.0 License.
 FROM ubuntu:18.04
 
 LABEL maintainer="karlmutch@cognizant.com, karlmutch@gmail.com"
@@ -52,7 +52,7 @@ RUN \
     tar xzf /tmp/go.tgz && \
     rm /tmp/go.tgz
 
-CMD cd /project/src/github.com/leaf-ai/go-service && go mod vendor && go install github.com/alvaroloes/enumer@455e9a94796c0e108c38e253b67307736fc4b200 && go mod vendor && go mod tidy && go test -ldflags="-extldflags=-static" -tags="osusergo netgo" -v ./internal/test/...
+CMD cd /project/src/github.com/karlmutch/go-service && go mod vendor && go install github.com/alvaroloes/enumer@455e9a94796c0e108c38e253b67307736fc4b200 && go mod vendor && go mod tidy && go test -ldflags="-extldflags=-static" -tags="osusergo netgo" -v ./internal/test/...
 
 # Done last to prevent lots of disruption when bumping versions
 LABEL vendor="The Go Service Components authors" \

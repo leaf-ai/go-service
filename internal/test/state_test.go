@@ -1,4 +1,4 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package service_test
 
@@ -9,11 +9,11 @@ import (
 
 	"github.com/rs/xid"
 
-	"github.com/leaf-ai/go-service/pkg/server"
-	"github.com/leaf-ai/go-service/pkg/types"
+	"github.com/karlmutch/go-service/pkg/server"
+	"github.com/karlmutch/go-service/pkg/types"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv" // MIT License
+	"github.com/karlmutch/kv" // MIT License
 )
 
 // This file contains the implementation of a test that will simulate a state change

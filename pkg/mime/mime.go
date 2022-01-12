@@ -1,6 +1,6 @@
-// Copyright 2020-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2020-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package mime // import "github.com/leaf-ai/go-service/pkg/mime"
+package mime // import "github.com/karlmutch/go-service/pkg/mime"
 
 import (
 	"io"
@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv"
+	"github.com/karlmutch/kv"
 )
 
 // DetectFileType can be used to examine the contexts of a file and return

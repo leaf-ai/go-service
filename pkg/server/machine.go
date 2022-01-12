@@ -1,6 +1,6 @@
-// Copyright 2020-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2020-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package server // import "github.com/leaf-ai/go-service/pkg/server"
+package server // import "github.com/karlmutch/go-service/pkg/server"
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 	"github.com/dustin/go-humanize"
 
 	"github.com/shirou/gopsutil/disk"
-	memory "github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/mem"
 )
 
 // Resources is a receiver for resource related methods used to describe machine level capabilities
@@ -28,7 +28,7 @@ func (*Resources) FetchMachineResources() (rsc *Resource) {
 		GpuMem: "0",
 	}
 
-	v, _ := memory.VirtualMemory()
+	v, _ := mem.VirtualMemory()
 	rsc.Ram = humanize.Bytes(v.Free)
 
 	if dir, errGo := os.Getwd(); errGo != nil {

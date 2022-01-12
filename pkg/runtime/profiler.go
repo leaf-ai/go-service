@@ -1,6 +1,6 @@
-// Copyright 2020-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2020-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
-package runtime // import "github.com/leaf-ai/go-service/pkg/runtime"
+package runtime // import "github.com/karlmutch/go-service/pkg/runtime"
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/go-stack/stack"
-	"github.com/jjeffery/kv"
+	"github.com/karlmutch/kv"
 )
 
 // This file contains the implementation of several function that handle the CPU
