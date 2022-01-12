@@ -18,12 +18,12 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-stack/stack"
@@ -47,27 +47,26 @@ func init() {
 func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, serviceName string, apiKey string, dataset string) (newCtx context.Context, err kv.Error) {
 
 	// Create an OTLP exporter, passing in Honeycomb credentials as environment variables.
-	exp, errGo := otlp.NewExporter(
-		ctx,
-		otlpgrpc.NewDriver(
-			otlpgrpc.WithEndpoint("api.honeycomb.io:443"),
-			otlpgrpc.WithHeaders(map[string]string{
-				"x-honeycomb-team":    apiKey,
-				"x-honeycomb-dataset": dataset,
-			}),
-			otlpgrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, "")),
-		),
-	)
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint("api.honeycomb.io:443"),
+		otlptracegrpc.WithHeaders(map[string]string{
+			"x-honeycomb-team":    os.Getenv("HONEYCOMB_API_KEY"),
+			"x-honeycomb-dataset": os.Getenv("HONEYCOMB_DATASET"),
+		}),
+		otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, "")),
+	}
 
-	if err != nil {
+	client := otlptracegrpc.NewClient(opts...)
+	exp, errGo := otlptrace.New(ctx, client)
+	if errGo != nil {
 		return ctx, kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
 
 	// Create a new tracer provider with a batch span processor and the otlp exporter.
 	// Add a resource attribute service.name that identifies the service in the Honeycomb UI.
-	tp := trace.NewTracerProvider(
-		trace.WithBatcher(exp),
-		trace.WithResource(resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))),
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(serviceName))),
 	)
 
 	// Set the Tracer Provider and the W3C Trace Context propagator as globals

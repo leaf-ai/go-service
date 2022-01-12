@@ -26,7 +26,7 @@ _output/bin/protoc-gen-gofast:
 		https://github.com/gogo/protobuf \
 		github.com/gogo/protobuf \
 		github.com/gogo/protobuf/protoc-gen-gofast \
-		tags/v0.5
+		tags/v1.3.1
 
 _output/bin/gomvpkg:
 	GO111MODULE=off ./scripts/go-install.sh \
@@ -36,7 +36,7 @@ _output/bin/gomvpkg:
 		fbec762f837dc349b73d1eaa820552e2ad177942
 
 _output/src/github.com/golang/protobuf:
-	git clone https://github.com/golang/protobuf _output/src/github.com/golang/protobuf
+	git clone --branch v1.3.2 https://github.com/golang/protobuf _output/src/github.com/golang/protobuf
 
 _output/bin/protoc:
 	./scripts/get-protoc.sh
