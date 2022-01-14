@@ -132,7 +132,6 @@ func StartTelemetry(ctx context.Context, logger *log.Logger, options StartTeleme
 
 	for _, member := range members {
 		if bag, errGo = bag.SetMember(member); errGo != nil {
-		} else {
 			logger.Warn(errGo.Error())
 		}
 	}
