@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	hostKey = "service/host"
-	nodeKey = "service/node"
+	hostKey = "service.host"
+	nodeKey = "service.node"
 
 	defaultOTelEndpoint    = "api.honeycomb.io:443"
 	defaultCooldown        = time.Duration(2 * time.Second)

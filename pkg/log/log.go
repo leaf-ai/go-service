@@ -43,6 +43,7 @@ func NewLogger(component string) (log *Logger) {
 		log:        logxi.New(component),
 		hostName:   hostName,
 		debugStack: true,
+		included:   map[string]string{},
 	}
 }
 
@@ -56,6 +57,7 @@ func NewErrLogger(component string) (log *Logger) {
 		log:        logxi.NewLogger(logxi.NewConcurrentWriter(os.Stderr), component),
 		hostName:   hostName,
 		debugStack: true,
+		included:   map[string]string{},
 	}
 }
 
@@ -84,6 +86,9 @@ func (l *Logger) Label(key string, value string) {
 		}
 	} else {
 		// Item was not already in the labels so just append
+		if l.included == nil {
+			l.included = map[string]string{}
+		}
 		l.included[key] = value
 		l.labels = append(l.labels, key)
 		l.labels = append(l.labels, value)
