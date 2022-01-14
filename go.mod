@@ -3,7 +3,7 @@ module github.com/karlmutch/go-service
 go 1.18
 
 require (
-	github.com/aws/aws-sdk-go v1.42.32
+	github.com/aws/aws-sdk-go v1.42.34
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-stack/stack v1.8.1
@@ -11,11 +11,11 @@ require (
 	github.com/jjeffery/kv v0.8.1
 	github.com/karlmutch/envflag v0.0.0-20211229205350-9dc3b5cc21e3
 	github.com/karlmutch/go-fqdn v0.0.0-20160909083404-2501cdd51ef4
-	github.com/karlmutch/k8s v1.2.1
+	github.com/karlmutch/k8s v1.2.2
 	github.com/karlmutch/kv v0.8.2
 	github.com/karlmutch/logxi v0.0.0-20211230183642-c324f015c3e6
 	github.com/lthibault/jitterbug v2.0.0+incompatible
-	github.com/minio/minio-go/v7 v7.0.20
+	github.com/minio/minio-go/v7 v7.0.21
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/xid v1.3.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
@@ -24,7 +24,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.3.0
 	go.opentelemetry.io/otel/sdk v1.3.0
 	go.uber.org/atomic v1.9.0
-	golang.org/x/net v0.0.0-20220111093109-d55c255bac03
+	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
 	google.golang.org/grpc v1.43.0
 )
 

@@ -555,7 +555,7 @@ func (m *AzureFileVolumeSource) GetReadOnly() bool {
 // Deprecated in 1.7, please use the bindings subresource of pods instead.
 type Binding struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// The target object that you want to bind to the standard object.
@@ -654,9 +654,17 @@ type CSIPersistentVolumeSource struct {
 	// secret object contains more than one secret, all secrets are passed.
 	// +optional
 	NodePublishSecretRef *SecretReference `protobuf:"bytes,8,opt,name=nodePublishSecretRef" json:"nodePublishSecretRef,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// ControllerExpandSecretRef is a reference to the secret object containing
+	// sensitive information to pass to the CSI driver to complete the CSI
+	// ControllerExpandVolume call.
+	// This is an alpha field and requires enabling ExpandCSIVolumes feature gate.
+	// This field is optional, and may be empty if no secret is required. If the
+	// secret object contains more than one secret, all secrets are passed.
+	// +optional
+	ControllerExpandSecretRef *SecretReference `protobuf:"bytes,9,opt,name=controllerExpandSecretRef" json:"controllerExpandSecretRef,omitempty"`
+	XXX_NoUnkeyedLiteral      struct{}         `json:"-"`
+	XXX_unrecognized          []byte           `json:"-"`
+	XXX_sizecache             int32            `json:"-"`
 }
 
 func (m *CSIPersistentVolumeSource) Reset()         { *m = CSIPersistentVolumeSource{} }
@@ -748,6 +756,111 @@ func (m *CSIPersistentVolumeSource) GetNodePublishSecretRef() *SecretReference {
 	return nil
 }
 
+func (m *CSIPersistentVolumeSource) GetControllerExpandSecretRef() *SecretReference {
+	if m != nil {
+		return m.ControllerExpandSecretRef
+	}
+	return nil
+}
+
+// Represents a source location of a volume to mount, managed by an external CSI driver
+type CSIVolumeSource struct {
+	// Driver is the name of the CSI driver that handles this volume.
+	// Consult with your admin for the correct name as registered in the cluster.
+	Driver *string `protobuf:"bytes,1,opt,name=driver" json:"driver,omitempty"`
+	// Specifies a read-only configuration for the volume.
+	// Defaults to false (read/write).
+	// +optional
+	ReadOnly *bool `protobuf:"varint,2,opt,name=readOnly" json:"readOnly,omitempty"`
+	// Filesystem type to mount. Ex. "ext4", "xfs", "ntfs".
+	// If not provided, the empty value is passed to the associated CSI driver
+	// which will determine the default filesystem to apply.
+	// +optional
+	FsType *string `protobuf:"bytes,3,opt,name=fsType" json:"fsType,omitempty"`
+	// VolumeAttributes stores driver-specific properties that are passed to the CSI
+	// driver. Consult your driver's documentation for supported values.
+	// +optional
+	VolumeAttributes map[string]string `protobuf:"bytes,4,rep,name=volumeAttributes" json:"volumeAttributes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// NodePublishSecretRef is a reference to the secret object containing
+	// sensitive information to pass to the CSI driver to complete the CSI
+	// NodePublishVolume and NodeUnpublishVolume calls.
+	// This field is optional, and  may be empty if no secret is required. If the
+	// secret object contains more than one secret, all secret references are passed.
+	// +optional
+	NodePublishSecretRef *LocalObjectReference `protobuf:"bytes,5,opt,name=nodePublishSecretRef" json:"nodePublishSecretRef,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *CSIVolumeSource) Reset()         { *m = CSIVolumeSource{} }
+func (m *CSIVolumeSource) String() string { return proto.CompactTextString(m) }
+func (*CSIVolumeSource) ProtoMessage()    {}
+func (*CSIVolumeSource) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{9}
+}
+func (m *CSIVolumeSource) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CSIVolumeSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CSIVolumeSource.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CSIVolumeSource) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CSIVolumeSource.Merge(m, src)
+}
+func (m *CSIVolumeSource) XXX_Size() int {
+	return m.Size()
+}
+func (m *CSIVolumeSource) XXX_DiscardUnknown() {
+	xxx_messageInfo_CSIVolumeSource.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CSIVolumeSource proto.InternalMessageInfo
+
+func (m *CSIVolumeSource) GetDriver() string {
+	if m != nil && m.Driver != nil {
+		return *m.Driver
+	}
+	return ""
+}
+
+func (m *CSIVolumeSource) GetReadOnly() bool {
+	if m != nil && m.ReadOnly != nil {
+		return *m.ReadOnly
+	}
+	return false
+}
+
+func (m *CSIVolumeSource) GetFsType() string {
+	if m != nil && m.FsType != nil {
+		return *m.FsType
+	}
+	return ""
+}
+
+func (m *CSIVolumeSource) GetVolumeAttributes() map[string]string {
+	if m != nil {
+		return m.VolumeAttributes
+	}
+	return nil
+}
+
+func (m *CSIVolumeSource) GetNodePublishSecretRef() *LocalObjectReference {
+	if m != nil {
+		return m.NodePublishSecretRef
+	}
+	return nil
+}
+
 // Adds and removes POSIX capabilities from running containers.
 type Capabilities struct {
 	// Added capabilities
@@ -765,7 +878,7 @@ func (m *Capabilities) Reset()         { *m = Capabilities{} }
 func (m *Capabilities) String() string { return proto.CompactTextString(m) }
 func (*Capabilities) ProtoMessage()    {}
 func (*Capabilities) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{9}
+	return fileDescriptor_6c07b07c062484ab, []int{10}
 }
 func (m *Capabilities) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -812,26 +925,26 @@ func (m *Capabilities) GetDrop() []string {
 // Cephfs volumes do not support ownership management or SELinux relabeling.
 type CephFSPersistentVolumeSource struct {
 	// Required: Monitors is a collection of Ceph monitors
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	Monitors []string `protobuf:"bytes,1,rep,name=monitors" json:"monitors,omitempty"`
 	// Optional: Used as the mounted root, rather than the full Ceph tree, default is /
 	// +optional
 	Path *string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
 	// Optional: User is the rados user name, default is admin
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	User *string `protobuf:"bytes,3,opt,name=user" json:"user,omitempty"`
 	// Optional: SecretFile is the path to key ring for User, default is /etc/ceph/user.secret
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	SecretFile *string `protobuf:"bytes,4,opt,name=secretFile" json:"secretFile,omitempty"`
 	// Optional: SecretRef is reference to the authentication secret for User, default is empty.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	SecretRef *SecretReference `protobuf:"bytes,5,opt,name=secretRef" json:"secretRef,omitempty"`
 	// Optional: Defaults to false (read/write). ReadOnly here will force
 	// the ReadOnly setting in VolumeMounts.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	ReadOnly             *bool    `protobuf:"varint,6,opt,name=readOnly" json:"readOnly,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -843,7 +956,7 @@ func (m *CephFSPersistentVolumeSource) Reset()         { *m = CephFSPersistentVo
 func (m *CephFSPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*CephFSPersistentVolumeSource) ProtoMessage()    {}
 func (*CephFSPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{10}
+	return fileDescriptor_6c07b07c062484ab, []int{11}
 }
 func (m *CephFSPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -918,26 +1031,26 @@ func (m *CephFSPersistentVolumeSource) GetReadOnly() bool {
 // Cephfs volumes do not support ownership management or SELinux relabeling.
 type CephFSVolumeSource struct {
 	// Required: Monitors is a collection of Ceph monitors
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	Monitors []string `protobuf:"bytes,1,rep,name=monitors" json:"monitors,omitempty"`
 	// Optional: Used as the mounted root, rather than the full Ceph tree, default is /
 	// +optional
 	Path *string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
 	// Optional: User is the rados user name, default is admin
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	User *string `protobuf:"bytes,3,opt,name=user" json:"user,omitempty"`
 	// Optional: SecretFile is the path to key ring for User, default is /etc/ceph/user.secret
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	SecretFile *string `protobuf:"bytes,4,opt,name=secretFile" json:"secretFile,omitempty"`
 	// Optional: SecretRef is reference to the authentication secret for User, default is empty.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	SecretRef *LocalObjectReference `protobuf:"bytes,5,opt,name=secretRef" json:"secretRef,omitempty"`
 	// Optional: Defaults to false (read/write). ReadOnly here will force
 	// the ReadOnly setting in VolumeMounts.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
 	// +optional
 	ReadOnly             *bool    `protobuf:"varint,6,opt,name=readOnly" json:"readOnly,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -949,7 +1062,7 @@ func (m *CephFSVolumeSource) Reset()         { *m = CephFSVolumeSource{} }
 func (m *CephFSVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*CephFSVolumeSource) ProtoMessage()    {}
 func (*CephFSVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{11}
+	return fileDescriptor_6c07b07c062484ab, []int{12}
 }
 func (m *CephFSVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1025,18 +1138,18 @@ func (m *CephFSVolumeSource) GetReadOnly() bool {
 // The volume must also be in the same region as the kubelet.
 // Cinder volumes support ownership management and SELinux relabeling.
 type CinderPersistentVolumeSource struct {
-	// volume id used to identify the volume in cinder
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// volume id used to identify the volume in cinder.
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	VolumeID *string `protobuf:"bytes,1,opt,name=volumeID" json:"volumeID,omitempty"`
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
 	// Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	// +optional
 	FsType *string `protobuf:"bytes,2,opt,name=fsType" json:"fsType,omitempty"`
 	// Optional: Defaults to false (read/write). ReadOnly here will force
 	// the ReadOnly setting in VolumeMounts.
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	// +optional
 	ReadOnly *bool `protobuf:"varint,3,opt,name=readOnly" json:"readOnly,omitempty"`
 	// Optional: points to a secret object containing parameters used to connect
@@ -1052,7 +1165,7 @@ func (m *CinderPersistentVolumeSource) Reset()         { *m = CinderPersistentVo
 func (m *CinderPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*CinderPersistentVolumeSource) ProtoMessage()    {}
 func (*CinderPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{12}
+	return fileDescriptor_6c07b07c062484ab, []int{13}
 }
 func (m *CinderPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1114,18 +1227,18 @@ func (m *CinderPersistentVolumeSource) GetSecretRef() *SecretReference {
 // The volume must also be in the same region as the kubelet.
 // Cinder volumes support ownership management and SELinux relabeling.
 type CinderVolumeSource struct {
-	// volume id used to identify the volume in cinder
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// volume id used to identify the volume in cinder.
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	VolumeID *string `protobuf:"bytes,1,opt,name=volumeID" json:"volumeID,omitempty"`
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
 	// Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	// +optional
 	FsType *string `protobuf:"bytes,2,opt,name=fsType" json:"fsType,omitempty"`
 	// Optional: Defaults to false (read/write). ReadOnly here will force
 	// the ReadOnly setting in VolumeMounts.
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	// +optional
 	ReadOnly *bool `protobuf:"varint,3,opt,name=readOnly" json:"readOnly,omitempty"`
 	// Optional: points to a secret object containing parameters used to connect
@@ -1141,7 +1254,7 @@ func (m *CinderVolumeSource) Reset()         { *m = CinderVolumeSource{} }
 func (m *CinderVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*CinderVolumeSource) ProtoMessage()    {}
 func (*CinderVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{13}
+	return fileDescriptor_6c07b07c062484ab, []int{14}
 }
 func (m *CinderVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1214,7 +1327,7 @@ func (m *ClientIPConfig) Reset()         { *m = ClientIPConfig{} }
 func (m *ClientIPConfig) String() string { return proto.CompactTextString(m) }
 func (*ClientIPConfig) ProtoMessage()    {}
 func (*ClientIPConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{14}
+	return fileDescriptor_6c07b07c062484ab, []int{15}
 }
 func (m *ClientIPConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1275,7 +1388,7 @@ func (m *ComponentCondition) Reset()         { *m = ComponentCondition{} }
 func (m *ComponentCondition) String() string { return proto.CompactTextString(m) }
 func (*ComponentCondition) ProtoMessage()    {}
 func (*ComponentCondition) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{15}
+	return fileDescriptor_6c07b07c062484ab, []int{16}
 }
 func (m *ComponentCondition) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1333,9 +1446,10 @@ func (m *ComponentCondition) GetError() string {
 }
 
 // ComponentStatus (and ComponentStatusList) holds the cluster validation info.
+// Deprecated: This API is deprecated in v1.19+
 type ComponentStatus struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of component conditions observed
@@ -1352,7 +1466,7 @@ func (m *ComponentStatus) Reset()         { *m = ComponentStatus{} }
 func (m *ComponentStatus) String() string { return proto.CompactTextString(m) }
 func (*ComponentStatus) ProtoMessage()    {}
 func (*ComponentStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{16}
+	return fileDescriptor_6c07b07c062484ab, []int{17}
 }
 func (m *ComponentStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1396,9 +1510,10 @@ func (m *ComponentStatus) GetConditions() []*ComponentCondition {
 }
 
 // Status of all the conditions for the component as a list of ComponentStatus objects.
+// Deprecated: This API is deprecated in v1.19+
 type ComponentStatusList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of ComponentStatus objects.
@@ -1412,7 +1527,7 @@ func (m *ComponentStatusList) Reset()         { *m = ComponentStatusList{} }
 func (m *ComponentStatusList) String() string { return proto.CompactTextString(m) }
 func (*ComponentStatusList) ProtoMessage()    {}
 func (*ComponentStatusList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{17}
+	return fileDescriptor_6c07b07c062484ab, []int{18}
 }
 func (m *ComponentStatusList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1458,9 +1573,16 @@ func (m *ComponentStatusList) GetItems() []*ComponentStatus {
 // ConfigMap holds configuration data for pods to consume.
 type ConfigMap struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	// Immutable, if set to true, ensures that data stored in the ConfigMap cannot
+	// be updated (only object metadata can be modified).
+	// If not set to true, the field can be modified at any time.
+	// Defaulted to nil.
+	// This is a beta field enabled by ImmutableEphemeralVolumes feature gate.
+	// +optional
+	Immutable *bool `protobuf:"varint,4,opt,name=immutable" json:"immutable,omitempty"`
 	// Data contains the configuration data.
 	// Each key must consist of alphanumeric characters, '-', '_' or '.'.
 	// Values with non-UTF-8 byte sequences must use the BinaryData field.
@@ -1486,7 +1608,7 @@ func (m *ConfigMap) Reset()         { *m = ConfigMap{} }
 func (m *ConfigMap) String() string { return proto.CompactTextString(m) }
 func (*ConfigMap) ProtoMessage()    {}
 func (*ConfigMap) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{18}
+	return fileDescriptor_6c07b07c062484ab, []int{19}
 }
 func (m *ConfigMap) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1520,6 +1642,13 @@ func (m *ConfigMap) GetMetadata() *v1.ObjectMeta {
 		return m.Metadata
 	}
 	return nil
+}
+
+func (m *ConfigMap) GetImmutable() bool {
+	if m != nil && m.Immutable != nil {
+		return *m.Immutable
+	}
+	return false
 }
 
 func (m *ConfigMap) GetData() map[string]string {
@@ -1556,7 +1685,7 @@ func (m *ConfigMapEnvSource) Reset()         { *m = ConfigMapEnvSource{} }
 func (m *ConfigMapEnvSource) String() string { return proto.CompactTextString(m) }
 func (*ConfigMapEnvSource) ProtoMessage()    {}
 func (*ConfigMapEnvSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{19}
+	return fileDescriptor_6c07b07c062484ab, []int{20}
 }
 func (m *ConfigMapEnvSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1605,7 +1734,7 @@ type ConfigMapKeySelector struct {
 	LocalObjectReference *LocalObjectReference `protobuf:"bytes,1,opt,name=localObjectReference" json:"localObjectReference,omitempty"`
 	// The key to select.
 	Key *string `protobuf:"bytes,2,opt,name=key" json:"key,omitempty"`
-	// Specify whether the ConfigMap or it's key must be defined
+	// Specify whether the ConfigMap or its key must be defined
 	// +optional
 	Optional             *bool    `protobuf:"varint,3,opt,name=optional" json:"optional,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1617,7 +1746,7 @@ func (m *ConfigMapKeySelector) Reset()         { *m = ConfigMapKeySelector{} }
 func (m *ConfigMapKeySelector) String() string { return proto.CompactTextString(m) }
 func (*ConfigMapKeySelector) ProtoMessage()    {}
 func (*ConfigMapKeySelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{20}
+	return fileDescriptor_6c07b07c062484ab, []int{21}
 }
 func (m *ConfigMapKeySelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1669,7 +1798,7 @@ func (m *ConfigMapKeySelector) GetOptional() bool {
 
 // ConfigMapList is a resource containing a list of ConfigMap objects.
 type ConfigMapList struct {
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Items is the list of ConfigMaps.
@@ -1683,7 +1812,7 @@ func (m *ConfigMapList) Reset()         { *m = ConfigMapList{} }
 func (m *ConfigMapList) String() string { return proto.CompactTextString(m) }
 func (*ConfigMapList) ProtoMessage()    {}
 func (*ConfigMapList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{21}
+	return fileDescriptor_6c07b07c062484ab, []int{22}
 }
 func (m *ConfigMapList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1754,7 +1883,7 @@ func (m *ConfigMapNodeConfigSource) Reset()         { *m = ConfigMapNodeConfigSo
 func (m *ConfigMapNodeConfigSource) String() string { return proto.CompactTextString(m) }
 func (*ConfigMapNodeConfigSource) ProtoMessage()    {}
 func (*ConfigMapNodeConfigSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{22}
+	return fileDescriptor_6c07b07c062484ab, []int{23}
 }
 func (m *ConfigMapNodeConfigSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1836,7 +1965,7 @@ type ConfigMapProjection struct {
 	// relative and may not contain the '..' path or start with '..'.
 	// +optional
 	Items []*KeyToPath `protobuf:"bytes,2,rep,name=items" json:"items,omitempty"`
-	// Specify whether the ConfigMap or it's keys must be defined
+	// Specify whether the ConfigMap or its keys must be defined
 	// +optional
 	Optional             *bool    `protobuf:"varint,4,opt,name=optional" json:"optional,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1848,7 +1977,7 @@ func (m *ConfigMapProjection) Reset()         { *m = ConfigMapProjection{} }
 func (m *ConfigMapProjection) String() string { return proto.CompactTextString(m) }
 func (*ConfigMapProjection) ProtoMessage()    {}
 func (*ConfigMapProjection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{23}
+	return fileDescriptor_6c07b07c062484ab, []int{24}
 }
 func (m *ConfigMapProjection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1915,14 +2044,16 @@ type ConfigMapVolumeSource struct {
 	// relative and may not contain the '..' path or start with '..'.
 	// +optional
 	Items []*KeyToPath `protobuf:"bytes,2,rep,name=items" json:"items,omitempty"`
-	// Optional: mode bits to use on created files by default. Must be a
-	// value between 0 and 0777. Defaults to 0644.
+	// Optional: mode bits used to set permissions on created files by default.
+	// Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+	// YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+	// Defaults to 0644.
 	// Directories within the path are not affected by this setting.
 	// This might be in conflict with other options that affect the file
 	// mode, like fsGroup, and the result can be other mode bits set.
 	// +optional
 	DefaultMode *int32 `protobuf:"varint,3,opt,name=defaultMode" json:"defaultMode,omitempty"`
-	// Specify whether the ConfigMap or it's keys must be defined
+	// Specify whether the ConfigMap or its keys must be defined
 	// +optional
 	Optional             *bool    `protobuf:"varint,4,opt,name=optional" json:"optional,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1934,7 +2065,7 @@ func (m *ConfigMapVolumeSource) Reset()         { *m = ConfigMapVolumeSource{} }
 func (m *ConfigMapVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*ConfigMapVolumeSource) ProtoMessage()    {}
 func (*ConfigMapVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{24}
+	return fileDescriptor_6c07b07c062484ab, []int{25}
 }
 func (m *ConfigMapVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2069,7 +2200,6 @@ type Container struct {
 	// +patchStrategy=merge
 	VolumeMounts []*VolumeMount `protobuf:"bytes,9,rep,name=volumeMounts" json:"volumeMounts,omitempty"`
 	// volumeDevices is the list of block devices to be used by the container.
-	// This is a beta feature.
 	// +patchMergeKey=devicePath
 	// +patchStrategy=merge
 	// +optional
@@ -2086,6 +2216,15 @@ type Container struct {
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
 	ReadinessProbe *Probe `protobuf:"bytes,11,opt,name=readinessProbe" json:"readinessProbe,omitempty"`
+	// StartupProbe indicates that the Pod has successfully initialized.
+	// If specified, no other probes are executed until this completes successfully.
+	// If this probe fails, the Pod will be restarted, just as if the livenessProbe failed.
+	// This can be used to provide different probe parameters at the beginning of a Pod's lifecycle,
+	// when it might take a long time to load data or warm a cache, than during steady-state operation.
+	// This cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+	// +optional
+	StartupProbe *Probe `protobuf:"bytes,22,opt,name=startupProbe" json:"startupProbe,omitempty"`
 	// Actions that the management system should take in response to container lifecycle events.
 	// Cannot be updated.
 	// +optional
@@ -2147,7 +2286,7 @@ func (m *Container) Reset()         { *m = Container{} }
 func (m *Container) String() string { return proto.CompactTextString(m) }
 func (*Container) ProtoMessage()    {}
 func (*Container) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{25}
+	return fileDescriptor_6c07b07c062484ab, []int{26}
 }
 func (m *Container) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2267,6 +2406,13 @@ func (m *Container) GetReadinessProbe() *Probe {
 	return nil
 }
 
+func (m *Container) GetStartupProbe() *Probe {
+	if m != nil {
+		return m.StartupProbe
+	}
+	return nil
+}
+
 func (m *Container) GetLifecycle() *Lifecycle {
 	if m != nil {
 		return m.Lifecycle
@@ -2340,7 +2486,7 @@ func (m *ContainerImage) Reset()         { *m = ContainerImage{} }
 func (m *ContainerImage) String() string { return proto.CompactTextString(m) }
 func (*ContainerImage) ProtoMessage()    {}
 func (*ContainerImage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{26}
+	return fileDescriptor_6c07b07c062484ab, []int{27}
 }
 func (m *ContainerImage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2402,6 +2548,7 @@ type ContainerPort struct {
 	// Protocol for port. Must be UDP, TCP, or SCTP.
 	// Defaults to "TCP".
 	// +optional
+	// +default="TCP"
 	Protocol *string `protobuf:"bytes,4,opt,name=protocol" json:"protocol,omitempty"`
 	// What host IP to bind the external port to.
 	// +optional
@@ -2415,7 +2562,7 @@ func (m *ContainerPort) Reset()         { *m = ContainerPort{} }
 func (m *ContainerPort) String() string { return proto.CompactTextString(m) }
 func (*ContainerPort) ProtoMessage()    {}
 func (*ContainerPort) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{27}
+	return fileDescriptor_6c07b07c062484ab, []int{28}
 }
 func (m *ContainerPort) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2501,7 +2648,7 @@ func (m *ContainerState) Reset()         { *m = ContainerState{} }
 func (m *ContainerState) String() string { return proto.CompactTextString(m) }
 func (*ContainerState) ProtoMessage()    {}
 func (*ContainerState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{28}
+	return fileDescriptor_6c07b07c062484ab, []int{29}
 }
 func (m *ContainerState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2565,7 +2712,7 @@ func (m *ContainerStateRunning) Reset()         { *m = ContainerStateRunning{} }
 func (m *ContainerStateRunning) String() string { return proto.CompactTextString(m) }
 func (*ContainerStateRunning) ProtoMessage()    {}
 func (*ContainerStateRunning) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{29}
+	return fileDescriptor_6c07b07c062484ab, []int{30}
 }
 func (m *ContainerStateRunning) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2632,7 +2779,7 @@ func (m *ContainerStateTerminated) Reset()         { *m = ContainerStateTerminat
 func (m *ContainerStateTerminated) String() string { return proto.CompactTextString(m) }
 func (*ContainerStateTerminated) ProtoMessage()    {}
 func (*ContainerStateTerminated) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{30}
+	return fileDescriptor_6c07b07c062484ab, []int{31}
 }
 func (m *ContainerStateTerminated) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2727,7 +2874,7 @@ func (m *ContainerStateWaiting) Reset()         { *m = ContainerStateWaiting{} }
 func (m *ContainerStateWaiting) String() string { return proto.CompactTextString(m) }
 func (*ContainerStateWaiting) ProtoMessage()    {}
 func (*ContainerStateWaiting) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{31}
+	return fileDescriptor_6c07b07c062484ab, []int{32}
 }
 func (m *ContainerStateWaiting) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2796,7 +2943,13 @@ type ContainerStatus struct {
 	ImageID *string `protobuf:"bytes,7,opt,name=imageID" json:"imageID,omitempty"`
 	// Container's ID in the format 'docker://<container_id>'.
 	// +optional
-	ContainerID          *string  `protobuf:"bytes,8,opt,name=containerID" json:"containerID,omitempty"`
+	ContainerID *string `protobuf:"bytes,8,opt,name=containerID" json:"containerID,omitempty"`
+	// Specifies whether the container has passed its startup probe.
+	// Initialized as false, becomes true after startupProbe is considered successful.
+	// Resets to false when the container is restarted, or if kubelet loses state temporarily.
+	// Is always true when no startupProbe is defined.
+	// +optional
+	Started              *bool    `protobuf:"varint,9,opt,name=started" json:"started,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2806,7 +2959,7 @@ func (m *ContainerStatus) Reset()         { *m = ContainerStatus{} }
 func (m *ContainerStatus) String() string { return proto.CompactTextString(m) }
 func (*ContainerStatus) ProtoMessage()    {}
 func (*ContainerStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{32}
+	return fileDescriptor_6c07b07c062484ab, []int{33}
 }
 func (m *ContainerStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2891,6 +3044,13 @@ func (m *ContainerStatus) GetContainerID() string {
 	return ""
 }
 
+func (m *ContainerStatus) GetStarted() bool {
+	if m != nil && m.Started != nil {
+		return *m.Started
+	}
+	return false
+}
+
 // DaemonEndpoint contains information about a single Daemon endpoint.
 type DaemonEndpoint struct {
 	// Port number of the given endpoint.
@@ -2904,7 +3064,7 @@ func (m *DaemonEndpoint) Reset()         { *m = DaemonEndpoint{} }
 func (m *DaemonEndpoint) String() string { return proto.CompactTextString(m) }
 func (*DaemonEndpoint) ProtoMessage()    {}
 func (*DaemonEndpoint) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{33}
+	return fileDescriptor_6c07b07c062484ab, []int{34}
 }
 func (m *DaemonEndpoint) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2956,7 +3116,7 @@ func (m *DownwardAPIProjection) Reset()         { *m = DownwardAPIProjection{} }
 func (m *DownwardAPIProjection) String() string { return proto.CompactTextString(m) }
 func (*DownwardAPIProjection) ProtoMessage()    {}
 func (*DownwardAPIProjection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{34}
+	return fileDescriptor_6c07b07c062484ab, []int{35}
 }
 func (m *DownwardAPIProjection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3003,8 +3163,10 @@ type DownwardAPIVolumeFile struct {
 	// (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.
 	// +optional
 	ResourceFieldRef *ResourceFieldSelector `protobuf:"bytes,3,opt,name=resourceFieldRef" json:"resourceFieldRef,omitempty"`
-	// Optional: mode bits to use on this file, must be a value between 0
-	// and 0777. If not specified, the volume defaultMode will be used.
+	// Optional: mode bits used to set permissions on this file, must be an octal value
+	// between 0000 and 0777 or a decimal value between 0 and 511.
+	// YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+	// If not specified, the volume defaultMode will be used.
 	// This might be in conflict with other options that affect the file
 	// mode, like fsGroup, and the result can be other mode bits set.
 	// +optional
@@ -3018,7 +3180,7 @@ func (m *DownwardAPIVolumeFile) Reset()         { *m = DownwardAPIVolumeFile{} }
 func (m *DownwardAPIVolumeFile) String() string { return proto.CompactTextString(m) }
 func (*DownwardAPIVolumeFile) ProtoMessage()    {}
 func (*DownwardAPIVolumeFile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{35}
+	return fileDescriptor_6c07b07c062484ab, []int{36}
 }
 func (m *DownwardAPIVolumeFile) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3082,7 +3244,10 @@ type DownwardAPIVolumeSource struct {
 	// +optional
 	Items []*DownwardAPIVolumeFile `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
 	// Optional: mode bits to use on created files by default. Must be a
-	// value between 0 and 0777. Defaults to 0644.
+	// Optional: mode bits used to set permissions on created files by default.
+	// Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+	// YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+	// Defaults to 0644.
 	// Directories within the path are not affected by this setting.
 	// This might be in conflict with other options that affect the file
 	// mode, like fsGroup, and the result can be other mode bits set.
@@ -3097,7 +3262,7 @@ func (m *DownwardAPIVolumeSource) Reset()         { *m = DownwardAPIVolumeSource
 func (m *DownwardAPIVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*DownwardAPIVolumeSource) ProtoMessage()    {}
 func (*DownwardAPIVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{36}
+	return fileDescriptor_6c07b07c062484ab, []int{37}
 }
 func (m *DownwardAPIVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3166,7 +3331,7 @@ func (m *EmptyDirVolumeSource) Reset()         { *m = EmptyDirVolumeSource{} }
 func (m *EmptyDirVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*EmptyDirVolumeSource) ProtoMessage()    {}
 func (*EmptyDirVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{37}
+	return fileDescriptor_6c07b07c062484ab, []int{38}
 }
 func (m *EmptyDirVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3236,7 +3401,7 @@ func (m *EndpointAddress) Reset()         { *m = EndpointAddress{} }
 func (m *EndpointAddress) String() string { return proto.CompactTextString(m) }
 func (*EndpointAddress) ProtoMessage()    {}
 func (*EndpointAddress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{38}
+	return fileDescriptor_6c07b07c062484ab, []int{39}
 }
 func (m *EndpointAddress) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3295,7 +3460,8 @@ func (m *EndpointAddress) GetTargetRef() *ObjectReference {
 
 // EndpointPort is a tuple that describes a single port.
 type EndpointPort struct {
-	// The name of this port (corresponds to ServicePort.Name).
+	// The name of this port.  This must match the 'name' field in the
+	// corresponding ServicePort.
 	// Must be a DNS_LABEL.
 	// Optional only if one port is defined.
 	// +optional
@@ -3306,7 +3472,17 @@ type EndpointPort struct {
 	// Must be UDP, TCP, or SCTP.
 	// Default is TCP.
 	// +optional
-	Protocol             *string  `protobuf:"bytes,3,opt,name=protocol" json:"protocol,omitempty"`
+	Protocol *string `protobuf:"bytes,3,opt,name=protocol" json:"protocol,omitempty"`
+	// The application protocol for this port.
+	// This field follows standard Kubernetes label syntax.
+	// Un-prefixed names are reserved for IANA standard service names (as per
+	// RFC-6335 and http://www.iana.org/assignments/service-names).
+	// Non-standard protocols should use prefixed names such as
+	// mycompany.com/my-custom-protocol.
+	// This is a beta field that is guarded by the ServiceAppProtocol feature
+	// gate and enabled by default.
+	// +optional
+	AppProtocol          *string  `protobuf:"bytes,4,opt,name=appProtocol" json:"appProtocol,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3316,7 +3492,7 @@ func (m *EndpointPort) Reset()         { *m = EndpointPort{} }
 func (m *EndpointPort) String() string { return proto.CompactTextString(m) }
 func (*EndpointPort) ProtoMessage()    {}
 func (*EndpointPort) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{39}
+	return fileDescriptor_6c07b07c062484ab, []int{40}
 }
 func (m *EndpointPort) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3366,6 +3542,13 @@ func (m *EndpointPort) GetProtocol() string {
 	return ""
 }
 
+func (m *EndpointPort) GetAppProtocol() string {
+	if m != nil && m.AppProtocol != nil {
+		return *m.AppProtocol
+	}
+	return ""
+}
+
 // EndpointSubset is a group of addresses with a common set of ports. The
 // expanded set of endpoints is the Cartesian product of Addresses x Ports.
 // For example, given:
@@ -3398,7 +3581,7 @@ func (m *EndpointSubset) Reset()         { *m = EndpointSubset{} }
 func (m *EndpointSubset) String() string { return proto.CompactTextString(m) }
 func (*EndpointSubset) ProtoMessage()    {}
 func (*EndpointSubset) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{40}
+	return fileDescriptor_6c07b07c062484ab, []int{41}
 }
 func (m *EndpointSubset) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3462,7 +3645,7 @@ func (m *EndpointSubset) GetPorts() []*EndpointPort {
 //  ]
 type Endpoints struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// The set of all endpoints is the union of all subsets. Addresses are placed into
@@ -3483,7 +3666,7 @@ func (m *Endpoints) Reset()         { *m = Endpoints{} }
 func (m *Endpoints) String() string { return proto.CompactTextString(m) }
 func (*Endpoints) ProtoMessage()    {}
 func (*Endpoints) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{41}
+	return fileDescriptor_6c07b07c062484ab, []int{42}
 }
 func (m *Endpoints) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3529,7 +3712,7 @@ func (m *Endpoints) GetSubsets() []*EndpointSubset {
 // EndpointsList is a list of endpoints.
 type EndpointsList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of endpoints.
@@ -3543,7 +3726,7 @@ func (m *EndpointsList) Reset()         { *m = EndpointsList{} }
 func (m *EndpointsList) String() string { return proto.CompactTextString(m) }
 func (*EndpointsList) ProtoMessage()    {}
 func (*EndpointsList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{42}
+	return fileDescriptor_6c07b07c062484ab, []int{43}
 }
 func (m *EndpointsList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3606,7 +3789,7 @@ func (m *EnvFromSource) Reset()         { *m = EnvFromSource{} }
 func (m *EnvFromSource) String() string { return proto.CompactTextString(m) }
 func (*EnvFromSource) ProtoMessage()    {}
 func (*EnvFromSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{43}
+	return fileDescriptor_6c07b07c062484ab, []int{44}
 }
 func (m *EnvFromSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3682,7 +3865,7 @@ func (m *EnvVar) Reset()         { *m = EnvVar{} }
 func (m *EnvVar) String() string { return proto.CompactTextString(m) }
 func (*EnvVar) ProtoMessage()    {}
 func (*EnvVar) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{44}
+	return fileDescriptor_6c07b07c062484ab, []int{45}
 }
 func (m *EnvVar) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3734,8 +3917,8 @@ func (m *EnvVar) GetValueFrom() *EnvVarSource {
 
 // EnvVarSource represents a source for the value of an EnvVar.
 type EnvVarSource struct {
-	// Selects a field of the pod: supports metadata.name, metadata.namespace, metadata.labels, metadata.annotations,
-	// spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP.
+	// Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+	// spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 	// +optional
 	FieldRef *ObjectFieldSelector `protobuf:"bytes,1,opt,name=fieldRef" json:"fieldRef,omitempty"`
 	// Selects a resource of the container: only resources limits and requests
@@ -3757,7 +3940,7 @@ func (m *EnvVarSource) Reset()         { *m = EnvVarSource{} }
 func (m *EnvVarSource) String() string { return proto.CompactTextString(m) }
 func (*EnvVarSource) ProtoMessage()    {}
 func (*EnvVarSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{45}
+	return fileDescriptor_6c07b07c062484ab, []int{46}
 }
 func (m *EnvVarSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3814,10 +3997,548 @@ func (m *EnvVarSource) GetSecretKeyRef() *SecretKeySelector {
 	return nil
 }
 
-// Event is a report of an event somewhere in the cluster.
+// An EphemeralContainer is a container that may be added temporarily to an existing pod for
+// user-initiated activities such as debugging. Ephemeral containers have no resource or
+// scheduling guarantees, and they will not be restarted when they exit or when a pod is
+// removed or restarted. If an ephemeral container causes a pod to exceed its resource
+// allocation, the pod may be evicted.
+// Ephemeral containers may not be added by directly updating the pod spec. They must be added
+// via the pod's ephemeralcontainers subresource, and they will appear in the pod spec
+// once added.
+// This is an alpha feature enabled by the EphemeralContainers feature flag.
+type EphemeralContainer struct {
+	// Ephemeral containers have all of the fields of Container, plus additional fields
+	// specific to ephemeral containers. Fields in common with Container are in the
+	// following inlined struct so than an EphemeralContainer may easily be converted
+	// to a Container.
+	EphemeralContainerCommon *EphemeralContainerCommon `protobuf:"bytes,1,opt,name=ephemeralContainerCommon" json:"ephemeralContainerCommon,omitempty"`
+	// If set, the name of the container from PodSpec that this ephemeral container targets.
+	// The ephemeral container will be run in the namespaces (IPC, PID, etc) of this container.
+	// If not set then the ephemeral container is run in whatever namespaces are shared
+	// for the pod. Note that the container runtime must support this feature.
+	// +optional
+	TargetContainerName  *string  `protobuf:"bytes,2,opt,name=targetContainerName" json:"targetContainerName,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EphemeralContainer) Reset()         { *m = EphemeralContainer{} }
+func (m *EphemeralContainer) String() string { return proto.CompactTextString(m) }
+func (*EphemeralContainer) ProtoMessage()    {}
+func (*EphemeralContainer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{47}
+}
+func (m *EphemeralContainer) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EphemeralContainer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EphemeralContainer.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EphemeralContainer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EphemeralContainer.Merge(m, src)
+}
+func (m *EphemeralContainer) XXX_Size() int {
+	return m.Size()
+}
+func (m *EphemeralContainer) XXX_DiscardUnknown() {
+	xxx_messageInfo_EphemeralContainer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EphemeralContainer proto.InternalMessageInfo
+
+func (m *EphemeralContainer) GetEphemeralContainerCommon() *EphemeralContainerCommon {
+	if m != nil {
+		return m.EphemeralContainerCommon
+	}
+	return nil
+}
+
+func (m *EphemeralContainer) GetTargetContainerName() string {
+	if m != nil && m.TargetContainerName != nil {
+		return *m.TargetContainerName
+	}
+	return ""
+}
+
+// EphemeralContainerCommon is a copy of all fields in Container to be inlined in
+// EphemeralContainer. This separate type allows easy conversion from EphemeralContainer
+// to Container and allows separate documentation for the fields of EphemeralContainer.
+// When a new field is added to Container it must be added here as well.
+type EphemeralContainerCommon struct {
+	// Name of the ephemeral container specified as a DNS_LABEL.
+	// This name must be unique among all containers, init containers and ephemeral containers.
+	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	// Docker image name.
+	// More info: https://kubernetes.io/docs/concepts/containers/images
+	Image *string `protobuf:"bytes,2,opt,name=image" json:"image,omitempty"`
+	// Entrypoint array. Not executed within a shell.
+	// The docker image's ENTRYPOINT is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
+	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+	// regardless of whether the variable exists or not.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// +optional
+	Command []string `protobuf:"bytes,3,rep,name=command" json:"command,omitempty"`
+	// Arguments to the entrypoint.
+	// The docker image's CMD is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
+	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+	// regardless of whether the variable exists or not.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// +optional
+	Args []string `protobuf:"bytes,4,rep,name=args" json:"args,omitempty"`
+	// Container's working directory.
+	// If not specified, the container runtime's default will be used, which
+	// might be configured in the container image.
+	// Cannot be updated.
+	// +optional
+	WorkingDir *string `protobuf:"bytes,5,opt,name=workingDir" json:"workingDir,omitempty"`
+	// Ports are not allowed for ephemeral containers.
+	Ports []*ContainerPort `protobuf:"bytes,6,rep,name=ports" json:"ports,omitempty"`
+	// List of sources to populate environment variables in the container.
+	// The keys defined within a source must be a C_IDENTIFIER. All invalid keys
+	// will be reported as an event when the container is starting. When a key exists in multiple
+	// sources, the value associated with the last source will take precedence.
+	// Values defined by an Env with a duplicate key will take precedence.
+	// Cannot be updated.
+	// +optional
+	EnvFrom []*EnvFromSource `protobuf:"bytes,19,rep,name=envFrom" json:"envFrom,omitempty"`
+	// List of environment variables to set in the container.
+	// Cannot be updated.
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	Env []*EnvVar `protobuf:"bytes,7,rep,name=env" json:"env,omitempty"`
+	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
+	// already allocated to the pod.
+	// +optional
+	Resources *ResourceRequirements `protobuf:"bytes,8,opt,name=resources" json:"resources,omitempty"`
+	// Pod volumes to mount into the container's filesystem.
+	// Cannot be updated.
+	// +optional
+	// +patchMergeKey=mountPath
+	// +patchStrategy=merge
+	VolumeMounts []*VolumeMount `protobuf:"bytes,9,rep,name=volumeMounts" json:"volumeMounts,omitempty"`
+	// volumeDevices is the list of block devices to be used by the container.
+	// +patchMergeKey=devicePath
+	// +patchStrategy=merge
+	// +optional
+	VolumeDevices []*VolumeDevice `protobuf:"bytes,21,rep,name=volumeDevices" json:"volumeDevices,omitempty"`
+	// Probes are not allowed for ephemeral containers.
+	// +optional
+	LivenessProbe *Probe `protobuf:"bytes,10,opt,name=livenessProbe" json:"livenessProbe,omitempty"`
+	// Probes are not allowed for ephemeral containers.
+	// +optional
+	ReadinessProbe *Probe `protobuf:"bytes,11,opt,name=readinessProbe" json:"readinessProbe,omitempty"`
+	// Probes are not allowed for ephemeral containers.
+	// +optional
+	StartupProbe *Probe `protobuf:"bytes,22,opt,name=startupProbe" json:"startupProbe,omitempty"`
+	// Lifecycle is not allowed for ephemeral containers.
+	// +optional
+	Lifecycle *Lifecycle `protobuf:"bytes,12,opt,name=lifecycle" json:"lifecycle,omitempty"`
+	// Optional: Path at which the file to which the container's termination message
+	// will be written is mounted into the container's filesystem.
+	// Message written is intended to be brief final status, such as an assertion failure message.
+	// Will be truncated by the node if greater than 4096 bytes. The total message length across
+	// all containers will be limited to 12kb.
+	// Defaults to /dev/termination-log.
+	// Cannot be updated.
+	// +optional
+	TerminationMessagePath *string `protobuf:"bytes,13,opt,name=terminationMessagePath" json:"terminationMessagePath,omitempty"`
+	// Indicate how the termination message should be populated. File will use the contents of
+	// terminationMessagePath to populate the container status message on both success and failure.
+	// FallbackToLogsOnError will use the last chunk of container log output if the termination
+	// message file is empty and the container exited with an error.
+	// The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
+	// Defaults to File.
+	// Cannot be updated.
+	// +optional
+	TerminationMessagePolicy *string `protobuf:"bytes,20,opt,name=terminationMessagePolicy" json:"terminationMessagePolicy,omitempty"`
+	// Image pull policy.
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+	// +optional
+	ImagePullPolicy *string `protobuf:"bytes,14,opt,name=imagePullPolicy" json:"imagePullPolicy,omitempty"`
+	// SecurityContext is not allowed for ephemeral containers.
+	// +optional
+	SecurityContext *SecurityContext `protobuf:"bytes,15,opt,name=securityContext" json:"securityContext,omitempty"`
+	// Whether this container should allocate a buffer for stdin in the container runtime. If this
+	// is not set, reads from stdin in the container will always result in EOF.
+	// Default is false.
+	// +optional
+	Stdin *bool `protobuf:"varint,16,opt,name=stdin" json:"stdin,omitempty"`
+	// Whether the container runtime should close the stdin channel after it has been opened by
+	// a single attach. When stdin is true the stdin stream will remain open across multiple attach
+	// sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the
+	// first client attaches to stdin, and then remains open and accepts data until the client disconnects,
+	// at which time stdin is closed and remains closed until the container is restarted. If this
+	// flag is false, a container processes that reads from stdin will never receive an EOF.
+	// Default is false
+	// +optional
+	StdinOnce *bool `protobuf:"varint,17,opt,name=stdinOnce" json:"stdinOnce,omitempty"`
+	// Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.
+	// Default is false.
+	// +optional
+	Tty                  *bool    `protobuf:"varint,18,opt,name=tty" json:"tty,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EphemeralContainerCommon) Reset()         { *m = EphemeralContainerCommon{} }
+func (m *EphemeralContainerCommon) String() string { return proto.CompactTextString(m) }
+func (*EphemeralContainerCommon) ProtoMessage()    {}
+func (*EphemeralContainerCommon) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{48}
+}
+func (m *EphemeralContainerCommon) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EphemeralContainerCommon) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EphemeralContainerCommon.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EphemeralContainerCommon) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EphemeralContainerCommon.Merge(m, src)
+}
+func (m *EphemeralContainerCommon) XXX_Size() int {
+	return m.Size()
+}
+func (m *EphemeralContainerCommon) XXX_DiscardUnknown() {
+	xxx_messageInfo_EphemeralContainerCommon.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EphemeralContainerCommon proto.InternalMessageInfo
+
+func (m *EphemeralContainerCommon) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
+	}
+	return ""
+}
+
+func (m *EphemeralContainerCommon) GetImage() string {
+	if m != nil && m.Image != nil {
+		return *m.Image
+	}
+	return ""
+}
+
+func (m *EphemeralContainerCommon) GetCommand() []string {
+	if m != nil {
+		return m.Command
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetArgs() []string {
+	if m != nil {
+		return m.Args
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetWorkingDir() string {
+	if m != nil && m.WorkingDir != nil {
+		return *m.WorkingDir
+	}
+	return ""
+}
+
+func (m *EphemeralContainerCommon) GetPorts() []*ContainerPort {
+	if m != nil {
+		return m.Ports
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetEnvFrom() []*EnvFromSource {
+	if m != nil {
+		return m.EnvFrom
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetEnv() []*EnvVar {
+	if m != nil {
+		return m.Env
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetResources() *ResourceRequirements {
+	if m != nil {
+		return m.Resources
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetVolumeMounts() []*VolumeMount {
+	if m != nil {
+		return m.VolumeMounts
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetVolumeDevices() []*VolumeDevice {
+	if m != nil {
+		return m.VolumeDevices
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetLivenessProbe() *Probe {
+	if m != nil {
+		return m.LivenessProbe
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetReadinessProbe() *Probe {
+	if m != nil {
+		return m.ReadinessProbe
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetStartupProbe() *Probe {
+	if m != nil {
+		return m.StartupProbe
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetLifecycle() *Lifecycle {
+	if m != nil {
+		return m.Lifecycle
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetTerminationMessagePath() string {
+	if m != nil && m.TerminationMessagePath != nil {
+		return *m.TerminationMessagePath
+	}
+	return ""
+}
+
+func (m *EphemeralContainerCommon) GetTerminationMessagePolicy() string {
+	if m != nil && m.TerminationMessagePolicy != nil {
+		return *m.TerminationMessagePolicy
+	}
+	return ""
+}
+
+func (m *EphemeralContainerCommon) GetImagePullPolicy() string {
+	if m != nil && m.ImagePullPolicy != nil {
+		return *m.ImagePullPolicy
+	}
+	return ""
+}
+
+func (m *EphemeralContainerCommon) GetSecurityContext() *SecurityContext {
+	if m != nil {
+		return m.SecurityContext
+	}
+	return nil
+}
+
+func (m *EphemeralContainerCommon) GetStdin() bool {
+	if m != nil && m.Stdin != nil {
+		return *m.Stdin
+	}
+	return false
+}
+
+func (m *EphemeralContainerCommon) GetStdinOnce() bool {
+	if m != nil && m.StdinOnce != nil {
+		return *m.StdinOnce
+	}
+	return false
+}
+
+func (m *EphemeralContainerCommon) GetTty() bool {
+	if m != nil && m.Tty != nil {
+		return *m.Tty
+	}
+	return false
+}
+
+// A list of ephemeral containers used with the Pod ephemeralcontainers subresource.
+type EphemeralContainers struct {
+	// +optional
+	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	// A list of ephemeral containers associated with this pod. New ephemeral containers
+	// may be appended to this list, but existing ephemeral containers may not be removed
+	// or modified.
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	EphemeralContainers  []*EphemeralContainer `protobuf:"bytes,2,rep,name=ephemeralContainers" json:"ephemeralContainers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *EphemeralContainers) Reset()         { *m = EphemeralContainers{} }
+func (m *EphemeralContainers) String() string { return proto.CompactTextString(m) }
+func (*EphemeralContainers) ProtoMessage()    {}
+func (*EphemeralContainers) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{49}
+}
+func (m *EphemeralContainers) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EphemeralContainers) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EphemeralContainers.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EphemeralContainers) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EphemeralContainers.Merge(m, src)
+}
+func (m *EphemeralContainers) XXX_Size() int {
+	return m.Size()
+}
+func (m *EphemeralContainers) XXX_DiscardUnknown() {
+	xxx_messageInfo_EphemeralContainers.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EphemeralContainers proto.InternalMessageInfo
+
+func (m *EphemeralContainers) GetMetadata() *v1.ObjectMeta {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+func (m *EphemeralContainers) GetEphemeralContainers() []*EphemeralContainer {
+	if m != nil {
+		return m.EphemeralContainers
+	}
+	return nil
+}
+
+// Represents an ephemeral volume that is handled by a normal storage driver.
+type EphemeralVolumeSource struct {
+	// Will be used to create a stand-alone PVC to provision the volume.
+	// The pod in which this EphemeralVolumeSource is embedded will be the
+	// owner of the PVC, i.e. the PVC will be deleted together with the
+	// pod.  The name of the PVC will be `<pod name>-<volume name>` where
+	// `<volume name>` is the name from the `PodSpec.Volumes` array
+	// entry. Pod validation will reject the pod if the concatenated name
+	// is not valid for a PVC (for example, too long).
+	//
+	// An existing PVC with that name that is not owned by the pod
+	// will *not* be used for the pod to avoid using an unrelated
+	// volume by mistake. Starting the pod is then blocked until
+	// the unrelated PVC is removed. If such a pre-created PVC is
+	// meant to be used by the pod, the PVC has to updated with an
+	// owner reference to the pod once the pod exists. Normally
+	// this should not be necessary, but it may be useful when
+	// manually reconstructing a broken cluster.
+	//
+	// This field is read-only and no changes will be made by Kubernetes
+	// to the PVC after it has been created.
+	//
+	// Required, must not be nil.
+	VolumeClaimTemplate *PersistentVolumeClaimTemplate `protobuf:"bytes,1,opt,name=volumeClaimTemplate" json:"volumeClaimTemplate,omitempty"`
+	// Specifies a read-only configuration for the volume.
+	// Defaults to false (read/write).
+	// +optional
+	ReadOnly             *bool    `protobuf:"varint,2,opt,name=readOnly" json:"readOnly,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EphemeralVolumeSource) Reset()         { *m = EphemeralVolumeSource{} }
+func (m *EphemeralVolumeSource) String() string { return proto.CompactTextString(m) }
+func (*EphemeralVolumeSource) ProtoMessage()    {}
+func (*EphemeralVolumeSource) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{50}
+}
+func (m *EphemeralVolumeSource) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EphemeralVolumeSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EphemeralVolumeSource.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EphemeralVolumeSource) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EphemeralVolumeSource.Merge(m, src)
+}
+func (m *EphemeralVolumeSource) XXX_Size() int {
+	return m.Size()
+}
+func (m *EphemeralVolumeSource) XXX_DiscardUnknown() {
+	xxx_messageInfo_EphemeralVolumeSource.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EphemeralVolumeSource proto.InternalMessageInfo
+
+func (m *EphemeralVolumeSource) GetVolumeClaimTemplate() *PersistentVolumeClaimTemplate {
+	if m != nil {
+		return m.VolumeClaimTemplate
+	}
+	return nil
+}
+
+func (m *EphemeralVolumeSource) GetReadOnly() bool {
+	if m != nil && m.ReadOnly != nil {
+		return *m.ReadOnly
+	}
+	return false
+}
+
+// Event is a report of an event somewhere in the cluster.  Events
+// have a limited retention time and triggers and messages may evolve
+// with time.  Event consumers should not rely on the timing of an event
+// with a given Reason reflecting a consistent underlying trigger, or the
+// continued existence of events with that Reason.  Events should be
+// treated as informative, best-effort, supplemental data.
 type Event struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// The object that this event is about.
 	InvolvedObject *ObjectReference `protobuf:"bytes,2,opt,name=involvedObject" json:"involvedObject,omitempty"`
@@ -3872,7 +4593,7 @@ func (m *Event) Reset()         { *m = Event{} }
 func (m *Event) String() string { return proto.CompactTextString(m) }
 func (*Event) ProtoMessage()    {}
 func (*Event) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{46}
+	return fileDescriptor_6c07b07c062484ab, []int{51}
 }
 func (m *Event) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4009,7 +4730,7 @@ func (m *Event) GetReportingInstance() string {
 // EventList is a list of events.
 type EventList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of events
@@ -4023,7 +4744,7 @@ func (m *EventList) Reset()         { *m = EventList{} }
 func (m *EventList) String() string { return proto.CompactTextString(m) }
 func (*EventList) ProtoMessage()    {}
 func (*EventList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{47}
+	return fileDescriptor_6c07b07c062484ab, []int{52}
 }
 func (m *EventList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4072,19 +4793,17 @@ type EventSeries struct {
 	// Number of occurrences in this series up to the last heartbeat time
 	Count *int32 `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
 	// Time of the last occurrence observed
-	LastObservedTime *v1.MicroTime `protobuf:"bytes,2,opt,name=lastObservedTime" json:"lastObservedTime,omitempty"`
-	// State of this Series: Ongoing or Finished
-	State                *string  `protobuf:"bytes,3,opt,name=state" json:"state,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	LastObservedTime     *v1.MicroTime `protobuf:"bytes,2,opt,name=lastObservedTime" json:"lastObservedTime,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *EventSeries) Reset()         { *m = EventSeries{} }
 func (m *EventSeries) String() string { return proto.CompactTextString(m) }
 func (*EventSeries) ProtoMessage()    {}
 func (*EventSeries) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{48}
+	return fileDescriptor_6c07b07c062484ab, []int{53}
 }
 func (m *EventSeries) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4127,13 +4846,6 @@ func (m *EventSeries) GetLastObservedTime() *v1.MicroTime {
 	return nil
 }
 
-func (m *EventSeries) GetState() string {
-	if m != nil && m.State != nil {
-		return *m.State
-	}
-	return ""
-}
-
 // EventSource contains information for an event.
 type EventSource struct {
 	// Component from which the event is generated.
@@ -4151,7 +4863,7 @@ func (m *EventSource) Reset()         { *m = EventSource{} }
 func (m *EventSource) String() string { return proto.CompactTextString(m) }
 func (*EventSource) ProtoMessage()    {}
 func (*EventSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{49}
+	return fileDescriptor_6c07b07c062484ab, []int{54}
 }
 func (m *EventSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4212,7 +4924,7 @@ func (m *ExecAction) Reset()         { *m = ExecAction{} }
 func (m *ExecAction) String() string { return proto.CompactTextString(m) }
 func (*ExecAction) ProtoMessage()    {}
 func (*ExecAction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{50}
+	return fileDescriptor_6c07b07c062484ab, []int{55}
 }
 func (m *ExecAction) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4281,7 +4993,7 @@ func (m *FCVolumeSource) Reset()         { *m = FCVolumeSource{} }
 func (m *FCVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*FCVolumeSource) ProtoMessage()    {}
 func (*FCVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{51}
+	return fileDescriptor_6c07b07c062484ab, []int{56}
 }
 func (m *FCVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4378,7 +5090,7 @@ func (m *FlexPersistentVolumeSource) Reset()         { *m = FlexPersistentVolume
 func (m *FlexPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*FlexPersistentVolumeSource) ProtoMessage()    {}
 func (*FlexPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{52}
+	return fileDescriptor_6c07b07c062484ab, []int{57}
 }
 func (m *FlexPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4475,7 +5187,7 @@ func (m *FlexVolumeSource) Reset()         { *m = FlexVolumeSource{} }
 func (m *FlexVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*FlexVolumeSource) ProtoMessage()    {}
 func (*FlexVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{53}
+	return fileDescriptor_6c07b07c062484ab, []int{58}
 }
 func (m *FlexVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4559,7 +5271,7 @@ func (m *FlockerVolumeSource) Reset()         { *m = FlockerVolumeSource{} }
 func (m *FlockerVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*FlockerVolumeSource) ProtoMessage()    {}
 func (*FlockerVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{54}
+	return fileDescriptor_6c07b07c062484ab, []int{59}
 }
 func (m *FlockerVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4640,7 +5352,7 @@ func (m *GCEPersistentDiskVolumeSource) Reset()         { *m = GCEPersistentDisk
 func (m *GCEPersistentDiskVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*GCEPersistentDiskVolumeSource) ProtoMessage()    {}
 func (*GCEPersistentDiskVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{55}
+	return fileDescriptor_6c07b07c062484ab, []int{60}
 }
 func (m *GCEPersistentDiskVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4725,7 +5437,7 @@ func (m *GitRepoVolumeSource) Reset()         { *m = GitRepoVolumeSource{} }
 func (m *GitRepoVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*GitRepoVolumeSource) ProtoMessage()    {}
 func (*GitRepoVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{56}
+	return fileDescriptor_6c07b07c062484ab, []int{61}
 }
 func (m *GitRepoVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4779,19 +5491,19 @@ func (m *GitRepoVolumeSource) GetDirectory() string {
 // Glusterfs volumes do not support ownership management or SELinux relabeling.
 type GlusterfsPersistentVolumeSource struct {
 	// EndpointsName is the endpoint name that details Glusterfs topology.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
 	Endpoints *string `protobuf:"bytes,1,opt,name=endpoints" json:"endpoints,omitempty"`
 	// Path is the Glusterfs volume path.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
 	Path *string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
 	// ReadOnly here will force the Glusterfs volume to be mounted with read-only permissions.
 	// Defaults to false.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
 	// +optional
 	ReadOnly *bool `protobuf:"varint,3,opt,name=readOnly" json:"readOnly,omitempty"`
 	// EndpointsNamespace is the namespace that contains Glusterfs endpoint.
 	// If this field is empty, the EndpointNamespace defaults to the same namespace as the bound PVC.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
 	// +optional
 	EndpointsNamespace   *string  `protobuf:"bytes,4,opt,name=endpointsNamespace" json:"endpointsNamespace,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -4803,7 +5515,7 @@ func (m *GlusterfsPersistentVolumeSource) Reset()         { *m = GlusterfsPersis
 func (m *GlusterfsPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*GlusterfsPersistentVolumeSource) ProtoMessage()    {}
 func (*GlusterfsPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{57}
+	return fileDescriptor_6c07b07c062484ab, []int{62}
 }
 func (m *GlusterfsPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4864,14 +5576,14 @@ func (m *GlusterfsPersistentVolumeSource) GetEndpointsNamespace() string {
 // Glusterfs volumes do not support ownership management or SELinux relabeling.
 type GlusterfsVolumeSource struct {
 	// EndpointsName is the endpoint name that details Glusterfs topology.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
 	Endpoints *string `protobuf:"bytes,1,opt,name=endpoints" json:"endpoints,omitempty"`
 	// Path is the Glusterfs volume path.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
 	Path *string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
 	// ReadOnly here will force the Glusterfs volume to be mounted with read-only permissions.
 	// Defaults to false.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
 	// +optional
 	ReadOnly             *bool    `protobuf:"varint,3,opt,name=readOnly" json:"readOnly,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -4883,7 +5595,7 @@ func (m *GlusterfsVolumeSource) Reset()         { *m = GlusterfsVolumeSource{} }
 func (m *GlusterfsVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*GlusterfsVolumeSource) ProtoMessage()    {}
 func (*GlusterfsVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{58}
+	return fileDescriptor_6c07b07c062484ab, []int{63}
 }
 func (m *GlusterfsVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -4962,7 +5674,7 @@ func (m *HTTPGetAction) Reset()         { *m = HTTPGetAction{} }
 func (m *HTTPGetAction) String() string { return proto.CompactTextString(m) }
 func (*HTTPGetAction) ProtoMessage()    {}
 func (*HTTPGetAction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{59}
+	return fileDescriptor_6c07b07c062484ab, []int{64}
 }
 func (m *HTTPGetAction) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5041,7 +5753,7 @@ func (m *HTTPHeader) Reset()         { *m = HTTPHeader{} }
 func (m *HTTPHeader) String() string { return proto.CompactTextString(m) }
 func (*HTTPHeader) ProtoMessage()    {}
 func (*HTTPHeader) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{60}
+	return fileDescriptor_6c07b07c062484ab, []int{65}
 }
 func (m *HTTPHeader) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5108,7 +5820,7 @@ func (m *Handler) Reset()         { *m = Handler{} }
 func (m *Handler) String() string { return proto.CompactTextString(m) }
 func (*Handler) ProtoMessage()    {}
 func (*Handler) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{61}
+	return fileDescriptor_6c07b07c062484ab, []int{66}
 }
 func (m *Handler) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5174,7 +5886,7 @@ func (m *HostAlias) Reset()         { *m = HostAlias{} }
 func (m *HostAlias) String() string { return proto.CompactTextString(m) }
 func (*HostAlias) ProtoMessage()    {}
 func (*HostAlias) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{62}
+	return fileDescriptor_6c07b07c062484ab, []int{67}
 }
 func (m *HostAlias) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5238,7 +5950,7 @@ func (m *HostPathVolumeSource) Reset()         { *m = HostPathVolumeSource{} }
 func (m *HostPathVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*HostPathVolumeSource) ProtoMessage()    {}
 func (*HostPathVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{63}
+	return fileDescriptor_6c07b07c062484ab, []int{68}
 }
 func (m *HostPathVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5334,7 +6046,7 @@ func (m *ISCSIPersistentVolumeSource) Reset()         { *m = ISCSIPersistentVolu
 func (m *ISCSIPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*ISCSIPersistentVolumeSource) ProtoMessage()    {}
 func (*ISCSIPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{64}
+	return fileDescriptor_6c07b07c062484ab, []int{69}
 }
 func (m *ISCSIPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5493,7 +6205,7 @@ func (m *ISCSIVolumeSource) Reset()         { *m = ISCSIVolumeSource{} }
 func (m *ISCSIVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*ISCSIVolumeSource) ProtoMessage()    {}
 func (*ISCSIVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{65}
+	return fileDescriptor_6c07b07c062484ab, []int{70}
 }
 func (m *ISCSIVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5608,8 +6320,10 @@ type KeyToPath struct {
 	// May not contain the path element '..'.
 	// May not start with the string '..'.
 	Path *string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
-	// Optional: mode bits to use on this file, must be a value between 0
-	// and 0777. If not specified, the volume defaultMode will be used.
+	// Optional: mode bits used to set permissions on this file.
+	// Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+	// YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+	// If not specified, the volume defaultMode will be used.
 	// This might be in conflict with other options that affect the file
 	// mode, like fsGroup, and the result can be other mode bits set.
 	// +optional
@@ -5623,7 +6337,7 @@ func (m *KeyToPath) Reset()         { *m = KeyToPath{} }
 func (m *KeyToPath) String() string { return proto.CompactTextString(m) }
 func (*KeyToPath) ProtoMessage()    {}
 func (*KeyToPath) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{66}
+	return fileDescriptor_6c07b07c062484ab, []int{71}
 }
 func (m *KeyToPath) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5683,11 +6397,15 @@ type Lifecycle struct {
 	// More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 	// +optional
 	PostStart *Handler `protobuf:"bytes,1,opt,name=postStart" json:"postStart,omitempty"`
-	// PreStop is called immediately before a container is terminated.
-	// The container is terminated after the handler completes.
-	// The reason for termination is passed to the handler.
-	// Regardless of the outcome of the handler, the container is eventually terminated.
-	// Other management of the container blocks until the hook completes.
+	// PreStop is called immediately before a container is terminated due to an
+	// API request or management event such as liveness/startup probe failure,
+	// preemption, resource contention, etc. The handler is not called if the
+	// container crashes or exits. The reason for termination is passed to the
+	// handler. The Pod's termination grace period countdown begins before the
+	// PreStop hooked is executed. Regardless of the outcome of the handler, the
+	// container will eventually terminate within the Pod's termination grace
+	// period. Other management of the container blocks until the hook completes
+	// or until the termination grace period is reached.
 	// More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 	// +optional
 	PreStop              *Handler `protobuf:"bytes,2,opt,name=preStop" json:"preStop,omitempty"`
@@ -5700,7 +6418,7 @@ func (m *Lifecycle) Reset()         { *m = Lifecycle{} }
 func (m *Lifecycle) String() string { return proto.CompactTextString(m) }
 func (*Lifecycle) ProtoMessage()    {}
 func (*Lifecycle) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{67}
+	return fileDescriptor_6c07b07c062484ab, []int{72}
 }
 func (m *Lifecycle) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5746,11 +6464,11 @@ func (m *Lifecycle) GetPreStop() *Handler {
 // LimitRange sets resource usage limits for each kind of resource in a Namespace.
 type LimitRange struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines the limits enforced.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec                 *LimitRangeSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
@@ -5762,7 +6480,7 @@ func (m *LimitRange) Reset()         { *m = LimitRange{} }
 func (m *LimitRange) String() string { return proto.CompactTextString(m) }
 func (*LimitRange) ProtoMessage()    {}
 func (*LimitRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{68}
+	return fileDescriptor_6c07b07c062484ab, []int{73}
 }
 func (m *LimitRange) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5808,7 +6526,6 @@ func (m *LimitRange) GetSpec() *LimitRangeSpec {
 // LimitRangeItem defines a min/max usage limit for any resource that matches on kind.
 type LimitRangeItem struct {
 	// Type of resource that this limit applies to.
-	// +optional
 	Type *string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
 	// Max usage constraints on this kind by resource name.
 	// +optional
@@ -5834,7 +6551,7 @@ func (m *LimitRangeItem) Reset()         { *m = LimitRangeItem{} }
 func (m *LimitRangeItem) String() string { return proto.CompactTextString(m) }
 func (*LimitRangeItem) ProtoMessage()    {}
 func (*LimitRangeItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{69}
+	return fileDescriptor_6c07b07c062484ab, []int{74}
 }
 func (m *LimitRangeItem) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5908,7 +6625,7 @@ func (m *LimitRangeItem) GetMaxLimitRequestRatio() map[string]*resource.Quantity
 // LimitRangeList is a list of LimitRange items.
 type LimitRangeList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Items is a list of LimitRange objects.
@@ -5923,7 +6640,7 @@ func (m *LimitRangeList) Reset()         { *m = LimitRangeList{} }
 func (m *LimitRangeList) String() string { return proto.CompactTextString(m) }
 func (*LimitRangeList) ProtoMessage()    {}
 func (*LimitRangeList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{70}
+	return fileDescriptor_6c07b07c062484ab, []int{75}
 }
 func (m *LimitRangeList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -5979,7 +6696,7 @@ func (m *LimitRangeSpec) Reset()         { *m = LimitRangeSpec{} }
 func (m *LimitRangeSpec) String() string { return proto.CompactTextString(m) }
 func (*LimitRangeSpec) ProtoMessage()    {}
 func (*LimitRangeSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{71}
+	return fileDescriptor_6c07b07c062484ab, []int{76}
 }
 func (m *LimitRangeSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6018,7 +6735,7 @@ func (m *LimitRangeSpec) GetLimits() []*LimitRangeItem {
 // List holds a list of objects, which may not be known by the server.
 type List struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of objects
@@ -6032,7 +6749,7 @@ func (m *List) Reset()         { *m = List{} }
 func (m *List) String() string { return proto.CompactTextString(m) }
 func (*List) ProtoMessage()    {}
 func (*List) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{72}
+	return fileDescriptor_6c07b07c062484ab, []int{77}
 }
 func (m *List) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6085,17 +6802,22 @@ type LoadBalancerIngress struct {
 	// Hostname is set for load-balancer ingress points that are DNS based
 	// (typically AWS load-balancers)
 	// +optional
-	Hostname             *string  `protobuf:"bytes,2,opt,name=hostname" json:"hostname,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Hostname *string `protobuf:"bytes,2,opt,name=hostname" json:"hostname,omitempty"`
+	// Ports is a list of records of service ports
+	// If used, every port defined in the service should have an entry in it
+	// +listType=atomic
+	// +optional
+	Ports                []*PortStatus `protobuf:"bytes,4,rep,name=ports" json:"ports,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *LoadBalancerIngress) Reset()         { *m = LoadBalancerIngress{} }
 func (m *LoadBalancerIngress) String() string { return proto.CompactTextString(m) }
 func (*LoadBalancerIngress) ProtoMessage()    {}
 func (*LoadBalancerIngress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{73}
+	return fileDescriptor_6c07b07c062484ab, []int{78}
 }
 func (m *LoadBalancerIngress) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6138,6 +6860,13 @@ func (m *LoadBalancerIngress) GetHostname() string {
 	return ""
 }
 
+func (m *LoadBalancerIngress) GetPorts() []*PortStatus {
+	if m != nil {
+		return m.Ports
+	}
+	return nil
+}
+
 // LoadBalancerStatus represents the status of a load-balancer.
 type LoadBalancerStatus struct {
 	// Ingress is a list containing ingress points for the load-balancer.
@@ -6153,7 +6882,7 @@ func (m *LoadBalancerStatus) Reset()         { *m = LoadBalancerStatus{} }
 func (m *LoadBalancerStatus) String() string { return proto.CompactTextString(m) }
 func (*LoadBalancerStatus) ProtoMessage()    {}
 func (*LoadBalancerStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{74}
+	return fileDescriptor_6c07b07c062484ab, []int{79}
 }
 func (m *LoadBalancerStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6206,7 +6935,7 @@ func (m *LocalObjectReference) Reset()         { *m = LocalObjectReference{} }
 func (m *LocalObjectReference) String() string { return proto.CompactTextString(m) }
 func (*LocalObjectReference) ProtoMessage()    {}
 func (*LocalObjectReference) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{75}
+	return fileDescriptor_6c07b07c062484ab, []int{80}
 }
 func (m *LocalObjectReference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6262,7 +6991,7 @@ func (m *LocalVolumeSource) Reset()         { *m = LocalVolumeSource{} }
 func (m *LocalVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*LocalVolumeSource) ProtoMessage()    {}
 func (*LocalVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{76}
+	return fileDescriptor_6c07b07c062484ab, []int{81}
 }
 func (m *LocalVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6329,7 +7058,7 @@ func (m *NFSVolumeSource) Reset()         { *m = NFSVolumeSource{} }
 func (m *NFSVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*NFSVolumeSource) ProtoMessage()    {}
 func (*NFSVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{77}
+	return fileDescriptor_6c07b07c062484ab, []int{82}
 }
 func (m *NFSVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6383,15 +7112,15 @@ func (m *NFSVolumeSource) GetReadOnly() bool {
 // Use of multiple namespaces is optional.
 type Namespace struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines the behavior of the Namespace.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec *NamespaceSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	// Status describes the current status of a Namespace.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status               *NamespaceStatus `protobuf:"bytes,3,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
@@ -6403,7 +7132,7 @@ func (m *Namespace) Reset()         { *m = Namespace{} }
 func (m *Namespace) String() string { return proto.CompactTextString(m) }
 func (*Namespace) ProtoMessage()    {}
 func (*Namespace) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{78}
+	return fileDescriptor_6c07b07c062484ab, []int{83}
 }
 func (m *Namespace) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6453,10 +7182,95 @@ func (m *Namespace) GetStatus() *NamespaceStatus {
 	return nil
 }
 
+// NamespaceCondition contains details about state of namespace.
+type NamespaceCondition struct {
+	// Type of namespace controller condition.
+	Type *string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
+	// Status of the condition, one of True, False, Unknown.
+	Status *string `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
+	// +optional
+	LastTransitionTime *v1.Time `protobuf:"bytes,4,opt,name=lastTransitionTime" json:"lastTransitionTime,omitempty"`
+	// +optional
+	Reason *string `protobuf:"bytes,5,opt,name=reason" json:"reason,omitempty"`
+	// +optional
+	Message              *string  `protobuf:"bytes,6,opt,name=message" json:"message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NamespaceCondition) Reset()         { *m = NamespaceCondition{} }
+func (m *NamespaceCondition) String() string { return proto.CompactTextString(m) }
+func (*NamespaceCondition) ProtoMessage()    {}
+func (*NamespaceCondition) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{84}
+}
+func (m *NamespaceCondition) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NamespaceCondition) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NamespaceCondition.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NamespaceCondition) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NamespaceCondition.Merge(m, src)
+}
+func (m *NamespaceCondition) XXX_Size() int {
+	return m.Size()
+}
+func (m *NamespaceCondition) XXX_DiscardUnknown() {
+	xxx_messageInfo_NamespaceCondition.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NamespaceCondition proto.InternalMessageInfo
+
+func (m *NamespaceCondition) GetType() string {
+	if m != nil && m.Type != nil {
+		return *m.Type
+	}
+	return ""
+}
+
+func (m *NamespaceCondition) GetStatus() string {
+	if m != nil && m.Status != nil {
+		return *m.Status
+	}
+	return ""
+}
+
+func (m *NamespaceCondition) GetLastTransitionTime() *v1.Time {
+	if m != nil {
+		return m.LastTransitionTime
+	}
+	return nil
+}
+
+func (m *NamespaceCondition) GetReason() string {
+	if m != nil && m.Reason != nil {
+		return *m.Reason
+	}
+	return ""
+}
+
+func (m *NamespaceCondition) GetMessage() string {
+	if m != nil && m.Message != nil {
+		return *m.Message
+	}
+	return ""
+}
+
 // NamespaceList is a list of Namespaces.
 type NamespaceList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Items is the list of Namespace objects in the list.
@@ -6471,7 +7285,7 @@ func (m *NamespaceList) Reset()         { *m = NamespaceList{} }
 func (m *NamespaceList) String() string { return proto.CompactTextString(m) }
 func (*NamespaceList) ProtoMessage()    {}
 func (*NamespaceList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{79}
+	return fileDescriptor_6c07b07c062484ab, []int{85}
 }
 func (m *NamespaceList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6529,7 +7343,7 @@ func (m *NamespaceSpec) Reset()         { *m = NamespaceSpec{} }
 func (m *NamespaceSpec) String() string { return proto.CompactTextString(m) }
 func (*NamespaceSpec) ProtoMessage()    {}
 func (*NamespaceSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{80}
+	return fileDescriptor_6c07b07c062484ab, []int{86}
 }
 func (m *NamespaceSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6570,17 +7384,22 @@ type NamespaceStatus struct {
 	// Phase is the current lifecycle phase of the namespace.
 	// More info: https://kubernetes.io/docs/tasks/administer-cluster/namespaces/
 	// +optional
-	Phase                *string  `protobuf:"bytes,1,opt,name=phase" json:"phase,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Phase *string `protobuf:"bytes,1,opt,name=phase" json:"phase,omitempty"`
+	// Represents the latest available observations of a namespace's current state.
+	// +optional
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	Conditions           []*NamespaceCondition `protobuf:"bytes,2,rep,name=conditions" json:"conditions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
 func (m *NamespaceStatus) Reset()         { *m = NamespaceStatus{} }
 func (m *NamespaceStatus) String() string { return proto.CompactTextString(m) }
 func (*NamespaceStatus) ProtoMessage()    {}
 func (*NamespaceStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{81}
+	return fileDescriptor_6c07b07c062484ab, []int{87}
 }
 func (m *NamespaceStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6616,21 +7435,28 @@ func (m *NamespaceStatus) GetPhase() string {
 	return ""
 }
 
+func (m *NamespaceStatus) GetConditions() []*NamespaceCondition {
+	if m != nil {
+		return m.Conditions
+	}
+	return nil
+}
+
 // Node is a worker node in Kubernetes.
 // Each node will have a unique identifier in the cache (i.e. in etcd).
 type Node struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines the behavior of a node.
-	// https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec *NodeSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	// Most recently observed status of the node.
 	// Populated by the system.
 	// Read-only.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status               *NodeStatus `protobuf:"bytes,3,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
@@ -6642,7 +7468,7 @@ func (m *Node) Reset()         { *m = Node{} }
 func (m *Node) String() string { return proto.CompactTextString(m) }
 func (*Node) ProtoMessage()    {}
 func (*Node) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{82}
+	return fileDescriptor_6c07b07c062484ab, []int{88}
 }
 func (m *Node) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6707,7 +7533,7 @@ func (m *NodeAddress) Reset()         { *m = NodeAddress{} }
 func (m *NodeAddress) String() string { return proto.CompactTextString(m) }
 func (*NodeAddress) ProtoMessage()    {}
 func (*NodeAddress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{83}
+	return fileDescriptor_6c07b07c062484ab, []int{89}
 }
 func (m *NodeAddress) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6779,7 +7605,7 @@ func (m *NodeAffinity) Reset()         { *m = NodeAffinity{} }
 func (m *NodeAffinity) String() string { return proto.CompactTextString(m) }
 func (*NodeAffinity) ProtoMessage()    {}
 func (*NodeAffinity) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{84}
+	return fileDescriptor_6c07b07c062484ab, []int{90}
 }
 func (m *NodeAffinity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6849,7 +7675,7 @@ func (m *NodeCondition) Reset()         { *m = NodeCondition{} }
 func (m *NodeCondition) String() string { return proto.CompactTextString(m) }
 func (*NodeCondition) ProtoMessage()    {}
 func (*NodeCondition) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{85}
+	return fileDescriptor_6c07b07c062484ab, []int{91}
 }
 func (m *NodeCondition) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -6933,7 +7759,7 @@ func (m *NodeConfigSource) Reset()         { *m = NodeConfigSource{} }
 func (m *NodeConfigSource) String() string { return proto.CompactTextString(m) }
 func (*NodeConfigSource) ProtoMessage()    {}
 func (*NodeConfigSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{86}
+	return fileDescriptor_6c07b07c062484ab, []int{92}
 }
 func (m *NodeConfigSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7023,7 +7849,7 @@ func (m *NodeConfigStatus) Reset()         { *m = NodeConfigStatus{} }
 func (m *NodeConfigStatus) String() string { return proto.CompactTextString(m) }
 func (*NodeConfigStatus) ProtoMessage()    {}
 func (*NodeConfigStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{87}
+	return fileDescriptor_6c07b07c062484ab, []int{93}
 }
 func (m *NodeConfigStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7094,7 +7920,7 @@ func (m *NodeDaemonEndpoints) Reset()         { *m = NodeDaemonEndpoints{} }
 func (m *NodeDaemonEndpoints) String() string { return proto.CompactTextString(m) }
 func (*NodeDaemonEndpoints) ProtoMessage()    {}
 func (*NodeDaemonEndpoints) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{88}
+	return fileDescriptor_6c07b07c062484ab, []int{94}
 }
 func (m *NodeDaemonEndpoints) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7133,7 +7959,7 @@ func (m *NodeDaemonEndpoints) GetKubeletEndpoint() *DaemonEndpoint {
 // NodeList is the whole list of all Nodes which have been registered with master.
 type NodeList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of nodes
@@ -7147,7 +7973,7 @@ func (m *NodeList) Reset()         { *m = NodeList{} }
 func (m *NodeList) String() string { return proto.CompactTextString(m) }
 func (*NodeList) ProtoMessage()    {}
 func (*NodeList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{89}
+	return fileDescriptor_6c07b07c062484ab, []int{95}
 }
 func (m *NodeList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7204,7 +8030,7 @@ func (m *NodeProxyOptions) Reset()         { *m = NodeProxyOptions{} }
 func (m *NodeProxyOptions) String() string { return proto.CompactTextString(m) }
 func (*NodeProxyOptions) ProtoMessage()    {}
 func (*NodeProxyOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{90}
+	return fileDescriptor_6c07b07c062484ab, []int{96}
 }
 func (m *NodeProxyOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7241,7 +8067,7 @@ func (m *NodeProxyOptions) GetPath() string {
 }
 
 // NodeResources is an object for conveying resource information about a node.
-// see http://releases.k8s.io/HEAD/docs/design/resources.md for more details.
+// see https://kubernetes.io/docs/concepts/architecture/nodes/#capacity for more details.
 type NodeResources struct {
 	// Capacity represents the available resources of a node
 	Capacity             map[string]*resource.Quantity `protobuf:"bytes,1,rep,name=capacity" json:"capacity,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -7254,7 +8080,7 @@ func (m *NodeResources) Reset()         { *m = NodeResources{} }
 func (m *NodeResources) String() string { return proto.CompactTextString(m) }
 func (*NodeResources) ProtoMessage()    {}
 func (*NodeResources) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{91}
+	return fileDescriptor_6c07b07c062484ab, []int{97}
 }
 func (m *NodeResources) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7305,7 +8131,7 @@ func (m *NodeSelector) Reset()         { *m = NodeSelector{} }
 func (m *NodeSelector) String() string { return proto.CompactTextString(m) }
 func (*NodeSelector) ProtoMessage()    {}
 func (*NodeSelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{92}
+	return fileDescriptor_6c07b07c062484ab, []int{98}
 }
 func (m *NodeSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7365,7 +8191,7 @@ func (m *NodeSelectorRequirement) Reset()         { *m = NodeSelectorRequirement
 func (m *NodeSelectorRequirement) String() string { return proto.CompactTextString(m) }
 func (*NodeSelectorRequirement) ProtoMessage()    {}
 func (*NodeSelectorRequirement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{93}
+	return fileDescriptor_6c07b07c062484ab, []int{99}
 }
 func (m *NodeSelectorRequirement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7434,7 +8260,7 @@ func (m *NodeSelectorTerm) Reset()         { *m = NodeSelectorTerm{} }
 func (m *NodeSelectorTerm) String() string { return proto.CompactTextString(m) }
 func (*NodeSelectorTerm) ProtoMessage()    {}
 func (*NodeSelectorTerm) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{94}
+	return fileDescriptor_6c07b07c062484ab, []int{100}
 }
 func (m *NodeSelectorTerm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7482,6 +8308,12 @@ type NodeSpec struct {
 	// PodCIDR represents the pod IP range assigned to the node.
 	// +optional
 	PodCIDR *string `protobuf:"bytes,1,opt,name=podCIDR" json:"podCIDR,omitempty"`
+	// podCIDRs represents the IP ranges assigned to the node for usage by Pods on that node. If this
+	// field is specified, the 0th entry must match the podCIDR field. It may contain at most 1 value for
+	// each of IPv4 and IPv6.
+	// +optional
+	// +patchStrategy=merge
+	PodCIDRs []string `protobuf:"bytes,7,rep,name=podCIDRs" json:"podCIDRs,omitempty"`
 	// ID of the node assigned by the cloud provider in the format: <ProviderName>://<ProviderSpecificNodeID>
 	// +optional
 	ProviderID *string `protobuf:"bytes,3,opt,name=providerID" json:"providerID,omitempty"`
@@ -7509,7 +8341,7 @@ func (m *NodeSpec) Reset()         { *m = NodeSpec{} }
 func (m *NodeSpec) String() string { return proto.CompactTextString(m) }
 func (*NodeSpec) ProtoMessage()    {}
 func (*NodeSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{95}
+	return fileDescriptor_6c07b07c062484ab, []int{101}
 }
 func (m *NodeSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7543,6 +8375,13 @@ func (m *NodeSpec) GetPodCIDR() string {
 		return *m.PodCIDR
 	}
 	return ""
+}
+
+func (m *NodeSpec) GetPodCIDRs() []string {
+	if m != nil {
+		return m.PodCIDRs
+	}
+	return nil
 }
 
 func (m *NodeSpec) GetProviderID() string {
@@ -7604,6 +8443,9 @@ type NodeStatus struct {
 	// List of addresses reachable to the node.
 	// Queried from cloud provider, if available.
 	// More info: https://kubernetes.io/docs/concepts/nodes/node/#addresses
+	// Note: This field is declared as mergeable, but the merge key is not sufficiently
+	// unique, which can cause data corruption when it is merged. Callers should instead
+	// use a full-replacement patch. See http://pr.k8s.io/79391 for an example.
 	// +optional
 	// +patchMergeKey=type
 	// +patchStrategy=merge
@@ -7636,7 +8478,7 @@ func (m *NodeStatus) Reset()         { *m = NodeStatus{} }
 func (m *NodeStatus) String() string { return proto.CompactTextString(m) }
 func (*NodeStatus) ProtoMessage()    {}
 func (*NodeStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{96}
+	return fileDescriptor_6c07b07c062484ab, []int{102}
 }
 func (m *NodeStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7750,7 +8592,7 @@ type NodeSystemInfo struct {
 	MachineID *string `protobuf:"bytes,1,opt,name=machineID" json:"machineID,omitempty"`
 	// SystemUUID reported by the node. For unique machine identification
 	// MachineID is preferred. This field is specific to Red Hat hosts
-	// https://access.redhat.com/documentation/en-US/Red_Hat_Subscription_Management/1/html/RHSM/getting-system-uuid.html
+	// https://access.redhat.com/documentation/en-us/red_hat_subscription_management/1/html/rhsm/uuid
 	SystemUUID *string `protobuf:"bytes,2,opt,name=systemUUID" json:"systemUUID,omitempty"`
 	// Boot ID reported by the node.
 	BootID *string `protobuf:"bytes,3,opt,name=bootID" json:"bootID,omitempty"`
@@ -7777,7 +8619,7 @@ func (m *NodeSystemInfo) Reset()         { *m = NodeSystemInfo{} }
 func (m *NodeSystemInfo) String() string { return proto.CompactTextString(m) }
 func (*NodeSystemInfo) ProtoMessage()    {}
 func (*NodeSystemInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{97}
+	return fileDescriptor_6c07b07c062484ab, []int{103}
 }
 func (m *NodeSystemInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7892,7 +8734,7 @@ func (m *ObjectFieldSelector) Reset()         { *m = ObjectFieldSelector{} }
 func (m *ObjectFieldSelector) String() string { return proto.CompactTextString(m) }
 func (*ObjectFieldSelector) ProtoMessage()    {}
 func (*ObjectFieldSelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{98}
+	return fileDescriptor_6c07b07c062484ab, []int{104}
 }
 func (m *ObjectFieldSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -7936,10 +8778,24 @@ func (m *ObjectFieldSelector) GetFieldPath() string {
 }
 
 // ObjectReference contains enough information to let you inspect or modify the referred object.
+// ---
+// New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.
+//  1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.
+//  2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular
+//     restrictions like, "must refer only to types A and B" or "UID not honored" or "name must be restricted".
+//     Those cannot be well described when embedded.
+//  3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.
+//  4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity
+//     during interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple
+//     and the version of the actual struct is irrelevant.
+//  5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type
+//     will affect numerous schemas.  Don't make new APIs embed an underspecified API type they do not control.
+// Instead of using this type, create a locally provided and used type that is well-focused on your reference.
+// For example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ObjectReference struct {
 	// Kind of the referent.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Kind *string `protobuf:"bytes,1,opt,name=kind" json:"kind,omitempty"`
 	// Namespace of the referent.
@@ -7958,7 +8814,7 @@ type ObjectReference struct {
 	// +optional
 	ApiVersion *string `protobuf:"bytes,5,opt,name=apiVersion" json:"apiVersion,omitempty"`
 	// Specific resourceVersion to which this reference is made, if any.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
 	// +optional
 	ResourceVersion *string `protobuf:"bytes,6,opt,name=resourceVersion" json:"resourceVersion,omitempty"`
 	// If referring to a piece of an object instead of an entire object, this string
@@ -7980,7 +8836,7 @@ func (m *ObjectReference) Reset()         { *m = ObjectReference{} }
 func (m *ObjectReference) String() string { return proto.CompactTextString(m) }
 func (*ObjectReference) ProtoMessage()    {}
 func (*ObjectReference) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{99}
+	return fileDescriptor_6c07b07c062484ab, []int{105}
 }
 func (m *ObjectReference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8063,7 +8919,7 @@ func (m *ObjectReference) GetFieldPath() string {
 // More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes
 type PersistentVolume struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines a specification of a persistent volume owned by the cluster.
@@ -8086,7 +8942,7 @@ func (m *PersistentVolume) Reset()         { *m = PersistentVolume{} }
 func (m *PersistentVolume) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolume) ProtoMessage()    {}
 func (*PersistentVolume) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{100}
+	return fileDescriptor_6c07b07c062484ab, []int{106}
 }
 func (m *PersistentVolume) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8139,7 +8995,7 @@ func (m *PersistentVolume) GetStatus() *PersistentVolumeStatus {
 // PersistentVolumeClaim is a user's request for and claim to a persistent volume
 type PersistentVolumeClaim struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines the desired characteristics of a volume requested by a pod author.
@@ -8160,7 +9016,7 @@ func (m *PersistentVolumeClaim) Reset()         { *m = PersistentVolumeClaim{} }
 func (m *PersistentVolumeClaim) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeClaim) ProtoMessage()    {}
 func (*PersistentVolumeClaim) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{101}
+	return fileDescriptor_6c07b07c062484ab, []int{107}
 }
 func (m *PersistentVolumeClaim) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8237,7 +9093,7 @@ func (m *PersistentVolumeClaimCondition) Reset()         { *m = PersistentVolume
 func (m *PersistentVolumeClaimCondition) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeClaimCondition) ProtoMessage()    {}
 func (*PersistentVolumeClaimCondition) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{102}
+	return fileDescriptor_6c07b07c062484ab, []int{108}
 }
 func (m *PersistentVolumeClaimCondition) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8311,7 +9167,7 @@ func (m *PersistentVolumeClaimCondition) GetMessage() string {
 // PersistentVolumeClaimList is a list of PersistentVolumeClaim items.
 type PersistentVolumeClaimList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// A list of persistent volume claims.
@@ -8326,7 +9182,7 @@ func (m *PersistentVolumeClaimList) Reset()         { *m = PersistentVolumeClaim
 func (m *PersistentVolumeClaimList) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeClaimList) ProtoMessage()    {}
 func (*PersistentVolumeClaimList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{103}
+	return fileDescriptor_6c07b07c062484ab, []int{109}
 }
 func (m *PersistentVolumeClaimList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8392,17 +9248,16 @@ type PersistentVolumeClaimSpec struct {
 	StorageClassName *string `protobuf:"bytes,5,opt,name=storageClassName" json:"storageClassName,omitempty"`
 	// volumeMode defines what type of volume is required by the claim.
 	// Value of Filesystem is implied when not included in claim spec.
-	// This is a beta feature.
 	// +optional
 	VolumeMode *string `protobuf:"bytes,6,opt,name=volumeMode" json:"volumeMode,omitempty"`
-	// This field requires the VolumeSnapshotDataSource alpha feature gate to be
-	// enabled and currently VolumeSnapshot is the only supported data source.
-	// If the provisioner can support VolumeSnapshot data source, it will create
-	// a new volume and data will be restored to the volume at the same time.
-	// If the provisioner does not support VolumeSnapshot data source, volume will
-	// not be created and the failure will be reported as an event.
-	// In the future, we plan to support more data source types and the behavior
-	// of the provisioner may change.
+	// This field can be used to specify either:
+	// * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+	// * An existing PVC (PersistentVolumeClaim)
+	// * An existing custom resource that implements data population (Alpha)
+	// In order to use custom resource types that implement data population,
+	// the AnyVolumeDataSource feature gate must be enabled.
+	// If the provisioner or an external controller can support the specified data source,
+	// it will create a new volume based on the contents of the specified data source.
 	// +optional
 	DataSource           *TypedLocalObjectReference `protobuf:"bytes,7,opt,name=dataSource" json:"dataSource,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
@@ -8414,7 +9269,7 @@ func (m *PersistentVolumeClaimSpec) Reset()         { *m = PersistentVolumeClaim
 func (m *PersistentVolumeClaimSpec) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeClaimSpec) ProtoMessage()    {}
 func (*PersistentVolumeClaimSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{104}
+	return fileDescriptor_6c07b07c062484ab, []int{110}
 }
 func (m *PersistentVolumeClaimSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8519,7 +9374,7 @@ func (m *PersistentVolumeClaimStatus) Reset()         { *m = PersistentVolumeCla
 func (m *PersistentVolumeClaimStatus) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeClaimStatus) ProtoMessage()    {}
 func (*PersistentVolumeClaimStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{105}
+	return fileDescriptor_6c07b07c062484ab, []int{111}
 }
 func (m *PersistentVolumeClaimStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8576,6 +9431,72 @@ func (m *PersistentVolumeClaimStatus) GetConditions() []*PersistentVolumeClaimCo
 	return nil
 }
 
+// PersistentVolumeClaimTemplate is used to produce
+// PersistentVolumeClaim objects as part of an EphemeralVolumeSource.
+type PersistentVolumeClaimTemplate struct {
+	// May contain labels and annotations that will be copied into the PVC
+	// when creating it. No other fields are allowed and will be rejected during
+	// validation.
+	//
+	// +optional
+	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	// The specification for the PersistentVolumeClaim. The entire content is
+	// copied unchanged into the PVC that gets created from this
+	// template. The same fields as in a PersistentVolumeClaim
+	// are also valid here.
+	Spec                 *PersistentVolumeClaimSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *PersistentVolumeClaimTemplate) Reset()         { *m = PersistentVolumeClaimTemplate{} }
+func (m *PersistentVolumeClaimTemplate) String() string { return proto.CompactTextString(m) }
+func (*PersistentVolumeClaimTemplate) ProtoMessage()    {}
+func (*PersistentVolumeClaimTemplate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{112}
+}
+func (m *PersistentVolumeClaimTemplate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PersistentVolumeClaimTemplate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PersistentVolumeClaimTemplate.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PersistentVolumeClaimTemplate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PersistentVolumeClaimTemplate.Merge(m, src)
+}
+func (m *PersistentVolumeClaimTemplate) XXX_Size() int {
+	return m.Size()
+}
+func (m *PersistentVolumeClaimTemplate) XXX_DiscardUnknown() {
+	xxx_messageInfo_PersistentVolumeClaimTemplate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PersistentVolumeClaimTemplate proto.InternalMessageInfo
+
+func (m *PersistentVolumeClaimTemplate) GetMetadata() *v1.ObjectMeta {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+func (m *PersistentVolumeClaimTemplate) GetSpec() *PersistentVolumeClaimSpec {
+	if m != nil {
+		return m.Spec
+	}
+	return nil
+}
+
 // PersistentVolumeClaimVolumeSource references the user's PVC in the same namespace.
 // This volume finds the bound PV and mounts that volume for the pod. A
 // PersistentVolumeClaimVolumeSource is, essentially, a wrapper around another
@@ -8597,7 +9518,7 @@ func (m *PersistentVolumeClaimVolumeSource) Reset()         { *m = PersistentVol
 func (m *PersistentVolumeClaimVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeClaimVolumeSource) ProtoMessage()    {}
 func (*PersistentVolumeClaimVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{106}
+	return fileDescriptor_6c07b07c062484ab, []int{113}
 }
 func (m *PersistentVolumeClaimVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8643,7 +9564,7 @@ func (m *PersistentVolumeClaimVolumeSource) GetReadOnly() bool {
 // PersistentVolumeList is a list of PersistentVolume items.
 type PersistentVolumeList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of persistent volumes.
@@ -8658,7 +9579,7 @@ func (m *PersistentVolumeList) Reset()         { *m = PersistentVolumeList{} }
 func (m *PersistentVolumeList) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeList) ProtoMessage()    {}
 func (*PersistentVolumeList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{107}
+	return fileDescriptor_6c07b07c062484ab, []int{114}
 }
 func (m *PersistentVolumeList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -8723,7 +9644,7 @@ type PersistentVolumeSource struct {
 	HostPath *HostPathVolumeSource `protobuf:"bytes,3,opt,name=hostPath" json:"hostPath,omitempty"`
 	// Glusterfs represents a Glusterfs volume that is attached to a host and
 	// exposed to the pod. Provisioned by an admin.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md
 	// +optional
 	Glusterfs *GlusterfsPersistentVolumeSource `protobuf:"bytes,4,opt,name=glusterfs" json:"glusterfs,omitempty"`
 	// NFS represents an NFS mount on the host. Provisioned by an admin.
@@ -8731,15 +9652,15 @@ type PersistentVolumeSource struct {
 	// +optional
 	Nfs *NFSVolumeSource `protobuf:"bytes,5,opt,name=nfs" json:"nfs,omitempty"`
 	// RBD represents a Rados Block Device mount on the host that shares a pod's lifetime.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md
+	// More info: https://examples.k8s.io/volumes/rbd/README.md
 	// +optional
 	Rbd *RBDPersistentVolumeSource `protobuf:"bytes,6,opt,name=rbd" json:"rbd,omitempty"`
 	// ISCSI represents an ISCSI Disk resource that is attached to a
 	// kubelet's host machine and then exposed to the pod. Provisioned by an admin.
 	// +optional
 	Iscsi *ISCSIPersistentVolumeSource `protobuf:"bytes,7,opt,name=iscsi" json:"iscsi,omitempty"`
-	// Cinder represents a cinder volume attached and mounted on kubelets host machine
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// Cinder represents a cinder volume attached and mounted on kubelets host machine.
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	// +optional
 	Cinder *CinderPersistentVolumeSource `protobuf:"bytes,8,opt,name=cinder" json:"cinder,omitempty"`
 	// CephFS represents a Ceph FS mount on the host that shares a pod's lifetime
@@ -8779,10 +9700,10 @@ type PersistentVolumeSource struct {
 	// +optional
 	Local *LocalVolumeSource `protobuf:"bytes,20,opt,name=local" json:"local,omitempty"`
 	// StorageOS represents a StorageOS volume that is attached to the kubelet's host machine and mounted into the pod
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/storageos/README.md
+	// More info: https://examples.k8s.io/volumes/storageos/README.md
 	// +optional
 	Storageos *StorageOSPersistentVolumeSource `protobuf:"bytes,21,opt,name=storageos" json:"storageos,omitempty"`
-	// CSI represents storage that handled by an external CSI driver (Beta feature).
+	// CSI represents storage that is handled by an external CSI driver (Beta feature).
 	// +optional
 	Csi                  *CSIPersistentVolumeSource `protobuf:"bytes,22,opt,name=csi" json:"csi,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
@@ -8794,7 +9715,7 @@ func (m *PersistentVolumeSource) Reset()         { *m = PersistentVolumeSource{}
 func (m *PersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeSource) ProtoMessage()    {}
 func (*PersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{108}
+	return fileDescriptor_6c07b07c062484ab, []int{115}
 }
 func (m *PersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9013,7 +9934,6 @@ type PersistentVolumeSpec struct {
 	MountOptions []string `protobuf:"bytes,7,rep,name=mountOptions" json:"mountOptions,omitempty"`
 	// volumeMode defines if a volume is intended to be used with a formatted filesystem
 	// or to remain in raw block state. Value of Filesystem is implied when not included in spec.
-	// This is a beta feature.
 	// +optional
 	VolumeMode *string `protobuf:"bytes,8,opt,name=volumeMode" json:"volumeMode,omitempty"`
 	// NodeAffinity defines constraints that limit what nodes this volume can be accessed from.
@@ -9029,7 +9949,7 @@ func (m *PersistentVolumeSpec) Reset()         { *m = PersistentVolumeSpec{} }
 func (m *PersistentVolumeSpec) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeSpec) ProtoMessage()    {}
 func (*PersistentVolumeSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{109}
+	return fileDescriptor_6c07b07c062484ab, []int{116}
 }
 func (m *PersistentVolumeSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9143,7 +10063,7 @@ func (m *PersistentVolumeStatus) Reset()         { *m = PersistentVolumeStatus{}
 func (m *PersistentVolumeStatus) String() string { return proto.CompactTextString(m) }
 func (*PersistentVolumeStatus) ProtoMessage()    {}
 func (*PersistentVolumeStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{110}
+	return fileDescriptor_6c07b07c062484ab, []int{117}
 }
 func (m *PersistentVolumeStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9210,7 +10130,7 @@ func (m *PhotonPersistentDiskVolumeSource) Reset()         { *m = PhotonPersiste
 func (m *PhotonPersistentDiskVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*PhotonPersistentDiskVolumeSource) ProtoMessage()    {}
 func (*PhotonPersistentDiskVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{111}
+	return fileDescriptor_6c07b07c062484ab, []int{118}
 }
 func (m *PhotonPersistentDiskVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9257,18 +10177,18 @@ func (m *PhotonPersistentDiskVolumeSource) GetFsType() string {
 // by clients and scheduled onto hosts.
 type Pod struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Specification of the desired behavior of the pod.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec *PodSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	// Most recently observed status of the pod.
 	// This data may not be up to date.
 	// Populated by the system.
 	// Read-only.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status               *PodStatus `protobuf:"bytes,3,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
@@ -9280,7 +10200,7 @@ func (m *Pod) Reset()         { *m = Pod{} }
 func (m *Pod) String() string { return proto.CompactTextString(m) }
 func (*Pod) ProtoMessage()    {}
 func (*Pod) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{112}
+	return fileDescriptor_6c07b07c062484ab, []int{119}
 }
 func (m *Pod) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9361,7 +10281,7 @@ func (m *PodAffinity) Reset()         { *m = PodAffinity{} }
 func (m *PodAffinity) String() string { return proto.CompactTextString(m) }
 func (*PodAffinity) ProtoMessage()    {}
 func (*PodAffinity) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{113}
+	return fileDescriptor_6c07b07c062484ab, []int{120}
 }
 func (m *PodAffinity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9433,7 +10353,7 @@ func (m *PodAffinityTerm) Reset()         { *m = PodAffinityTerm{} }
 func (m *PodAffinityTerm) String() string { return proto.CompactTextString(m) }
 func (*PodAffinityTerm) ProtoMessage()    {}
 func (*PodAffinityTerm) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{114}
+	return fileDescriptor_6c07b07c062484ab, []int{121}
 }
 func (m *PodAffinityTerm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9514,7 +10434,7 @@ func (m *PodAntiAffinity) Reset()         { *m = PodAntiAffinity{} }
 func (m *PodAntiAffinity) String() string { return proto.CompactTextString(m) }
 func (*PodAntiAffinity) ProtoMessage()    {}
 func (*PodAntiAffinity) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{115}
+	return fileDescriptor_6c07b07c062484ab, []int{122}
 }
 func (m *PodAntiAffinity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9593,7 +10513,7 @@ func (m *PodAttachOptions) Reset()         { *m = PodAttachOptions{} }
 func (m *PodAttachOptions) String() string { return proto.CompactTextString(m) }
 func (*PodAttachOptions) ProtoMessage()    {}
 func (*PodAttachOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{116}
+	return fileDescriptor_6c07b07c062484ab, []int{123}
 }
 func (m *PodAttachOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9687,7 +10607,7 @@ func (m *PodCondition) Reset()         { *m = PodCondition{} }
 func (m *PodCondition) String() string { return proto.CompactTextString(m) }
 func (*PodCondition) ProtoMessage()    {}
 func (*PodCondition) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{117}
+	return fileDescriptor_6c07b07c062484ab, []int{124}
 }
 func (m *PodCondition) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9786,7 +10706,7 @@ func (m *PodDNSConfig) Reset()         { *m = PodDNSConfig{} }
 func (m *PodDNSConfig) String() string { return proto.CompactTextString(m) }
 func (*PodDNSConfig) ProtoMessage()    {}
 func (*PodDNSConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{118}
+	return fileDescriptor_6c07b07c062484ab, []int{125}
 }
 func (m *PodDNSConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9851,7 +10771,7 @@ func (m *PodDNSConfigOption) Reset()         { *m = PodDNSConfigOption{} }
 func (m *PodDNSConfigOption) String() string { return proto.CompactTextString(m) }
 func (*PodDNSConfigOption) ProtoMessage()    {}
 func (*PodDNSConfigOption) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{119}
+	return fileDescriptor_6c07b07c062484ab, []int{126}
 }
 func (m *PodDNSConfigOption) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -9930,7 +10850,7 @@ func (m *PodExecOptions) Reset()         { *m = PodExecOptions{} }
 func (m *PodExecOptions) String() string { return proto.CompactTextString(m) }
 func (*PodExecOptions) ProtoMessage()    {}
 func (*PodExecOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{120}
+	return fileDescriptor_6c07b07c062484ab, []int{127}
 }
 func (m *PodExecOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10001,14 +10921,65 @@ func (m *PodExecOptions) GetCommand() []string {
 	return nil
 }
 
+// IP address information for entries in the (plural) PodIPs field.
+// Each entry includes:
+//    IP: An IP address allocated to the pod. Routable at least within the cluster.
+type PodIP struct {
+	// ip is an IP address (IPv4 or IPv6) assigned to the pod
+	Ip                   *string  `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PodIP) Reset()         { *m = PodIP{} }
+func (m *PodIP) String() string { return proto.CompactTextString(m) }
+func (*PodIP) ProtoMessage()    {}
+func (*PodIP) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{128}
+}
+func (m *PodIP) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PodIP) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PodIP.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PodIP) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PodIP.Merge(m, src)
+}
+func (m *PodIP) XXX_Size() int {
+	return m.Size()
+}
+func (m *PodIP) XXX_DiscardUnknown() {
+	xxx_messageInfo_PodIP.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PodIP proto.InternalMessageInfo
+
+func (m *PodIP) GetIp() string {
+	if m != nil && m.Ip != nil {
+		return *m.Ip
+	}
+	return ""
+}
+
 // PodList is a list of Pods.
 type PodList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of pods.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md
 	Items                []*Pod   `protobuf:"bytes,2,rep,name=items" json:"items,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -10019,7 +10990,7 @@ func (m *PodList) Reset()         { *m = PodList{} }
 func (m *PodList) String() string { return proto.CompactTextString(m) }
 func (*PodList) ProtoMessage()    {}
 func (*PodList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{121}
+	return fileDescriptor_6c07b07c062484ab, []int{129}
 }
 func (m *PodList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10097,17 +11068,25 @@ type PodLogOptions struct {
 	// log output. This may not display a complete final line of logging, and may return
 	// slightly more or slightly less than the specified limit.
 	// +optional
-	LimitBytes           *int64   `protobuf:"varint,8,opt,name=limitBytes" json:"limitBytes,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	LimitBytes *int64 `protobuf:"varint,8,opt,name=limitBytes" json:"limitBytes,omitempty"`
+	// insecureSkipTLSVerifyBackend indicates that the apiserver should not confirm the validity of the
+	// serving certificate of the backend it is connecting to.  This will make the HTTPS connection between the apiserver
+	// and the backend insecure. This means the apiserver cannot verify the log data it is receiving came from the real
+	// kubelet.  If the kubelet is configured to verify the apiserver's TLS credentials, it does not mean the
+	// connection to the real kubelet is vulnerable to a man in the middle attack (e.g. an attacker could not intercept
+	// the actual log data coming from the real kubelet).
+	// +optional
+	InsecureSkipTLSVerifyBackend *bool    `protobuf:"varint,9,opt,name=insecureSkipTLSVerifyBackend" json:"insecureSkipTLSVerifyBackend,omitempty"`
+	XXX_NoUnkeyedLiteral         struct{} `json:"-"`
+	XXX_unrecognized             []byte   `json:"-"`
+	XXX_sizecache                int32    `json:"-"`
 }
 
 func (m *PodLogOptions) Reset()         { *m = PodLogOptions{} }
 func (m *PodLogOptions) String() string { return proto.CompactTextString(m) }
 func (*PodLogOptions) ProtoMessage()    {}
 func (*PodLogOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{122}
+	return fileDescriptor_6c07b07c062484ab, []int{130}
 }
 func (m *PodLogOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10192,6 +11171,13 @@ func (m *PodLogOptions) GetLimitBytes() int64 {
 	return 0
 }
 
+func (m *PodLogOptions) GetInsecureSkipTLSVerifyBackend() bool {
+	if m != nil && m.InsecureSkipTLSVerifyBackend != nil {
+		return *m.InsecureSkipTLSVerifyBackend
+	}
+	return false
+}
+
 // PodPortForwardOptions is the query options to a Pod's port forward call
 // when using WebSockets.
 // The `port` query parameter must specify the port or
@@ -10212,7 +11198,7 @@ func (m *PodPortForwardOptions) Reset()         { *m = PodPortForwardOptions{} }
 func (m *PodPortForwardOptions) String() string { return proto.CompactTextString(m) }
 func (*PodPortForwardOptions) ProtoMessage()    {}
 func (*PodPortForwardOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{123}
+	return fileDescriptor_6c07b07c062484ab, []int{131}
 }
 func (m *PodPortForwardOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10262,7 +11248,7 @@ func (m *PodProxyOptions) Reset()         { *m = PodProxyOptions{} }
 func (m *PodProxyOptions) String() string { return proto.CompactTextString(m) }
 func (*PodProxyOptions) ProtoMessage()    {}
 func (*PodProxyOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{124}
+	return fileDescriptor_6c07b07c062484ab, []int{132}
 }
 func (m *PodProxyOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10311,7 +11297,7 @@ func (m *PodReadinessGate) Reset()         { *m = PodReadinessGate{} }
 func (m *PodReadinessGate) String() string { return proto.CompactTextString(m) }
 func (*PodReadinessGate) ProtoMessage()    {}
 func (*PodReadinessGate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{125}
+	return fileDescriptor_6c07b07c062484ab, []int{133}
 }
 func (m *PodReadinessGate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10358,6 +11344,11 @@ type PodSecurityContext struct {
 	// takes precedence for that container.
 	// +optional
 	SeLinuxOptions *SELinuxOptions `protobuf:"bytes,1,opt,name=seLinuxOptions" json:"seLinuxOptions,omitempty"`
+	// The Windows specific settings applied to all containers.
+	// If unspecified, the options within a container's SecurityContext will be used.
+	// If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+	// +optional
+	WindowsOptions *WindowsSecurityContextOptions `protobuf:"bytes,8,opt,name=windowsOptions" json:"windowsOptions,omitempty"`
 	// The UID to run the entrypoint of the container process.
 	// Defaults to user specified in image metadata if unspecified.
 	// May also be set in SecurityContext.  If set in both SecurityContext and
@@ -10399,17 +11390,28 @@ type PodSecurityContext struct {
 	// Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
 	// sysctls (by the container runtime) might fail to launch.
 	// +optional
-	Sysctls              []*Sysctl `protobuf:"bytes,7,rep,name=sysctls" json:"sysctls,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
+	Sysctls []*Sysctl `protobuf:"bytes,7,rep,name=sysctls" json:"sysctls,omitempty"`
+	// fsGroupChangePolicy defines behavior of changing ownership and permission of the volume
+	// before being exposed inside Pod. This field will only apply to
+	// volume types which support fsGroup based ownership(and permissions).
+	// It will have no effect on ephemeral volume types such as: secret, configmaps
+	// and emptydir.
+	// Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used.
+	// +optional
+	FsGroupChangePolicy *string `protobuf:"bytes,9,opt,name=fsGroupChangePolicy" json:"fsGroupChangePolicy,omitempty"`
+	// The seccomp options to use by the containers in this pod.
+	// +optional
+	SeccompProfile       *SeccompProfile `protobuf:"bytes,10,opt,name=seccompProfile" json:"seccompProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *PodSecurityContext) Reset()         { *m = PodSecurityContext{} }
 func (m *PodSecurityContext) String() string { return proto.CompactTextString(m) }
 func (*PodSecurityContext) ProtoMessage()    {}
 func (*PodSecurityContext) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{126}
+	return fileDescriptor_6c07b07c062484ab, []int{134}
 }
 func (m *PodSecurityContext) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10441,6 +11443,13 @@ var xxx_messageInfo_PodSecurityContext proto.InternalMessageInfo
 func (m *PodSecurityContext) GetSeLinuxOptions() *SELinuxOptions {
 	if m != nil {
 		return m.SeLinuxOptions
+	}
+	return nil
+}
+
+func (m *PodSecurityContext) GetWindowsOptions() *WindowsSecurityContextOptions {
+	if m != nil {
+		return m.WindowsOptions
 	}
 	return nil
 }
@@ -10487,6 +11496,20 @@ func (m *PodSecurityContext) GetSysctls() []*Sysctl {
 	return nil
 }
 
+func (m *PodSecurityContext) GetFsGroupChangePolicy() string {
+	if m != nil && m.FsGroupChangePolicy != nil {
+		return *m.FsGroupChangePolicy
+	}
+	return ""
+}
+
+func (m *PodSecurityContext) GetSeccompProfile() *SeccompProfile {
+	if m != nil {
+		return m.SeccompProfile
+	}
+	return nil
+}
+
 // Describes the class of pods that should avoid this node.
 // Exactly one field should be set.
 type PodSignature struct {
@@ -10502,7 +11525,7 @@ func (m *PodSignature) Reset()         { *m = PodSignature{} }
 func (m *PodSignature) String() string { return proto.CompactTextString(m) }
 func (*PodSignature) ProtoMessage()    {}
 func (*PodSignature) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{127}
+	return fileDescriptor_6c07b07c062484ab, []int{135}
 }
 func (m *PodSignature) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10551,7 +11574,7 @@ type PodSpec struct {
 	// init container fails, the pod is considered to have failed and is handled according
 	// to its restartPolicy. The name for an init container or normal container must be
 	// unique among all containers.
-	// Init containers may not have Lifecycle actions, Readiness probes, or Liveness probes.
+	// Init containers may not have Lifecycle actions, Readiness probes, Liveness probes, or Startup probes.
 	// The resourceRequirements of an init container are taken into account during scheduling
 	// by finding the highest request/limit for each resource type, and then using the max of
 	// of that value or the sum of the normal containers. Limits are applied to init containers
@@ -10569,6 +11592,15 @@ type PodSpec struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Containers []*Container `protobuf:"bytes,2,rep,name=containers" json:"containers,omitempty"`
+	// List of ephemeral containers run in this pod. Ephemeral containers may be run in an existing
+	// pod to perform user-initiated actions such as debugging. This list cannot be specified when
+	// creating a pod, and it cannot be modified by updating the pod spec. In order to add an
+	// ephemeral container to an existing pod, use the pod's ephemeralcontainers subresource.
+	// This field is alpha-level and is only honored by servers that enable the EphemeralContainers feature.
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	EphemeralContainers []*EphemeralContainer `protobuf:"bytes,34,rep,name=ephemeralContainers" json:"ephemeralContainers,omitempty"`
 	// Restart policy for all containers within the pod.
 	// One of Always, OnFailure, Never.
 	// Default to Always.
@@ -10640,7 +11672,6 @@ type PodSpec struct {
 	// in the same pod, and the first process in each container will not be assigned PID 1.
 	// HostPID and ShareProcessNamespace cannot both be set.
 	// Optional: Default to false.
-	// This field is beta-level and may be disabled with the PodShareProcessNamespace feature.
 	// +k8s:conversion-gen=false
 	// +optional
 	ShareProcessNamespace *bool `protobuf:"varint,27,opt,name=shareProcessNamespace" json:"shareProcessNamespace,omitempty"`
@@ -10703,21 +11734,55 @@ type PodSpec struct {
 	// If specified, all readiness gates will be evaluated for pod readiness.
 	// A pod is ready when all its containers are ready AND
 	// all conditions specified in the readiness gates have status equal to "True"
-	// More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md
+	// More info: https://git.k8s.io/enhancements/keps/sig-network/0007-pod-ready%2B%2B.md
 	// +optional
 	ReadinessGates []*PodReadinessGate `protobuf:"bytes,28,rep,name=readinessGates" json:"readinessGates,omitempty"`
 	// RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used
 	// to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run.
 	// If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an
 	// empty definition that uses the default runtime handler.
-	// More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-	// This is an alpha feature and may change in the future.
+	// More info: https://git.k8s.io/enhancements/keps/sig-node/runtime-class.md
+	// This is a beta feature as of Kubernetes v1.14.
 	// +optional
 	RuntimeClassName *string `protobuf:"bytes,29,opt,name=runtimeClassName" json:"runtimeClassName,omitempty"`
 	// EnableServiceLinks indicates whether information about services should be injected into pod's
 	// environment variables, matching the syntax of Docker links.
+	// Optional: Defaults to true.
 	// +optional
-	EnableServiceLinks   *bool    `protobuf:"varint,30,opt,name=enableServiceLinks" json:"enableServiceLinks,omitempty"`
+	EnableServiceLinks *bool `protobuf:"varint,30,opt,name=enableServiceLinks" json:"enableServiceLinks,omitempty"`
+	// PreemptionPolicy is the Policy for preempting pods with lower priority.
+	// One of Never, PreemptLowerPriority.
+	// Defaults to PreemptLowerPriority if unset.
+	// This field is beta-level, gated by the NonPreemptingPriority feature-gate.
+	// +optional
+	PreemptionPolicy *string `protobuf:"bytes,31,opt,name=preemptionPolicy" json:"preemptionPolicy,omitempty"`
+	// Overhead represents the resource overhead associated with running a pod for a given RuntimeClass.
+	// This field will be autopopulated at admission time by the RuntimeClass admission controller. If
+	// the RuntimeClass admission controller is enabled, overhead must not be set in Pod create requests.
+	// The RuntimeClass admission controller will reject Pod create requests which have the overhead already
+	// set. If RuntimeClass is configured and selected in the PodSpec, Overhead will be set to the value
+	// defined in the corresponding RuntimeClass, otherwise it will remain unset and treated as zero.
+	// More info: https://git.k8s.io/enhancements/keps/sig-node/20190226-pod-overhead.md
+	// This field is alpha-level as of Kubernetes v1.16, and is only honored by servers that enable the PodOverhead feature.
+	// +optional
+	Overhead map[string]*resource.Quantity `protobuf:"bytes,32,rep,name=overhead" json:"overhead,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// TopologySpreadConstraints describes how a group of pods ought to spread across topology
+	// domains. Scheduler will schedule pods in a way which abides by the constraints.
+	// All topologySpreadConstraints are ANDed.
+	// +optional
+	// +patchMergeKey=topologyKey
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=topologyKey
+	// +listMapKey=whenUnsatisfiable
+	TopologySpreadConstraints []*TopologySpreadConstraint `protobuf:"bytes,33,rep,name=topologySpreadConstraints" json:"topologySpreadConstraints,omitempty"`
+	// If true the pod's hostname will be configured as the pod's FQDN, rather than the leaf name (the default).
+	// In Linux containers, this means setting the FQDN in the hostname field of the kernel (the nodename field of struct utsname).
+	// In Windows containers, this means setting the registry value of hostname for the registry key HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters to FQDN.
+	// If a pod does not have FQDN, this has no effect.
+	// Default to false.
+	// +optional
+	SetHostnameAsFQDN    *bool    `protobuf:"varint,35,opt,name=setHostnameAsFQDN" json:"setHostnameAsFQDN,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -10727,7 +11792,7 @@ func (m *PodSpec) Reset()         { *m = PodSpec{} }
 func (m *PodSpec) String() string { return proto.CompactTextString(m) }
 func (*PodSpec) ProtoMessage()    {}
 func (*PodSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{128}
+	return fileDescriptor_6c07b07c062484ab, []int{136}
 }
 func (m *PodSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -10773,6 +11838,13 @@ func (m *PodSpec) GetInitContainers() []*Container {
 func (m *PodSpec) GetContainers() []*Container {
 	if m != nil {
 		return m.Containers
+	}
+	return nil
+}
+
+func (m *PodSpec) GetEphemeralContainers() []*EphemeralContainer {
+	if m != nil {
+		return m.EphemeralContainers
 	}
 	return nil
 }
@@ -10966,6 +12038,34 @@ func (m *PodSpec) GetEnableServiceLinks() bool {
 	return false
 }
 
+func (m *PodSpec) GetPreemptionPolicy() string {
+	if m != nil && m.PreemptionPolicy != nil {
+		return *m.PreemptionPolicy
+	}
+	return ""
+}
+
+func (m *PodSpec) GetOverhead() map[string]*resource.Quantity {
+	if m != nil {
+		return m.Overhead
+	}
+	return nil
+}
+
+func (m *PodSpec) GetTopologySpreadConstraints() []*TopologySpreadConstraint {
+	if m != nil {
+		return m.TopologySpreadConstraints
+	}
+	return nil
+}
+
+func (m *PodSpec) GetSetHostnameAsFQDN() bool {
+	if m != nil && m.SetHostnameAsFQDN != nil {
+		return *m.SetHostnameAsFQDN
+	}
+	return false
+}
+
 // PodStatus represents information about the status of a pod. Status may trail the actual
 // state of a system, especially if the node that hosts the pod cannot contact the control
 // plane.
@@ -11019,6 +12119,13 @@ type PodStatus struct {
 	// Empty if not yet allocated.
 	// +optional
 	PodIP *string `protobuf:"bytes,6,opt,name=podIP" json:"podIP,omitempty"`
+	// podIPs holds the IP addresses allocated to the pod. If this field is specified, the 0th entry must
+	// match the podIP field. Pods may be allocated at most 1 value for each of IPv4 and IPv6. This list
+	// is empty if no IPs have been allocated yet.
+	// +optional
+	// +patchStrategy=merge
+	// +patchMergeKey=ip
+	PodIPs []*PodIP `protobuf:"bytes,12,rep,name=podIPs" json:"podIPs,omitempty"`
 	// RFC 3339 date and time at which the object was acknowledged by the Kubelet.
 	// This is before the Kubelet pulled the container image(s) for the pod.
 	// +optional
@@ -11037,17 +12144,21 @@ type PodStatus struct {
 	// See PodQOSClass type for available QOS classes
 	// More info: https://git.k8s.io/community/contributors/design-proposals/node/resource-qos.md
 	// +optional
-	QosClass             *string  `protobuf:"bytes,9,opt,name=qosClass" json:"qosClass,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	QosClass *string `protobuf:"bytes,9,opt,name=qosClass" json:"qosClass,omitempty"`
+	// Status for any ephemeral containers that have run in this pod.
+	// This field is alpha-level and is only populated by servers that enable the EphemeralContainers feature.
+	// +optional
+	EphemeralContainerStatuses []*ContainerStatus `protobuf:"bytes,13,rep,name=ephemeralContainerStatuses" json:"ephemeralContainerStatuses,omitempty"`
+	XXX_NoUnkeyedLiteral       struct{}           `json:"-"`
+	XXX_unrecognized           []byte             `json:"-"`
+	XXX_sizecache              int32              `json:"-"`
 }
 
 func (m *PodStatus) Reset()         { *m = PodStatus{} }
 func (m *PodStatus) String() string { return proto.CompactTextString(m) }
 func (*PodStatus) ProtoMessage()    {}
 func (*PodStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{129}
+	return fileDescriptor_6c07b07c062484ab, []int{137}
 }
 func (m *PodStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11125,6 +12236,13 @@ func (m *PodStatus) GetPodIP() string {
 	return ""
 }
 
+func (m *PodStatus) GetPodIPs() []*PodIP {
+	if m != nil {
+		return m.PodIPs
+	}
+	return nil
+}
+
 func (m *PodStatus) GetStartTime() *v1.Time {
 	if m != nil {
 		return m.StartTime
@@ -11153,17 +12271,24 @@ func (m *PodStatus) GetQosClass() string {
 	return ""
 }
 
+func (m *PodStatus) GetEphemeralContainerStatuses() []*ContainerStatus {
+	if m != nil {
+		return m.EphemeralContainerStatuses
+	}
+	return nil
+}
+
 // PodStatusResult is a wrapper for PodStatus returned by kubelet that can be encode/decoded
 type PodStatusResult struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Most recently observed status of the pod.
 	// This data may not be up to date.
 	// Populated by the system.
 	// Read-only.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status               *PodStatus `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
@@ -11175,7 +12300,7 @@ func (m *PodStatusResult) Reset()         { *m = PodStatusResult{} }
 func (m *PodStatusResult) String() string { return proto.CompactTextString(m) }
 func (*PodStatusResult) ProtoMessage()    {}
 func (*PodStatusResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{130}
+	return fileDescriptor_6c07b07c062484ab, []int{138}
 }
 func (m *PodStatusResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11221,11 +12346,11 @@ func (m *PodStatusResult) GetStatus() *PodStatus {
 // PodTemplate describes a template for creating copies of a predefined pod.
 type PodTemplate struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Template defines the pods that will be created from this pod template.
-	// https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Template             *PodTemplateSpec `protobuf:"bytes,2,opt,name=template" json:"template,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
@@ -11237,7 +12362,7 @@ func (m *PodTemplate) Reset()         { *m = PodTemplate{} }
 func (m *PodTemplate) String() string { return proto.CompactTextString(m) }
 func (*PodTemplate) ProtoMessage()    {}
 func (*PodTemplate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{131}
+	return fileDescriptor_6c07b07c062484ab, []int{139}
 }
 func (m *PodTemplate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11283,7 +12408,7 @@ func (m *PodTemplate) GetTemplate() *PodTemplateSpec {
 // PodTemplateList is a list of PodTemplates.
 type PodTemplateList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of pod templates
@@ -11297,7 +12422,7 @@ func (m *PodTemplateList) Reset()         { *m = PodTemplateList{} }
 func (m *PodTemplateList) String() string { return proto.CompactTextString(m) }
 func (*PodTemplateList) ProtoMessage()    {}
 func (*PodTemplateList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{132}
+	return fileDescriptor_6c07b07c062484ab, []int{140}
 }
 func (m *PodTemplateList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11343,11 +12468,11 @@ func (m *PodTemplateList) GetItems() []*PodTemplate {
 // PodTemplateSpec describes the data a pod should have when created from a template
 type PodTemplateSpec struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Specification of the desired behavior of the pod.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec                 *PodSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -11359,7 +12484,7 @@ func (m *PodTemplateSpec) Reset()         { *m = PodTemplateSpec{} }
 func (m *PodTemplateSpec) String() string { return proto.CompactTextString(m) }
 func (*PodTemplateSpec) ProtoMessage()    {}
 func (*PodTemplateSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{133}
+	return fileDescriptor_6c07b07c062484ab, []int{141}
 }
 func (m *PodTemplateSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11402,6 +12527,84 @@ func (m *PodTemplateSpec) GetSpec() *PodSpec {
 	return nil
 }
 
+type PortStatus struct {
+	// Port is the port number of the service port of which status is recorded here
+	Port *int32 `protobuf:"varint,1,opt,name=port" json:"port,omitempty"`
+	// Protocol is the protocol of the service port of which status is recorded here
+	// The supported values are: "TCP", "UDP", "SCTP"
+	Protocol *string `protobuf:"bytes,2,opt,name=protocol" json:"protocol,omitempty"`
+	// Error is to record the problem with the service port
+	// The format of the error shall comply with the following rules:
+	// - built-in error values shall be specified in this file and those shall use
+	//   CamelCase names
+	// - cloud provider specific error values must have names that comply with the
+	//   format foo.example.com/CamelCase.
+	// ---
+	// The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+	// +optional
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`
+	// +kubebuilder:validation:MaxLength=316
+	Error                *string  `protobuf:"bytes,3,opt,name=error" json:"error,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PortStatus) Reset()         { *m = PortStatus{} }
+func (m *PortStatus) String() string { return proto.CompactTextString(m) }
+func (*PortStatus) ProtoMessage()    {}
+func (*PortStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{142}
+}
+func (m *PortStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PortStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PortStatus.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PortStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PortStatus.Merge(m, src)
+}
+func (m *PortStatus) XXX_Size() int {
+	return m.Size()
+}
+func (m *PortStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_PortStatus.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PortStatus proto.InternalMessageInfo
+
+func (m *PortStatus) GetPort() int32 {
+	if m != nil && m.Port != nil {
+		return *m.Port
+	}
+	return 0
+}
+
+func (m *PortStatus) GetProtocol() string {
+	if m != nil && m.Protocol != nil {
+		return *m.Protocol
+	}
+	return ""
+}
+
+func (m *PortStatus) GetError() string {
+	if m != nil && m.Error != nil {
+		return *m.Error
+	}
+	return ""
+}
+
 // PortworxVolumeSource represents a Portworx volume resource.
 type PortworxVolumeSource struct {
 	// VolumeID uniquely identifies a Portworx volume
@@ -11423,7 +12626,7 @@ func (m *PortworxVolumeSource) Reset()         { *m = PortworxVolumeSource{} }
 func (m *PortworxVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*PortworxVolumeSource) ProtoMessage()    {}
 func (*PortworxVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{134}
+	return fileDescriptor_6c07b07c062484ab, []int{143}
 }
 func (m *PortworxVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11488,7 +12691,7 @@ func (m *Preconditions) Reset()         { *m = Preconditions{} }
 func (m *Preconditions) String() string { return proto.CompactTextString(m) }
 func (*Preconditions) ProtoMessage()    {}
 func (*Preconditions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{135}
+	return fileDescriptor_6c07b07c062484ab, []int{144}
 }
 func (m *Preconditions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11546,7 +12749,7 @@ func (m *PreferAvoidPodsEntry) Reset()         { *m = PreferAvoidPodsEntry{} }
 func (m *PreferAvoidPodsEntry) String() string { return proto.CompactTextString(m) }
 func (*PreferAvoidPodsEntry) ProtoMessage()    {}
 func (*PreferAvoidPodsEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{136}
+	return fileDescriptor_6c07b07c062484ab, []int{145}
 }
 func (m *PreferAvoidPodsEntry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11619,7 +12822,7 @@ func (m *PreferredSchedulingTerm) Reset()         { *m = PreferredSchedulingTerm
 func (m *PreferredSchedulingTerm) String() string { return proto.CompactTextString(m) }
 func (*PreferredSchedulingTerm) ProtoMessage()    {}
 func (*PreferredSchedulingTerm) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{137}
+	return fileDescriptor_6c07b07c062484ab, []int{146}
 }
 func (m *PreferredSchedulingTerm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11681,7 +12884,7 @@ type Probe struct {
 	// +optional
 	PeriodSeconds *int32 `protobuf:"varint,4,opt,name=periodSeconds" json:"periodSeconds,omitempty"`
 	// Minimum consecutive successes for the probe to be considered successful after having failed.
-	// Defaults to 1. Must be 1 for liveness. Minimum value is 1.
+	// Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
 	// +optional
 	SuccessThreshold *int32 `protobuf:"varint,5,opt,name=successThreshold" json:"successThreshold,omitempty"`
 	// Minimum consecutive failures for the probe to be considered failed after having succeeded.
@@ -11697,7 +12900,7 @@ func (m *Probe) Reset()         { *m = Probe{} }
 func (m *Probe) String() string { return proto.CompactTextString(m) }
 func (*Probe) ProtoMessage()    {}
 func (*Probe) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{138}
+	return fileDescriptor_6c07b07c062484ab, []int{147}
 }
 func (m *Probe) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11771,9 +12974,11 @@ func (m *Probe) GetFailureThreshold() int32 {
 // Represents a projected volume source
 type ProjectedVolumeSource struct {
 	// list of volume projections
+	// +optional
 	Sources []*VolumeProjection `protobuf:"bytes,1,rep,name=sources" json:"sources,omitempty"`
-	// Mode bits to use on created files by default. Must be a value between
-	// 0 and 0777.
+	// Mode bits used to set permissions on created files by default.
+	// Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+	// YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
 	// Directories within the path are not affected by this setting.
 	// This might be in conflict with other options that affect the file
 	// mode, like fsGroup, and the result can be other mode bits set.
@@ -11788,7 +12993,7 @@ func (m *ProjectedVolumeSource) Reset()         { *m = ProjectedVolumeSource{} }
 func (m *ProjectedVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*ProjectedVolumeSource) ProtoMessage()    {}
 func (*ProjectedVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{139}
+	return fileDescriptor_6c07b07c062484ab, []int{148}
 }
 func (m *ProjectedVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11851,7 +13056,11 @@ type QuobyteVolumeSource struct {
 	// Group to map volume access to
 	// Default is no group
 	// +optional
-	Group                *string  `protobuf:"bytes,5,opt,name=group" json:"group,omitempty"`
+	Group *string `protobuf:"bytes,5,opt,name=group" json:"group,omitempty"`
+	// Tenant owning the given Quobyte volume in the Backend
+	// Used with dynamically provisioned Quobyte volumes, value is set by the plugin
+	// +optional
+	Tenant               *string  `protobuf:"bytes,6,opt,name=tenant" json:"tenant,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -11861,7 +13070,7 @@ func (m *QuobyteVolumeSource) Reset()         { *m = QuobyteVolumeSource{} }
 func (m *QuobyteVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*QuobyteVolumeSource) ProtoMessage()    {}
 func (*QuobyteVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{140}
+	return fileDescriptor_6c07b07c062484ab, []int{149}
 }
 func (m *QuobyteVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -11925,14 +13134,21 @@ func (m *QuobyteVolumeSource) GetGroup() string {
 	return ""
 }
 
+func (m *QuobyteVolumeSource) GetTenant() string {
+	if m != nil && m.Tenant != nil {
+		return *m.Tenant
+	}
+	return ""
+}
+
 // Represents a Rados Block Device mount that lasts the lifetime of a pod.
 // RBD volumes support ownership management and SELinux relabeling.
 type RBDPersistentVolumeSource struct {
 	// A collection of Ceph monitors.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	Monitors []string `protobuf:"bytes,1,rep,name=monitors" json:"monitors,omitempty"`
 	// The rados image name.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	Image *string `protobuf:"bytes,2,opt,name=image" json:"image,omitempty"`
 	// Filesystem type of the volume that you want to mount.
 	// Tip: Ensure that the filesystem type is supported by the host operating system.
@@ -11943,28 +13159,28 @@ type RBDPersistentVolumeSource struct {
 	FsType *string `protobuf:"bytes,3,opt,name=fsType" json:"fsType,omitempty"`
 	// The rados pool name.
 	// Default is rbd.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	Pool *string `protobuf:"bytes,4,opt,name=pool" json:"pool,omitempty"`
 	// The rados user name.
 	// Default is admin.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	User *string `protobuf:"bytes,5,opt,name=user" json:"user,omitempty"`
 	// Keyring is the path to key ring for RBDUser.
 	// Default is /etc/ceph/keyring.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	Keyring *string `protobuf:"bytes,6,opt,name=keyring" json:"keyring,omitempty"`
 	// SecretRef is name of the authentication secret for RBDUser. If provided
 	// overrides keyring.
 	// Default is nil.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	SecretRef *SecretReference `protobuf:"bytes,7,opt,name=secretRef" json:"secretRef,omitempty"`
 	// ReadOnly here will force the ReadOnly setting in VolumeMounts.
 	// Defaults to false.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	ReadOnly             *bool    `protobuf:"varint,8,opt,name=readOnly" json:"readOnly,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -11976,7 +13192,7 @@ func (m *RBDPersistentVolumeSource) Reset()         { *m = RBDPersistentVolumeSo
 func (m *RBDPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*RBDPersistentVolumeSource) ProtoMessage()    {}
 func (*RBDPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{141}
+	return fileDescriptor_6c07b07c062484ab, []int{150}
 }
 func (m *RBDPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12065,10 +13281,10 @@ func (m *RBDPersistentVolumeSource) GetReadOnly() bool {
 // RBD volumes support ownership management and SELinux relabeling.
 type RBDVolumeSource struct {
 	// A collection of Ceph monitors.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	Monitors []string `protobuf:"bytes,1,rep,name=monitors" json:"monitors,omitempty"`
 	// The rados image name.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	Image *string `protobuf:"bytes,2,opt,name=image" json:"image,omitempty"`
 	// Filesystem type of the volume that you want to mount.
 	// Tip: Ensure that the filesystem type is supported by the host operating system.
@@ -12079,28 +13295,28 @@ type RBDVolumeSource struct {
 	FsType *string `protobuf:"bytes,3,opt,name=fsType" json:"fsType,omitempty"`
 	// The rados pool name.
 	// Default is rbd.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	Pool *string `protobuf:"bytes,4,opt,name=pool" json:"pool,omitempty"`
 	// The rados user name.
 	// Default is admin.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	User *string `protobuf:"bytes,5,opt,name=user" json:"user,omitempty"`
 	// Keyring is the path to key ring for RBDUser.
 	// Default is /etc/ceph/keyring.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	Keyring *string `protobuf:"bytes,6,opt,name=keyring" json:"keyring,omitempty"`
 	// SecretRef is name of the authentication secret for RBDUser. If provided
 	// overrides keyring.
 	// Default is nil.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	SecretRef *LocalObjectReference `protobuf:"bytes,7,opt,name=secretRef" json:"secretRef,omitempty"`
 	// ReadOnly here will force the ReadOnly setting in VolumeMounts.
 	// Defaults to false.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it
+	// More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
 	// +optional
 	ReadOnly             *bool    `protobuf:"varint,8,opt,name=readOnly" json:"readOnly,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -12112,7 +13328,7 @@ func (m *RBDVolumeSource) Reset()         { *m = RBDVolumeSource{} }
 func (m *RBDVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*RBDVolumeSource) ProtoMessage()    {}
 func (*RBDVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{142}
+	return fileDescriptor_6c07b07c062484ab, []int{151}
 }
 func (m *RBDVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12200,7 +13416,7 @@ func (m *RBDVolumeSource) GetReadOnly() bool {
 // RangeAllocation is not a public type.
 type RangeAllocation struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Range is string that identifies the range represented by 'data'.
@@ -12216,7 +13432,7 @@ func (m *RangeAllocation) Reset()         { *m = RangeAllocation{} }
 func (m *RangeAllocation) String() string { return proto.CompactTextString(m) }
 func (*RangeAllocation) ProtoMessage()    {}
 func (*RangeAllocation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{143}
+	return fileDescriptor_6c07b07c062484ab, []int{152}
 }
 func (m *RangeAllocation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12270,18 +13486,18 @@ func (m *RangeAllocation) GetData() []byte {
 type ReplicationController struct {
 	// If the Labels of a ReplicationController are empty, they are defaulted to
 	// be the same as the Pod(s) that the replication controller manages.
-	// Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines the specification of the desired behavior of the replication controller.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec *ReplicationControllerSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	// Status is the most recently observed status of the replication controller.
 	// This data may be out of date by some window of time.
 	// Populated by the system.
 	// Read-only.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status               *ReplicationControllerStatus `protobuf:"bytes,3,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
@@ -12293,7 +13509,7 @@ func (m *ReplicationController) Reset()         { *m = ReplicationController{} }
 func (m *ReplicationController) String() string { return proto.CompactTextString(m) }
 func (*ReplicationController) ProtoMessage()    {}
 func (*ReplicationController) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{144}
+	return fileDescriptor_6c07b07c062484ab, []int{153}
 }
 func (m *ReplicationController) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12367,7 +13583,7 @@ func (m *ReplicationControllerCondition) Reset()         { *m = ReplicationContr
 func (m *ReplicationControllerCondition) String() string { return proto.CompactTextString(m) }
 func (*ReplicationControllerCondition) ProtoMessage()    {}
 func (*ReplicationControllerCondition) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{145}
+	return fileDescriptor_6c07b07c062484ab, []int{154}
 }
 func (m *ReplicationControllerCondition) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12434,7 +13650,7 @@ func (m *ReplicationControllerCondition) GetMessage() string {
 // ReplicationControllerList is a collection of replication controllers.
 type ReplicationControllerList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of replication controllers.
@@ -12449,7 +13665,7 @@ func (m *ReplicationControllerList) Reset()         { *m = ReplicationController
 func (m *ReplicationControllerList) String() string { return proto.CompactTextString(m) }
 func (*ReplicationControllerList) ProtoMessage()    {}
 func (*ReplicationControllerList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{146}
+	return fileDescriptor_6c07b07c062484ab, []int{155}
 }
 func (m *ReplicationControllerList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12526,7 +13742,7 @@ func (m *ReplicationControllerSpec) Reset()         { *m = ReplicationController
 func (m *ReplicationControllerSpec) String() string { return proto.CompactTextString(m) }
 func (*ReplicationControllerSpec) ProtoMessage()    {}
 func (*ReplicationControllerSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{147}
+	return fileDescriptor_6c07b07c062484ab, []int{156}
 }
 func (m *ReplicationControllerSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12615,7 +13831,7 @@ func (m *ReplicationControllerStatus) Reset()         { *m = ReplicationControll
 func (m *ReplicationControllerStatus) String() string { return proto.CompactTextString(m) }
 func (*ReplicationControllerStatus) ProtoMessage()    {}
 func (*ReplicationControllerStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{148}
+	return fileDescriptor_6c07b07c062484ab, []int{157}
 }
 func (m *ReplicationControllerStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12705,7 +13921,7 @@ func (m *ResourceFieldSelector) Reset()         { *m = ResourceFieldSelector{} }
 func (m *ResourceFieldSelector) String() string { return proto.CompactTextString(m) }
 func (*ResourceFieldSelector) ProtoMessage()    {}
 func (*ResourceFieldSelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{149}
+	return fileDescriptor_6c07b07c062484ab, []int{158}
 }
 func (m *ResourceFieldSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12758,15 +13974,15 @@ func (m *ResourceFieldSelector) GetDivisor() *resource.Quantity {
 // ResourceQuota sets aggregate quota restrictions enforced per namespace
 type ResourceQuota struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines the desired quota.
-	// https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec *ResourceQuotaSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	// Status defines the actual enforced quota and its current usage.
-	// https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status               *ResourceQuotaStatus `protobuf:"bytes,3,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
@@ -12778,7 +13994,7 @@ func (m *ResourceQuota) Reset()         { *m = ResourceQuota{} }
 func (m *ResourceQuota) String() string { return proto.CompactTextString(m) }
 func (*ResourceQuota) ProtoMessage()    {}
 func (*ResourceQuota) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{150}
+	return fileDescriptor_6c07b07c062484ab, []int{159}
 }
 func (m *ResourceQuota) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12831,7 +14047,7 @@ func (m *ResourceQuota) GetStatus() *ResourceQuotaStatus {
 // ResourceQuotaList is a list of ResourceQuota items.
 type ResourceQuotaList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Items is a list of ResourceQuota objects.
@@ -12846,7 +14062,7 @@ func (m *ResourceQuotaList) Reset()         { *m = ResourceQuotaList{} }
 func (m *ResourceQuotaList) String() string { return proto.CompactTextString(m) }
 func (*ResourceQuotaList) ProtoMessage()    {}
 func (*ResourceQuotaList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{151}
+	return fileDescriptor_6c07b07c062484ab, []int{160}
 }
 func (m *ResourceQuotaList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12913,7 +14129,7 @@ func (m *ResourceQuotaSpec) Reset()         { *m = ResourceQuotaSpec{} }
 func (m *ResourceQuotaSpec) String() string { return proto.CompactTextString(m) }
 func (*ResourceQuotaSpec) ProtoMessage()    {}
 func (*ResourceQuotaSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{152}
+	return fileDescriptor_6c07b07c062484ab, []int{161}
 }
 func (m *ResourceQuotaSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -12981,7 +14197,7 @@ func (m *ResourceQuotaStatus) Reset()         { *m = ResourceQuotaStatus{} }
 func (m *ResourceQuotaStatus) String() string { return proto.CompactTextString(m) }
 func (*ResourceQuotaStatus) ProtoMessage()    {}
 func (*ResourceQuotaStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{153}
+	return fileDescriptor_6c07b07c062484ab, []int{162}
 }
 func (m *ResourceQuotaStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13045,7 +14261,7 @@ func (m *ResourceRequirements) Reset()         { *m = ResourceRequirements{} }
 func (m *ResourceRequirements) String() string { return proto.CompactTextString(m) }
 func (*ResourceRequirements) ProtoMessage()    {}
 func (*ResourceRequirements) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{154}
+	return fileDescriptor_6c07b07c062484ab, []int{163}
 }
 func (m *ResourceRequirements) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13111,7 +14327,7 @@ func (m *SELinuxOptions) Reset()         { *m = SELinuxOptions{} }
 func (m *SELinuxOptions) String() string { return proto.CompactTextString(m) }
 func (*SELinuxOptions) ProtoMessage()    {}
 func (*SELinuxOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{155}
+	return fileDescriptor_6c07b07c062484ab, []int{164}
 }
 func (m *SELinuxOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13212,7 +14428,7 @@ func (m *ScaleIOPersistentVolumeSource) Reset()         { *m = ScaleIOPersistent
 func (m *ScaleIOPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*ScaleIOPersistentVolumeSource) ProtoMessage()    {}
 func (*ScaleIOPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{156}
+	return fileDescriptor_6c07b07c062484ab, []int{165}
 }
 func (m *ScaleIOPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13355,7 +14571,7 @@ func (m *ScaleIOVolumeSource) Reset()         { *m = ScaleIOVolumeSource{} }
 func (m *ScaleIOVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*ScaleIOVolumeSource) ProtoMessage()    {}
 func (*ScaleIOVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{157}
+	return fileDescriptor_6c07b07c062484ab, []int{166}
 }
 func (m *ScaleIOVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13469,7 +14685,7 @@ func (m *ScopeSelector) Reset()         { *m = ScopeSelector{} }
 func (m *ScopeSelector) String() string { return proto.CompactTextString(m) }
 func (*ScopeSelector) ProtoMessage()    {}
 func (*ScopeSelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{158}
+	return fileDescriptor_6c07b07c062484ab, []int{167}
 }
 func (m *ScopeSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13528,7 +14744,7 @@ func (m *ScopedResourceSelectorRequirement) Reset()         { *m = ScopedResourc
 func (m *ScopedResourceSelectorRequirement) String() string { return proto.CompactTextString(m) }
 func (*ScopedResourceSelectorRequirement) ProtoMessage()    {}
 func (*ScopedResourceSelectorRequirement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{159}
+	return fileDescriptor_6c07b07c062484ab, []int{168}
 }
 func (m *ScopedResourceSelectorRequirement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13578,13 +14794,90 @@ func (m *ScopedResourceSelectorRequirement) GetValues() []string {
 	return nil
 }
 
+// SeccompProfile defines a pod/container's seccomp profile settings.
+// Only one profile source may be set.
+// +union
+type SeccompProfile struct {
+	// type indicates which kind of seccomp profile will be applied.
+	// Valid options are:
+	//
+	// Localhost - a profile defined in a file on the node should be used.
+	// RuntimeDefault - the container runtime default profile should be used.
+	// Unconfined - no profile should be applied.
+	// +unionDiscriminator
+	Type *string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
+	// localhostProfile indicates a profile defined in a file on the node should be used.
+	// The profile must be preconfigured on the node to work.
+	// Must be a descending path, relative to the kubelet's configured seccomp profile location.
+	// Must only be set if type is "Localhost".
+	// +optional
+	LocalhostProfile     *string  `protobuf:"bytes,2,opt,name=localhostProfile" json:"localhostProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SeccompProfile) Reset()         { *m = SeccompProfile{} }
+func (m *SeccompProfile) String() string { return proto.CompactTextString(m) }
+func (*SeccompProfile) ProtoMessage()    {}
+func (*SeccompProfile) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{169}
+}
+func (m *SeccompProfile) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SeccompProfile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SeccompProfile.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SeccompProfile) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SeccompProfile.Merge(m, src)
+}
+func (m *SeccompProfile) XXX_Size() int {
+	return m.Size()
+}
+func (m *SeccompProfile) XXX_DiscardUnknown() {
+	xxx_messageInfo_SeccompProfile.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SeccompProfile proto.InternalMessageInfo
+
+func (m *SeccompProfile) GetType() string {
+	if m != nil && m.Type != nil {
+		return *m.Type
+	}
+	return ""
+}
+
+func (m *SeccompProfile) GetLocalhostProfile() string {
+	if m != nil && m.LocalhostProfile != nil {
+		return *m.LocalhostProfile
+	}
+	return ""
+}
+
 // Secret holds secret data of a certain type. The total bytes of the values in
 // the Data field must be less than MaxSecretSize bytes.
 type Secret struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	// Immutable, if set to true, ensures that data stored in the Secret cannot
+	// be updated (only object metadata can be modified).
+	// If not set to true, the field can be modified at any time.
+	// Defaulted to nil.
+	// This is a beta field enabled by ImmutableEphemeralVolumes feature gate.
+	// +optional
+	Immutable *bool `protobuf:"varint,5,opt,name=immutable" json:"immutable,omitempty"`
 	// Data contains the secret data. Each key must consist of alphanumeric
 	// characters, '-', '_' or '.'. The serialized form of the secret data is a
 	// base64 encoded string, representing the arbitrary (possibly non-string)
@@ -13610,7 +14903,7 @@ func (m *Secret) Reset()         { *m = Secret{} }
 func (m *Secret) String() string { return proto.CompactTextString(m) }
 func (*Secret) ProtoMessage()    {}
 func (*Secret) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{160}
+	return fileDescriptor_6c07b07c062484ab, []int{170}
 }
 func (m *Secret) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13644,6 +14937,13 @@ func (m *Secret) GetMetadata() *v1.ObjectMeta {
 		return m.Metadata
 	}
 	return nil
+}
+
+func (m *Secret) GetImmutable() bool {
+	if m != nil && m.Immutable != nil {
+		return *m.Immutable
+	}
+	return false
 }
 
 func (m *Secret) GetData() map[string][]byte {
@@ -13687,7 +14987,7 @@ func (m *SecretEnvSource) Reset()         { *m = SecretEnvSource{} }
 func (m *SecretEnvSource) String() string { return proto.CompactTextString(m) }
 func (*SecretEnvSource) ProtoMessage()    {}
 func (*SecretEnvSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{161}
+	return fileDescriptor_6c07b07c062484ab, []int{171}
 }
 func (m *SecretEnvSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13736,7 +15036,7 @@ type SecretKeySelector struct {
 	LocalObjectReference *LocalObjectReference `protobuf:"bytes,1,opt,name=localObjectReference" json:"localObjectReference,omitempty"`
 	// The key of the secret to select from.  Must be a valid secret key.
 	Key *string `protobuf:"bytes,2,opt,name=key" json:"key,omitempty"`
-	// Specify whether the Secret or it's key must be defined
+	// Specify whether the Secret or its key must be defined
 	// +optional
 	Optional             *bool    `protobuf:"varint,3,opt,name=optional" json:"optional,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -13748,7 +15048,7 @@ func (m *SecretKeySelector) Reset()         { *m = SecretKeySelector{} }
 func (m *SecretKeySelector) String() string { return proto.CompactTextString(m) }
 func (*SecretKeySelector) ProtoMessage()    {}
 func (*SecretKeySelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{162}
+	return fileDescriptor_6c07b07c062484ab, []int{172}
 }
 func (m *SecretKeySelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13801,7 +15101,7 @@ func (m *SecretKeySelector) GetOptional() bool {
 // SecretList is a list of Secret.
 type SecretList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Items is a list of secret objects.
@@ -13816,7 +15116,7 @@ func (m *SecretList) Reset()         { *m = SecretList{} }
 func (m *SecretList) String() string { return proto.CompactTextString(m) }
 func (*SecretList) ProtoMessage()    {}
 func (*SecretList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{163}
+	return fileDescriptor_6c07b07c062484ab, []int{173}
 }
 func (m *SecretList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13888,7 +15188,7 @@ func (m *SecretProjection) Reset()         { *m = SecretProjection{} }
 func (m *SecretProjection) String() string { return proto.CompactTextString(m) }
 func (*SecretProjection) ProtoMessage()    {}
 func (*SecretProjection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{164}
+	return fileDescriptor_6c07b07c062484ab, []int{174}
 }
 func (m *SecretProjection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -13956,7 +15256,7 @@ func (m *SecretReference) Reset()         { *m = SecretReference{} }
 func (m *SecretReference) String() string { return proto.CompactTextString(m) }
 func (*SecretReference) ProtoMessage()    {}
 func (*SecretReference) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{165}
+	return fileDescriptor_6c07b07c062484ab, []int{175}
 }
 func (m *SecretReference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14018,14 +15318,16 @@ type SecretVolumeSource struct {
 	// relative and may not contain the '..' path or start with '..'.
 	// +optional
 	Items []*KeyToPath `protobuf:"bytes,2,rep,name=items" json:"items,omitempty"`
-	// Optional: mode bits to use on created files by default. Must be a
-	// value between 0 and 0777. Defaults to 0644.
+	// Optional: mode bits used to set permissions on created files by default.
+	// Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+	// YAML accepts both octal and decimal values, JSON requires decimal values
+	// for mode bits. Defaults to 0644.
 	// Directories within the path are not affected by this setting.
 	// This might be in conflict with other options that affect the file
 	// mode, like fsGroup, and the result can be other mode bits set.
 	// +optional
 	DefaultMode *int32 `protobuf:"varint,3,opt,name=defaultMode" json:"defaultMode,omitempty"`
-	// Specify whether the Secret or it's keys must be defined
+	// Specify whether the Secret or its keys must be defined
 	// +optional
 	Optional             *bool    `protobuf:"varint,4,opt,name=optional" json:"optional,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -14037,7 +15339,7 @@ func (m *SecretVolumeSource) Reset()         { *m = SecretVolumeSource{} }
 func (m *SecretVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*SecretVolumeSource) ProtoMessage()    {}
 func (*SecretVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{166}
+	return fileDescriptor_6c07b07c062484ab, []int{176}
 }
 func (m *SecretVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14113,6 +15415,11 @@ type SecurityContext struct {
 	// PodSecurityContext, the value specified in SecurityContext takes precedence.
 	// +optional
 	SeLinuxOptions *SELinuxOptions `protobuf:"bytes,3,opt,name=seLinuxOptions" json:"seLinuxOptions,omitempty"`
+	// The Windows specific settings applied to all containers.
+	// If unspecified, the options from the PodSecurityContext will be used.
+	// If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+	// +optional
+	WindowsOptions *WindowsSecurityContextOptions `protobuf:"bytes,10,opt,name=windowsOptions" json:"windowsOptions,omitempty"`
 	// The UID to run the entrypoint of the container process.
 	// Defaults to user specified in image metadata if unspecified.
 	// May also be set in PodSecurityContext.  If set in both SecurityContext and
@@ -14150,17 +15457,22 @@ type SecurityContext struct {
 	// readonly paths and masked paths.
 	// This requires the ProcMountType feature flag to be enabled.
 	// +optional
-	ProcMount            *string  `protobuf:"bytes,9,opt,name=procMount" json:"procMount,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	ProcMount *string `protobuf:"bytes,9,opt,name=procMount" json:"procMount,omitempty"`
+	// The seccomp options to use by this container. If seccomp options are
+	// provided at both the pod & container level, the container options
+	// override the pod options.
+	// +optional
+	SeccompProfile       *SeccompProfile `protobuf:"bytes,11,opt,name=seccompProfile" json:"seccompProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *SecurityContext) Reset()         { *m = SecurityContext{} }
 func (m *SecurityContext) String() string { return proto.CompactTextString(m) }
 func (*SecurityContext) ProtoMessage()    {}
 func (*SecurityContext) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{167}
+	return fileDescriptor_6c07b07c062484ab, []int{177}
 }
 func (m *SecurityContext) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14210,6 +15522,13 @@ func (m *SecurityContext) GetSeLinuxOptions() *SELinuxOptions {
 	return nil
 }
 
+func (m *SecurityContext) GetWindowsOptions() *WindowsSecurityContextOptions {
+	if m != nil {
+		return m.WindowsOptions
+	}
+	return nil
+}
+
 func (m *SecurityContext) GetRunAsUser() int64 {
 	if m != nil && m.RunAsUser != nil {
 		return *m.RunAsUser
@@ -14252,6 +15571,13 @@ func (m *SecurityContext) GetProcMount() string {
 	return ""
 }
 
+func (m *SecurityContext) GetSeccompProfile() *SeccompProfile {
+	if m != nil {
+		return m.SeccompProfile
+	}
+	return nil
+}
+
 // SerializedReference is a reference to serialized object.
 type SerializedReference struct {
 	// The reference to an object in the system.
@@ -14266,7 +15592,7 @@ func (m *SerializedReference) Reset()         { *m = SerializedReference{} }
 func (m *SerializedReference) String() string { return proto.CompactTextString(m) }
 func (*SerializedReference) ProtoMessage()    {}
 func (*SerializedReference) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{168}
+	return fileDescriptor_6c07b07c062484ab, []int{178}
 }
 func (m *SerializedReference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14307,17 +15633,17 @@ func (m *SerializedReference) GetReference() *ObjectReference {
 // will answer requests sent through the proxy.
 type Service struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Spec defines the behavior of a service.
-	// https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Spec *ServiceSpec `protobuf:"bytes,2,opt,name=spec" json:"spec,omitempty"`
 	// Most recently observed status of the service.
 	// Populated by the system.
 	// Read-only.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status               *ServiceStatus `protobuf:"bytes,3,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
@@ -14329,7 +15655,7 @@ func (m *Service) Reset()         { *m = Service{} }
 func (m *Service) String() string { return proto.CompactTextString(m) }
 func (*Service) ProtoMessage()    {}
 func (*Service) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{169}
+	return fileDescriptor_6c07b07c062484ab, []int{179}
 }
 func (m *Service) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14385,7 +15711,7 @@ func (m *Service) GetStatus() *ServiceStatus {
 // * a set of secrets
 type ServiceAccount struct {
 	// Standard object's metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	Metadata *v1.ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Secrets is the list of secrets allowed to be used by pods running using this ServiceAccount.
@@ -14413,7 +15739,7 @@ func (m *ServiceAccount) Reset()         { *m = ServiceAccount{} }
 func (m *ServiceAccount) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccount) ProtoMessage()    {}
 func (*ServiceAccount) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{170}
+	return fileDescriptor_6c07b07c062484ab, []int{180}
 }
 func (m *ServiceAccount) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14473,7 +15799,7 @@ func (m *ServiceAccount) GetAutomountServiceAccountToken() bool {
 // ServiceAccountList is a list of ServiceAccount objects
 type ServiceAccountList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of ServiceAccounts.
@@ -14488,7 +15814,7 @@ func (m *ServiceAccountList) Reset()         { *m = ServiceAccountList{} }
 func (m *ServiceAccountList) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountList) ProtoMessage()    {}
 func (*ServiceAccountList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{171}
+	return fileDescriptor_6c07b07c062484ab, []int{181}
 }
 func (m *ServiceAccountList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14562,7 +15888,7 @@ func (m *ServiceAccountTokenProjection) Reset()         { *m = ServiceAccountTok
 func (m *ServiceAccountTokenProjection) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountTokenProjection) ProtoMessage()    {}
 func (*ServiceAccountTokenProjection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{172}
+	return fileDescriptor_6c07b07c062484ab, []int{182}
 }
 func (m *ServiceAccountTokenProjection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14615,7 +15941,7 @@ func (m *ServiceAccountTokenProjection) GetPath() string {
 // ServiceList holds a list of services.
 type ServiceList struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *v1.ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of services
@@ -14629,7 +15955,7 @@ func (m *ServiceList) Reset()         { *m = ServiceList{} }
 func (m *ServiceList) String() string { return proto.CompactTextString(m) }
 func (*ServiceList) ProtoMessage()    {}
 func (*ServiceList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{173}
+	return fileDescriptor_6c07b07c062484ab, []int{183}
 }
 func (m *ServiceList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14675,15 +16001,27 @@ func (m *ServiceList) GetItems() []*Service {
 // ServicePort contains information on service's port.
 type ServicePort struct {
 	// The name of this port within the service. This must be a DNS_LABEL.
-	// All ports within a ServiceSpec must have unique names. This maps to
-	// the 'Name' field in EndpointPort objects.
+	// All ports within a ServiceSpec must have unique names. When considering
+	// the endpoints for a Service, this must match the 'name' field in the
+	// EndpointPort.
 	// Optional if only one ServicePort is defined on this service.
 	// +optional
 	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
 	// Default is TCP.
+	// +default="TCP"
 	// +optional
 	Protocol *string `protobuf:"bytes,2,opt,name=protocol" json:"protocol,omitempty"`
+	// The application protocol for this port.
+	// This field follows standard Kubernetes label syntax.
+	// Un-prefixed names are reserved for IANA standard service names (as per
+	// RFC-6335 and http://www.iana.org/assignments/service-names).
+	// Non-standard protocols should use prefixed names such as
+	// mycompany.com/my-custom-protocol.
+	// This is a beta field that is guarded by the ServiceAppProtocol feature
+	// gate and enabled by default.
+	// +optional
+	AppProtocol *string `protobuf:"bytes,6,opt,name=appProtocol" json:"appProtocol,omitempty"`
 	// The port that will be exposed by this service.
 	Port *int32 `protobuf:"varint,3,opt,name=port" json:"port,omitempty"`
 	// Number or name of the port to access on the pods targeted by the service.
@@ -14696,10 +16034,14 @@ type ServicePort struct {
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service
 	// +optional
 	TargetPort *intstr.IntOrString `protobuf:"bytes,4,opt,name=targetPort" json:"targetPort,omitempty"`
-	// The port on each node on which this service is exposed when type=NodePort or LoadBalancer.
-	// Usually assigned by the system. If specified, it will be allocated to the service
-	// if unused or else creation of the service will fail.
-	// Default is to auto-allocate a port if the ServiceType of this Service requires one.
+	// The port on each node on which this service is exposed when type is
+	// NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+	// specified, in-range, and not in use it will be used, otherwise the
+	// operation will fail.  If not specified, a port will be allocated if this
+	// Service requires one.  If this field is specified when creating a
+	// Service which does not need it, creation will fail. This field will be
+	// wiped when updating a Service to no longer need it (e.g. changing type
+	// from NodePort to ClusterIP).
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
 	NodePort             *int32   `protobuf:"varint,5,opt,name=nodePort" json:"nodePort,omitempty"`
@@ -14712,7 +16054,7 @@ func (m *ServicePort) Reset()         { *m = ServicePort{} }
 func (m *ServicePort) String() string { return proto.CompactTextString(m) }
 func (*ServicePort) ProtoMessage()    {}
 func (*ServicePort) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{174}
+	return fileDescriptor_6c07b07c062484ab, []int{184}
 }
 func (m *ServicePort) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14751,6 +16093,13 @@ func (m *ServicePort) GetName() string {
 func (m *ServicePort) GetProtocol() string {
 	if m != nil && m.Protocol != nil {
 		return *m.Protocol
+	}
+	return ""
+}
+
+func (m *ServicePort) GetAppProtocol() string {
+	if m != nil && m.AppProtocol != nil {
+		return *m.AppProtocol
 	}
 	return ""
 }
@@ -14794,7 +16143,7 @@ func (m *ServiceProxyOptions) Reset()         { *m = ServiceProxyOptions{} }
 func (m *ServiceProxyOptions) String() string { return proto.CompactTextString(m) }
 func (*ServiceProxyOptions) ProtoMessage()    {}
 func (*ServiceProxyOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{175}
+	return fileDescriptor_6c07b07c062484ab, []int{185}
 }
 func (m *ServiceProxyOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14836,6 +16185,9 @@ type ServiceSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +patchMergeKey=port
 	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=port
+	// +listMapKey=protocol
 	Ports []*ServicePort `protobuf:"bytes,1,rep,name=ports" json:"ports,omitempty"`
 	// Route service traffic to pods with label keys and values matching this
 	// selector. If empty or not present, the service is assumed to have an
@@ -14846,30 +16198,67 @@ type ServiceSpec struct {
 	// +optional
 	Selector map[string]string `protobuf:"bytes,2,rep,name=selector" json:"selector,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// clusterIP is the IP address of the service and is usually assigned
-	// randomly by the master. If an address is specified manually and is not in
-	// use by others, it will be allocated to the service; otherwise, creation
-	// of the service will fail. This field can not be changed through updates.
-	// Valid values are "None", empty string (""), or a valid IP address. "None"
-	// can be specified for headless services when proxying is not required.
-	// Only applies to types ClusterIP, NodePort, and LoadBalancer. Ignored if
-	// type is ExternalName.
+	// randomly. If an address is specified manually, is in-range (as per
+	// system configuration), and is not in use, it will be allocated to the
+	// service; otherwise creation of the service will fail. This field may not
+	// be changed through updates unless the type field is also being changed
+	// to ExternalName (which requires this field to be blank) or the type
+	// field is being changed from ExternalName (in which case this field may
+	// optionally be specified, as describe above).  Valid values are "None",
+	// empty string (""), or a valid IP address. Setting this to "None" makes a
+	// "headless service" (no virtual IP), which is useful when direct endpoint
+	// connections are preferred and proxying is not required.  Only applies to
+	// types ClusterIP, NodePort, and LoadBalancer. If this field is specified
+	// when creating a Service of type ExternalName, creation will fail. This
+	// field will be wiped when updating a Service to type ExternalName.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +optional
 	ClusterIP *string `protobuf:"bytes,3,opt,name=clusterIP" json:"clusterIP,omitempty"`
+	// ClusterIPs is a list of IP addresses assigned to this service, and are
+	// usually assigned randomly.  If an address is specified manually, is
+	// in-range (as per system configuration), and is not in use, it will be
+	// allocated to the service; otherwise creation of the service will fail.
+	// This field may not be changed through updates unless the type field is
+	// also being changed to ExternalName (which requires this field to be
+	// empty) or the type field is being changed from ExternalName (in which
+	// case this field may optionally be specified, as describe above).  Valid
+	// values are "None", empty string (""), or a valid IP address.  Setting
+	// this to "None" makes a "headless service" (no virtual IP), which is
+	// useful when direct endpoint connections are preferred and proxying is
+	// not required.  Only applies to types ClusterIP, NodePort, and
+	// LoadBalancer. If this field is specified when creating a Service of type
+	// ExternalName, creation will fail. This field will be wiped when updating
+	// a Service to type ExternalName.  If this field is not specified, it will
+	// be initialized from the clusterIP field.  If this field is specified,
+	// clients must ensure that clusterIPs[0] and clusterIP have the same
+	// value.
+	//
+	// Unless the "IPv6DualStack" feature gate is enabled, this field is
+	// limited to one value, which must be the same as the clusterIP field.  If
+	// the feature gate is enabled, this field may hold a maximum of two
+	// entries (dual-stack IPs, in either order).  These IPs must correspond to
+	// the values of the ipFamilies field. Both clusterIPs and ipFamilies are
+	// governed by the ipFamilyPolicy field.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+	// +listType=atomic
+	// +optional
+	ClusterIPs []string `protobuf:"bytes,18,rep,name=clusterIPs" json:"clusterIPs,omitempty"`
 	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
 	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
-	// "ExternalName" maps to the specified externalName.
-	// "ClusterIP" allocates a cluster-internal IP address for load-balancing to
-	// endpoints. Endpoints are determined by the selector or if that is not
-	// specified, by manual construction of an Endpoints object. If clusterIP is
-	// "None", no virtual IP is allocated and the endpoints are published as a
-	// set of endpoints rather than a stable IP.
+	// "ClusterIP" allocates a cluster-internal IP address for load-balancing
+	// to endpoints. Endpoints are determined by the selector or if that is not
+	// specified, by manual construction of an Endpoints object or
+	// EndpointSlice objects. If clusterIP is "None", no virtual IP is
+	// allocated and the endpoints are published as a set of endpoints rather
+	// than a virtual IP.
 	// "NodePort" builds on ClusterIP and allocates a port on every node which
-	// routes to the clusterIP.
-	// "LoadBalancer" builds on NodePort and creates an
-	// external load-balancer (if supported in the current cloud) which routes
-	// to the clusterIP.
-	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services---service-types
+	// routes to the same endpoints as the clusterIP.
+	// "LoadBalancer" builds on NodePort and creates an external load-balancer
+	// (if supported in the current cloud) which routes to the same endpoints
+	// as the clusterIP.
+	// "ExternalName" aliases this service to the specified externalName.
+	// Several other fields do not apply to ExternalName services.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
 	// +optional
 	Type *string `protobuf:"bytes,4,opt,name=type" json:"type,omitempty"`
 	// externalIPs is a list of IP addresses for which nodes in the cluster
@@ -14899,10 +16288,10 @@ type ServiceSpec struct {
 	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/
 	// +optional
 	LoadBalancerSourceRanges []string `protobuf:"bytes,9,rep,name=loadBalancerSourceRanges" json:"loadBalancerSourceRanges,omitempty"`
-	// externalName is the external reference that kubedns or equivalent will
-	// return as a CNAME record for this service. No proxying will be involved.
-	// Must be a valid RFC-1123 hostname (https://tools.ietf.org/html/rfc1123)
-	// and requires Type to be ExternalName.
+	// externalName is the external reference that discovery mechanisms will
+	// return as an alias for this service (e.g. a DNS CNAME record). No
+	// proxying will be involved.  Must be a lowercase RFC-1123 hostname
+	// (https://tools.ietf.org/html/rfc1123) and requires Type to be
 	// +optional
 	ExternalName *string `protobuf:"bytes,10,opt,name=externalName" json:"externalName,omitempty"`
 	// externalTrafficPolicy denotes if this Service desires to route external
@@ -14914,33 +16303,93 @@ type ServiceSpec struct {
 	// +optional
 	ExternalTrafficPolicy *string `protobuf:"bytes,11,opt,name=externalTrafficPolicy" json:"externalTrafficPolicy,omitempty"`
 	// healthCheckNodePort specifies the healthcheck nodePort for the service.
-	// If not specified, HealthCheckNodePort is created by the service api
-	// backend with the allocated nodePort. Will use user-specified nodePort value
-	// if specified by the client. Only effects when Type is set to LoadBalancer
-	// and ExternalTrafficPolicy is set to Local.
+	// This only applies when type is set to LoadBalancer and
+	// externalTrafficPolicy is set to Local. If a value is specified, is
+	// in-range, and is not in use, it will be used.  If not specified, a value
+	// will be automatically allocated.  External systems (e.g. load-balancers)
+	// can use this port to determine if a given node holds endpoints for this
+	// service or not.  If this field is specified when creating a Service
+	// which does not need it, creation will fail. This field will be wiped
+	// when updating a Service to no longer need it (e.g. changing type).
 	// +optional
 	HealthCheckNodePort *int32 `protobuf:"varint,12,opt,name=healthCheckNodePort" json:"healthCheckNodePort,omitempty"`
-	// publishNotReadyAddresses, when set to true, indicates that DNS implementations
-	// must publish the notReadyAddresses of subsets for the Endpoints associated with
-	// the Service. The default value is false.
-	// The primary use case for setting this field is to use a StatefulSet's Headless Service
-	// to propagate SRV records for its Pods without respect to their readiness for purpose
-	// of peer discovery.
+	// publishNotReadyAddresses indicates that any agent which deals with endpoints for this
+	// Service should disregard any indications of ready/not-ready.
+	// The primary use case for setting this field is for a StatefulSet's Headless Service to
+	// propagate SRV DNS records for its Pods for the purpose of peer discovery.
+	// The Kubernetes controllers that generate Endpoints and EndpointSlice resources for
+	// Services interpret this to mean that all endpoints are considered "ready" even if the
+	// Pods themselves are not. Agents which consume only Kubernetes generated endpoints
+	// through the Endpoints or EndpointSlice resources can safely assume this behavior.
 	// +optional
 	PublishNotReadyAddresses *bool `protobuf:"varint,13,opt,name=publishNotReadyAddresses" json:"publishNotReadyAddresses,omitempty"`
 	// sessionAffinityConfig contains the configurations of session affinity.
 	// +optional
 	SessionAffinityConfig *SessionAffinityConfig `protobuf:"bytes,14,opt,name=sessionAffinityConfig" json:"sessionAffinityConfig,omitempty"`
-	XXX_NoUnkeyedLiteral  struct{}               `json:"-"`
-	XXX_unrecognized      []byte                 `json:"-"`
-	XXX_sizecache         int32                  `json:"-"`
+	// topologyKeys is a preference-order list of topology keys which
+	// implementations of services should use to preferentially sort endpoints
+	// when accessing this Service, it can not be used at the same time as
+	// externalTrafficPolicy=Local.
+	// Topology keys must be valid label keys and at most 16 keys may be specified.
+	// Endpoints are chosen based on the first topology key with available backends.
+	// If this field is specified and all entries have no backends that match
+	// the topology of the client, the service has no backends for that client
+	// and connections should fail.
+	// The special value "*" may be used to mean "any topology". This catch-all
+	// value, if used, only makes sense as the last value in the list.
+	// If this is not specified or empty, no topology constraints will be applied.
+	// This field is alpha-level and is only honored by servers that enable the ServiceTopology feature.
+	// +optional
+	TopologyKeys []string `protobuf:"bytes,16,rep,name=topologyKeys" json:"topologyKeys,omitempty"`
+	// IPFamilies is a list of IP families (e.g. IPv4, IPv6) assigned to this
+	// service, and is gated by the "IPv6DualStack" feature gate.  This field
+	// is usually assigned automatically based on cluster configuration and the
+	// ipFamilyPolicy field. If this field is specified manually, the requested
+	// family is available in the cluster, and ipFamilyPolicy allows it, it
+	// will be used; otherwise creation of the service will fail.  This field
+	// is conditionally mutable: it allows for adding or removing a secondary
+	// IP family, but it does not allow changing the primary IP family of the
+	// Service.  Valid values are "IPv4" and "IPv6".  This field only applies
+	// to Services of types ClusterIP, NodePort, and LoadBalancer, and does
+	// apply to "headless" services.  This field will be wiped when updating a
+	// Service to type ExternalName.
+	//
+	// This field may hold a maximum of two entries (dual-stack families, in
+	// either order).  These families must correspond to the values of the
+	// clusterIPs field, if specified. Both clusterIPs and ipFamilies are
+	// governed by the ipFamilyPolicy field.
+	// +listType=atomic
+	// +optional
+	IpFamilies []string `protobuf:"bytes,19,rep,name=ipFamilies" json:"ipFamilies,omitempty"`
+	// IPFamilyPolicy represents the dual-stack-ness requested or required by
+	// this Service, and is gated by the "IPv6DualStack" feature gate.  If
+	// there is no value provided, then this field will be set to SingleStack.
+	// Services can be "SingleStack" (a single IP family), "PreferDualStack"
+	// (two IP families on dual-stack configured clusters or a single IP family
+	// on single-stack clusters), or "RequireDualStack" (two IP families on
+	// dual-stack configured clusters, otherwise fail). The ipFamilies and
+	// clusterIPs fields depend on the value of this field.  This field will be
+	// wiped when updating a service to type ExternalName.
+	// +optional
+	IpFamilyPolicy *string `protobuf:"bytes,17,opt,name=ipFamilyPolicy" json:"ipFamilyPolicy,omitempty"`
+	// allocateLoadBalancerNodePorts defines if NodePorts will be automatically
+	// allocated for services with type LoadBalancer.  Default is "true". It may be
+	// set to "false" if the cluster load-balancer does not rely on NodePorts.
+	// allocateLoadBalancerNodePorts may only be set for services with type LoadBalancer
+	// and will be cleared if the type is changed to any other type.
+	// This field is alpha-level and is only honored by servers that enable the ServiceLBNodePortControl feature.
+	// +optional
+	AllocateLoadBalancerNodePorts *bool    `protobuf:"varint,20,opt,name=allocateLoadBalancerNodePorts" json:"allocateLoadBalancerNodePorts,omitempty"`
+	XXX_NoUnkeyedLiteral          struct{} `json:"-"`
+	XXX_unrecognized              []byte   `json:"-"`
+	XXX_sizecache                 int32    `json:"-"`
 }
 
 func (m *ServiceSpec) Reset()         { *m = ServiceSpec{} }
 func (m *ServiceSpec) String() string { return proto.CompactTextString(m) }
 func (*ServiceSpec) ProtoMessage()    {}
 func (*ServiceSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{176}
+	return fileDescriptor_6c07b07c062484ab, []int{186}
 }
 func (m *ServiceSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -14988,6 +16437,13 @@ func (m *ServiceSpec) GetClusterIP() string {
 		return *m.ClusterIP
 	}
 	return ""
+}
+
+func (m *ServiceSpec) GetClusterIPs() []string {
+	if m != nil {
+		return m.ClusterIPs
+	}
+	return nil
 }
 
 func (m *ServiceSpec) GetType() string {
@@ -15060,22 +16516,57 @@ func (m *ServiceSpec) GetSessionAffinityConfig() *SessionAffinityConfig {
 	return nil
 }
 
+func (m *ServiceSpec) GetTopologyKeys() []string {
+	if m != nil {
+		return m.TopologyKeys
+	}
+	return nil
+}
+
+func (m *ServiceSpec) GetIpFamilies() []string {
+	if m != nil {
+		return m.IpFamilies
+	}
+	return nil
+}
+
+func (m *ServiceSpec) GetIpFamilyPolicy() string {
+	if m != nil && m.IpFamilyPolicy != nil {
+		return *m.IpFamilyPolicy
+	}
+	return ""
+}
+
+func (m *ServiceSpec) GetAllocateLoadBalancerNodePorts() bool {
+	if m != nil && m.AllocateLoadBalancerNodePorts != nil {
+		return *m.AllocateLoadBalancerNodePorts
+	}
+	return false
+}
+
 // ServiceStatus represents the current status of a service.
 type ServiceStatus struct {
 	// LoadBalancer contains the current status of the load-balancer,
 	// if one is present.
 	// +optional
-	LoadBalancer         *LoadBalancerStatus `protobuf:"bytes,1,opt,name=loadBalancer" json:"loadBalancer,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+	LoadBalancer *LoadBalancerStatus `protobuf:"bytes,1,opt,name=loadBalancer" json:"loadBalancer,omitempty"`
+	// Current service state
+	// +optional
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions           []*v1.Condition `protobuf:"bytes,2,rep,name=conditions" json:"conditions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *ServiceStatus) Reset()         { *m = ServiceStatus{} }
 func (m *ServiceStatus) String() string { return proto.CompactTextString(m) }
 func (*ServiceStatus) ProtoMessage()    {}
 func (*ServiceStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{177}
+	return fileDescriptor_6c07b07c062484ab, []int{187}
 }
 func (m *ServiceStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15111,6 +16602,13 @@ func (m *ServiceStatus) GetLoadBalancer() *LoadBalancerStatus {
 	return nil
 }
 
+func (m *ServiceStatus) GetConditions() []*v1.Condition {
+	if m != nil {
+		return m.Conditions
+	}
+	return nil
+}
+
 // SessionAffinityConfig represents the configurations of session affinity.
 type SessionAffinityConfig struct {
 	// clientIP contains the configurations of Client IP based session affinity.
@@ -15125,7 +16623,7 @@ func (m *SessionAffinityConfig) Reset()         { *m = SessionAffinityConfig{} }
 func (m *SessionAffinityConfig) String() string { return proto.CompactTextString(m) }
 func (*SessionAffinityConfig) ProtoMessage()    {}
 func (*SessionAffinityConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{178}
+	return fileDescriptor_6c07b07c062484ab, []int{188}
 }
 func (m *SessionAffinityConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15196,7 +16694,7 @@ func (m *StorageOSPersistentVolumeSource) Reset()         { *m = StorageOSPersis
 func (m *StorageOSPersistentVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*StorageOSPersistentVolumeSource) ProtoMessage()    {}
 func (*StorageOSPersistentVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{179}
+	return fileDescriptor_6c07b07c062484ab, []int{189}
 }
 func (m *StorageOSPersistentVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15295,7 +16793,7 @@ func (m *StorageOSVolumeSource) Reset()         { *m = StorageOSVolumeSource{} }
 func (m *StorageOSVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*StorageOSVolumeSource) ProtoMessage()    {}
 func (*StorageOSVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{180}
+	return fileDescriptor_6c07b07c062484ab, []int{190}
 }
 func (m *StorageOSVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15374,7 +16872,7 @@ func (m *Sysctl) Reset()         { *m = Sysctl{} }
 func (m *Sysctl) String() string { return proto.CompactTextString(m) }
 func (*Sysctl) ProtoMessage()    {}
 func (*Sysctl) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{181}
+	return fileDescriptor_6c07b07c062484ab, []int{191}
 }
 func (m *Sysctl) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15435,7 +16933,7 @@ func (m *TCPSocketAction) Reset()         { *m = TCPSocketAction{} }
 func (m *TCPSocketAction) String() string { return proto.CompactTextString(m) }
 func (*TCPSocketAction) ProtoMessage()    {}
 func (*TCPSocketAction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{182}
+	return fileDescriptor_6c07b07c062484ab, []int{192}
 }
 func (m *TCPSocketAction) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15483,7 +16981,7 @@ func (m *TCPSocketAction) GetHost() string {
 type Taint struct {
 	// Required. The taint key to be applied to a node.
 	Key *string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	// Required. The taint value corresponding to the taint key.
+	// The taint value corresponding to the taint key.
 	// +optional
 	Value *string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
 	// Required. The effect of the taint on pods
@@ -15503,7 +17001,7 @@ func (m *Taint) Reset()         { *m = Taint{} }
 func (m *Taint) String() string { return proto.CompactTextString(m) }
 func (*Taint) ProtoMessage()    {}
 func (*Taint) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{183}
+	return fileDescriptor_6c07b07c062484ab, []int{193}
 }
 func (m *Taint) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15596,7 +17094,7 @@ func (m *Toleration) Reset()         { *m = Toleration{} }
 func (m *Toleration) String() string { return proto.CompactTextString(m) }
 func (*Toleration) ProtoMessage()    {}
 func (*Toleration) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{184}
+	return fileDescriptor_6c07b07c062484ab, []int{194}
 }
 func (m *Toleration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15677,7 +17175,7 @@ func (m *TopologySelectorLabelRequirement) Reset()         { *m = TopologySelect
 func (m *TopologySelectorLabelRequirement) String() string { return proto.CompactTextString(m) }
 func (*TopologySelectorLabelRequirement) ProtoMessage()    {}
 func (*TopologySelectorLabelRequirement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{185}
+	return fileDescriptor_6c07b07c062484ab, []int{195}
 }
 func (m *TopologySelectorLabelRequirement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15738,7 +17236,7 @@ func (m *TopologySelectorTerm) Reset()         { *m = TopologySelectorTerm{} }
 func (m *TopologySelectorTerm) String() string { return proto.CompactTextString(m) }
 func (*TopologySelectorTerm) ProtoMessage()    {}
 func (*TopologySelectorTerm) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{186}
+	return fileDescriptor_6c07b07c062484ab, []int{196}
 }
 func (m *TopologySelectorTerm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15774,6 +17272,125 @@ func (m *TopologySelectorTerm) GetMatchLabelExpressions() []*TopologySelectorLab
 	return nil
 }
 
+// TopologySpreadConstraint specifies how to spread matching pods among the given topology.
+type TopologySpreadConstraint struct {
+	// MaxSkew describes the degree to which pods may be unevenly distributed.
+	// When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
+	// between the number of matching pods in the target topology and the global minimum.
+	// For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+	// labelSelector spread as 1/1/0:
+	// +-------+-------+-------+
+	// | zone1 | zone2 | zone3 |
+	// +-------+-------+-------+
+	// |   P   |   P   |       |
+	// +-------+-------+-------+
+	// - if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 1/1/1;
+	// scheduling it onto zone1(zone2) would make the ActualSkew(2-0) on zone1(zone2)
+	// violate MaxSkew(1).
+	// - if MaxSkew is 2, incoming pod can be scheduled onto any zone.
+	// When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence
+	// to topologies that satisfy it.
+	// It's a required field. Default value is 1 and 0 is not allowed.
+	MaxSkew *int32 `protobuf:"varint,1,opt,name=maxSkew" json:"maxSkew,omitempty"`
+	// TopologyKey is the key of node labels. Nodes that have a label with this key
+	// and identical values are considered to be in the same topology.
+	// We consider each <key, value> as a "bucket", and try to put balanced number
+	// of pods into each bucket.
+	// It's a required field.
+	TopologyKey *string `protobuf:"bytes,2,opt,name=topologyKey" json:"topologyKey,omitempty"`
+	// WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
+	// the spread constraint.
+	// - DoNotSchedule (default) tells the scheduler not to schedule it.
+	// - ScheduleAnyway tells the scheduler to schedule the pod in any location,
+	//   but giving higher precedence to topologies that would help reduce the
+	//   skew.
+	// A constraint is considered "Unsatisfiable" for an incoming pod
+	// if and only if every possible node assigment for that pod would violate
+	// "MaxSkew" on some topology.
+	// For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+	// labelSelector spread as 3/1/1:
+	// +-------+-------+-------+
+	// | zone1 | zone2 | zone3 |
+	// +-------+-------+-------+
+	// | P P P |   P   |   P   |
+	// +-------+-------+-------+
+	// If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled
+	// to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies
+	// MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler
+	// won't make it *more* imbalanced.
+	// It's a required field.
+	WhenUnsatisfiable *string `protobuf:"bytes,3,opt,name=whenUnsatisfiable" json:"whenUnsatisfiable,omitempty"`
+	// LabelSelector is used to find matching pods.
+	// Pods that match this label selector are counted to determine the number of pods
+	// in their corresponding topology domain.
+	// +optional
+	LabelSelector        *v1.LabelSelector `protobuf:"bytes,4,opt,name=labelSelector" json:"labelSelector,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *TopologySpreadConstraint) Reset()         { *m = TopologySpreadConstraint{} }
+func (m *TopologySpreadConstraint) String() string { return proto.CompactTextString(m) }
+func (*TopologySpreadConstraint) ProtoMessage()    {}
+func (*TopologySpreadConstraint) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{197}
+}
+func (m *TopologySpreadConstraint) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TopologySpreadConstraint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TopologySpreadConstraint.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TopologySpreadConstraint) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TopologySpreadConstraint.Merge(m, src)
+}
+func (m *TopologySpreadConstraint) XXX_Size() int {
+	return m.Size()
+}
+func (m *TopologySpreadConstraint) XXX_DiscardUnknown() {
+	xxx_messageInfo_TopologySpreadConstraint.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TopologySpreadConstraint proto.InternalMessageInfo
+
+func (m *TopologySpreadConstraint) GetMaxSkew() int32 {
+	if m != nil && m.MaxSkew != nil {
+		return *m.MaxSkew
+	}
+	return 0
+}
+
+func (m *TopologySpreadConstraint) GetTopologyKey() string {
+	if m != nil && m.TopologyKey != nil {
+		return *m.TopologyKey
+	}
+	return ""
+}
+
+func (m *TopologySpreadConstraint) GetWhenUnsatisfiable() string {
+	if m != nil && m.WhenUnsatisfiable != nil {
+		return *m.WhenUnsatisfiable
+	}
+	return ""
+}
+
+func (m *TopologySpreadConstraint) GetLabelSelector() *v1.LabelSelector {
+	if m != nil {
+		return m.LabelSelector
+	}
+	return nil
+}
+
 // TypedLocalObjectReference contains enough information to let you locate the
 // typed referenced object inside the same namespace.
 type TypedLocalObjectReference struct {
@@ -15795,7 +17412,7 @@ func (m *TypedLocalObjectReference) Reset()         { *m = TypedLocalObjectRefer
 func (m *TypedLocalObjectReference) String() string { return proto.CompactTextString(m) }
 func (*TypedLocalObjectReference) ProtoMessage()    {}
 func (*TypedLocalObjectReference) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{187}
+	return fileDescriptor_6c07b07c062484ab, []int{198}
 }
 func (m *TypedLocalObjectReference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15864,7 +17481,7 @@ func (m *Volume) Reset()         { *m = Volume{} }
 func (m *Volume) String() string { return proto.CompactTextString(m) }
 func (*Volume) ProtoMessage()    {}
 func (*Volume) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{188}
+	return fileDescriptor_6c07b07c062484ab, []int{199}
 }
 func (m *Volume) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15922,7 +17539,7 @@ func (m *VolumeDevice) Reset()         { *m = VolumeDevice{} }
 func (m *VolumeDevice) String() string { return proto.CompactTextString(m) }
 func (*VolumeDevice) ProtoMessage()    {}
 func (*VolumeDevice) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{189}
+	return fileDescriptor_6c07b07c062484ab, []int{200}
 }
 func (m *VolumeDevice) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -15985,7 +17602,13 @@ type VolumeMount struct {
 	// When not set, MountPropagationNone is used.
 	// This field is beta in 1.10.
 	// +optional
-	MountPropagation     *string  `protobuf:"bytes,5,opt,name=mountPropagation" json:"mountPropagation,omitempty"`
+	MountPropagation *string `protobuf:"bytes,5,opt,name=mountPropagation" json:"mountPropagation,omitempty"`
+	// Expanded path within the volume from which the container's volume should be mounted.
+	// Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
+	// Defaults to "" (volume's root).
+	// SubPathExpr and SubPath are mutually exclusive.
+	// +optional
+	SubPathExpr          *string  `protobuf:"bytes,6,opt,name=subPathExpr" json:"subPathExpr,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -15995,7 +17618,7 @@ func (m *VolumeMount) Reset()         { *m = VolumeMount{} }
 func (m *VolumeMount) String() string { return proto.CompactTextString(m) }
 func (*VolumeMount) ProtoMessage()    {}
 func (*VolumeMount) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{190}
+	return fileDescriptor_6c07b07c062484ab, []int{201}
 }
 func (m *VolumeMount) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -16059,6 +17682,13 @@ func (m *VolumeMount) GetMountPropagation() string {
 	return ""
 }
 
+func (m *VolumeMount) GetSubPathExpr() string {
+	if m != nil && m.SubPathExpr != nil {
+		return *m.SubPathExpr
+	}
+	return ""
+}
+
 // VolumeNodeAffinity defines constraints that limit what nodes this volume can be accessed from.
 type VolumeNodeAffinity struct {
 	// Required specifies hard node constraints that must be met.
@@ -16072,7 +17702,7 @@ func (m *VolumeNodeAffinity) Reset()         { *m = VolumeNodeAffinity{} }
 func (m *VolumeNodeAffinity) String() string { return proto.CompactTextString(m) }
 func (*VolumeNodeAffinity) ProtoMessage()    {}
 func (*VolumeNodeAffinity) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{191}
+	return fileDescriptor_6c07b07c062484ab, []int{202}
 }
 func (m *VolumeNodeAffinity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -16131,7 +17761,7 @@ func (m *VolumeProjection) Reset()         { *m = VolumeProjection{} }
 func (m *VolumeProjection) String() string { return proto.CompactTextString(m) }
 func (*VolumeProjection) ProtoMessage()    {}
 func (*VolumeProjection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{192}
+	return fileDescriptor_6c07b07c062484ab, []int{203}
 }
 func (m *VolumeProjection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -16231,11 +17861,11 @@ type VolumeSource struct {
 	Nfs *NFSVolumeSource `protobuf:"bytes,7,opt,name=nfs" json:"nfs,omitempty"`
 	// ISCSI represents an ISCSI Disk resource that is attached to a
 	// kubelet's host machine and then exposed to the pod.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/iscsi/README.md
+	// More info: https://examples.k8s.io/volumes/iscsi/README.md
 	// +optional
 	Iscsi *ISCSIVolumeSource `protobuf:"bytes,8,opt,name=iscsi" json:"iscsi,omitempty"`
 	// Glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md
+	// More info: https://examples.k8s.io/volumes/glusterfs/README.md
 	// +optional
 	Glusterfs *GlusterfsVolumeSource `protobuf:"bytes,9,opt,name=glusterfs" json:"glusterfs,omitempty"`
 	// PersistentVolumeClaimVolumeSource represents a reference to a
@@ -16244,15 +17874,15 @@ type VolumeSource struct {
 	// +optional
 	PersistentVolumeClaim *PersistentVolumeClaimVolumeSource `protobuf:"bytes,10,opt,name=persistentVolumeClaim" json:"persistentVolumeClaim,omitempty"`
 	// RBD represents a Rados Block Device mount on the host that shares a pod's lifetime.
-	// More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md
+	// More info: https://examples.k8s.io/volumes/rbd/README.md
 	// +optional
 	Rbd *RBDVolumeSource `protobuf:"bytes,11,opt,name=rbd" json:"rbd,omitempty"`
 	// FlexVolume represents a generic volume resource that is
 	// provisioned/attached using an exec based plugin.
 	// +optional
 	FlexVolume *FlexVolumeSource `protobuf:"bytes,12,opt,name=flexVolume" json:"flexVolume,omitempty"`
-	// Cinder represents a cinder volume attached and mounted on kubelets host machine
-	// More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md
+	// Cinder represents a cinder volume attached and mounted on kubelets host machine.
+	// More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 	// +optional
 	Cinder *CinderVolumeSource `protobuf:"bytes,13,opt,name=cinder" json:"cinder,omitempty"`
 	// CephFS represents a Ceph FS mount on the host that shares a pod's lifetime
@@ -16294,7 +17924,37 @@ type VolumeSource struct {
 	ScaleIO *ScaleIOVolumeSource `protobuf:"bytes,25,opt,name=scaleIO" json:"scaleIO,omitempty"`
 	// StorageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.
 	// +optional
-	Storageos            *StorageOSVolumeSource `protobuf:"bytes,27,opt,name=storageos" json:"storageos,omitempty"`
+	Storageos *StorageOSVolumeSource `protobuf:"bytes,27,opt,name=storageos" json:"storageos,omitempty"`
+	// CSI (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers (Beta feature).
+	// +optional
+	Csi *CSIVolumeSource `protobuf:"bytes,28,opt,name=csi" json:"csi,omitempty"`
+	// Ephemeral represents a volume that is handled by a cluster storage driver (Alpha feature).
+	// The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
+	// and deleted when the pod is removed.
+	//
+	// Use this if:
+	// a) the volume is only needed while the pod runs,
+	// b) features of normal volumes like restoring from snapshot or capacity
+	//    tracking are needed,
+	// c) the storage driver is specified through a storage class, and
+	// d) the storage driver supports dynamic volume provisioning through
+	//    a PersistentVolumeClaim (see EphemeralVolumeSource for more
+	//    information on the connection between this volume type
+	//    and PersistentVolumeClaim).
+	//
+	// Use PersistentVolumeClaim or one of the vendor-specific
+	// APIs for volumes that persist for longer than the lifecycle
+	// of an individual pod.
+	//
+	// Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
+	// be used that way - see the documentation of the driver for
+	// more information.
+	//
+	// A pod can use both types of ephemeral volumes and
+	// persistent volumes at the same time.
+	//
+	// +optional
+	Ephemeral            *EphemeralVolumeSource `protobuf:"bytes,29,opt,name=ephemeral" json:"ephemeral,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`
@@ -16304,7 +17964,7 @@ func (m *VolumeSource) Reset()         { *m = VolumeSource{} }
 func (m *VolumeSource) String() string { return proto.CompactTextString(m) }
 func (*VolumeSource) ProtoMessage()    {}
 func (*VolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{193}
+	return fileDescriptor_6c07b07c062484ab, []int{204}
 }
 func (m *VolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -16522,6 +18182,20 @@ func (m *VolumeSource) GetStorageos() *StorageOSVolumeSource {
 	return nil
 }
 
+func (m *VolumeSource) GetCsi() *CSIVolumeSource {
+	if m != nil {
+		return m.Csi
+	}
+	return nil
+}
+
+func (m *VolumeSource) GetEphemeral() *EphemeralVolumeSource {
+	if m != nil {
+		return m.Ephemeral
+	}
+	return nil
+}
+
 // Represents a vSphere volume resource.
 type VsphereVirtualDiskVolumeSource struct {
 	// Path that identifies vSphere volume vmdk
@@ -16546,7 +18220,7 @@ func (m *VsphereVirtualDiskVolumeSource) Reset()         { *m = VsphereVirtualDi
 func (m *VsphereVirtualDiskVolumeSource) String() string { return proto.CompactTextString(m) }
 func (*VsphereVirtualDiskVolumeSource) ProtoMessage()    {}
 func (*VsphereVirtualDiskVolumeSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{194}
+	return fileDescriptor_6c07b07c062484ab, []int{205}
 }
 func (m *VsphereVirtualDiskVolumeSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -16619,7 +18293,7 @@ func (m *WeightedPodAffinityTerm) Reset()         { *m = WeightedPodAffinityTerm
 func (m *WeightedPodAffinityTerm) String() string { return proto.CompactTextString(m) }
 func (*WeightedPodAffinityTerm) ProtoMessage()    {}
 func (*WeightedPodAffinityTerm) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c07b07c062484ab, []int{195}
+	return fileDescriptor_6c07b07c062484ab, []int{206}
 }
 func (m *WeightedPodAffinityTerm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -16662,6 +18336,81 @@ func (m *WeightedPodAffinityTerm) GetPodAffinityTerm() *PodAffinityTerm {
 	return nil
 }
 
+// WindowsSecurityContextOptions contain Windows-specific options and credentials.
+type WindowsSecurityContextOptions struct {
+	// GMSACredentialSpecName is the name of the GMSA credential spec to use.
+	// +optional
+	GmsaCredentialSpecName *string `protobuf:"bytes,1,opt,name=gmsaCredentialSpecName" json:"gmsaCredentialSpecName,omitempty"`
+	// GMSACredentialSpec is where the GMSA admission webhook
+	// (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
+	// GMSA credential spec named by the GMSACredentialSpecName field.
+	// +optional
+	GmsaCredentialSpec *string `protobuf:"bytes,2,opt,name=gmsaCredentialSpec" json:"gmsaCredentialSpec,omitempty"`
+	// The UserName in Windows to run the entrypoint of the container process.
+	// Defaults to the user specified in image metadata if unspecified.
+	// May also be set in PodSecurityContext. If set in both SecurityContext and
+	// PodSecurityContext, the value specified in SecurityContext takes precedence.
+	// +optional
+	RunAsUserName        *string  `protobuf:"bytes,3,opt,name=runAsUserName" json:"runAsUserName,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *WindowsSecurityContextOptions) Reset()         { *m = WindowsSecurityContextOptions{} }
+func (m *WindowsSecurityContextOptions) String() string { return proto.CompactTextString(m) }
+func (*WindowsSecurityContextOptions) ProtoMessage()    {}
+func (*WindowsSecurityContextOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c07b07c062484ab, []int{207}
+}
+func (m *WindowsSecurityContextOptions) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *WindowsSecurityContextOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_WindowsSecurityContextOptions.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *WindowsSecurityContextOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WindowsSecurityContextOptions.Merge(m, src)
+}
+func (m *WindowsSecurityContextOptions) XXX_Size() int {
+	return m.Size()
+}
+func (m *WindowsSecurityContextOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_WindowsSecurityContextOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WindowsSecurityContextOptions proto.InternalMessageInfo
+
+func (m *WindowsSecurityContextOptions) GetGmsaCredentialSpecName() string {
+	if m != nil && m.GmsaCredentialSpecName != nil {
+		return *m.GmsaCredentialSpecName
+	}
+	return ""
+}
+
+func (m *WindowsSecurityContextOptions) GetGmsaCredentialSpec() string {
+	if m != nil && m.GmsaCredentialSpec != nil {
+		return *m.GmsaCredentialSpec
+	}
+	return ""
+}
+
+func (m *WindowsSecurityContextOptions) GetRunAsUserName() string {
+	if m != nil && m.RunAsUserName != nil {
+		return *m.RunAsUserName
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*AWSElasticBlockStoreVolumeSource)(nil), "k8s.io.api.core.v1.AWSElasticBlockStoreVolumeSource")
 	proto.RegisterType((*Affinity)(nil), "k8s.io.api.core.v1.Affinity")
@@ -16673,6 +18422,8 @@ func init() {
 	proto.RegisterType((*Binding)(nil), "k8s.io.api.core.v1.Binding")
 	proto.RegisterType((*CSIPersistentVolumeSource)(nil), "k8s.io.api.core.v1.CSIPersistentVolumeSource")
 	proto.RegisterMapType((map[string]string)(nil), "k8s.io.api.core.v1.CSIPersistentVolumeSource.VolumeAttributesEntry")
+	proto.RegisterType((*CSIVolumeSource)(nil), "k8s.io.api.core.v1.CSIVolumeSource")
+	proto.RegisterMapType((map[string]string)(nil), "k8s.io.api.core.v1.CSIVolumeSource.VolumeAttributesEntry")
 	proto.RegisterType((*Capabilities)(nil), "k8s.io.api.core.v1.Capabilities")
 	proto.RegisterType((*CephFSPersistentVolumeSource)(nil), "k8s.io.api.core.v1.CephFSPersistentVolumeSource")
 	proto.RegisterType((*CephFSVolumeSource)(nil), "k8s.io.api.core.v1.CephFSVolumeSource")
@@ -16712,6 +18463,10 @@ func init() {
 	proto.RegisterType((*EnvFromSource)(nil), "k8s.io.api.core.v1.EnvFromSource")
 	proto.RegisterType((*EnvVar)(nil), "k8s.io.api.core.v1.EnvVar")
 	proto.RegisterType((*EnvVarSource)(nil), "k8s.io.api.core.v1.EnvVarSource")
+	proto.RegisterType((*EphemeralContainer)(nil), "k8s.io.api.core.v1.EphemeralContainer")
+	proto.RegisterType((*EphemeralContainerCommon)(nil), "k8s.io.api.core.v1.EphemeralContainerCommon")
+	proto.RegisterType((*EphemeralContainers)(nil), "k8s.io.api.core.v1.EphemeralContainers")
+	proto.RegisterType((*EphemeralVolumeSource)(nil), "k8s.io.api.core.v1.EphemeralVolumeSource")
 	proto.RegisterType((*Event)(nil), "k8s.io.api.core.v1.Event")
 	proto.RegisterType((*EventList)(nil), "k8s.io.api.core.v1.EventList")
 	proto.RegisterType((*EventSeries)(nil), "k8s.io.api.core.v1.EventSeries")
@@ -16752,6 +18507,7 @@ func init() {
 	proto.RegisterType((*LocalVolumeSource)(nil), "k8s.io.api.core.v1.LocalVolumeSource")
 	proto.RegisterType((*NFSVolumeSource)(nil), "k8s.io.api.core.v1.NFSVolumeSource")
 	proto.RegisterType((*Namespace)(nil), "k8s.io.api.core.v1.Namespace")
+	proto.RegisterType((*NamespaceCondition)(nil), "k8s.io.api.core.v1.NamespaceCondition")
 	proto.RegisterType((*NamespaceList)(nil), "k8s.io.api.core.v1.NamespaceList")
 	proto.RegisterType((*NamespaceSpec)(nil), "k8s.io.api.core.v1.NamespaceSpec")
 	proto.RegisterType((*NamespaceStatus)(nil), "k8s.io.api.core.v1.NamespaceStatus")
@@ -16783,6 +18539,7 @@ func init() {
 	proto.RegisterType((*PersistentVolumeClaimSpec)(nil), "k8s.io.api.core.v1.PersistentVolumeClaimSpec")
 	proto.RegisterType((*PersistentVolumeClaimStatus)(nil), "k8s.io.api.core.v1.PersistentVolumeClaimStatus")
 	proto.RegisterMapType((map[string]*resource.Quantity)(nil), "k8s.io.api.core.v1.PersistentVolumeClaimStatus.CapacityEntry")
+	proto.RegisterType((*PersistentVolumeClaimTemplate)(nil), "k8s.io.api.core.v1.PersistentVolumeClaimTemplate")
 	proto.RegisterType((*PersistentVolumeClaimVolumeSource)(nil), "k8s.io.api.core.v1.PersistentVolumeClaimVolumeSource")
 	proto.RegisterType((*PersistentVolumeList)(nil), "k8s.io.api.core.v1.PersistentVolumeList")
 	proto.RegisterType((*PersistentVolumeSource)(nil), "k8s.io.api.core.v1.PersistentVolumeSource")
@@ -16799,6 +18556,7 @@ func init() {
 	proto.RegisterType((*PodDNSConfig)(nil), "k8s.io.api.core.v1.PodDNSConfig")
 	proto.RegisterType((*PodDNSConfigOption)(nil), "k8s.io.api.core.v1.PodDNSConfigOption")
 	proto.RegisterType((*PodExecOptions)(nil), "k8s.io.api.core.v1.PodExecOptions")
+	proto.RegisterType((*PodIP)(nil), "k8s.io.api.core.v1.PodIP")
 	proto.RegisterType((*PodList)(nil), "k8s.io.api.core.v1.PodList")
 	proto.RegisterType((*PodLogOptions)(nil), "k8s.io.api.core.v1.PodLogOptions")
 	proto.RegisterType((*PodPortForwardOptions)(nil), "k8s.io.api.core.v1.PodPortForwardOptions")
@@ -16808,11 +18566,13 @@ func init() {
 	proto.RegisterType((*PodSignature)(nil), "k8s.io.api.core.v1.PodSignature")
 	proto.RegisterType((*PodSpec)(nil), "k8s.io.api.core.v1.PodSpec")
 	proto.RegisterMapType((map[string]string)(nil), "k8s.io.api.core.v1.PodSpec.NodeSelectorEntry")
+	proto.RegisterMapType((map[string]*resource.Quantity)(nil), "k8s.io.api.core.v1.PodSpec.OverheadEntry")
 	proto.RegisterType((*PodStatus)(nil), "k8s.io.api.core.v1.PodStatus")
 	proto.RegisterType((*PodStatusResult)(nil), "k8s.io.api.core.v1.PodStatusResult")
 	proto.RegisterType((*PodTemplate)(nil), "k8s.io.api.core.v1.PodTemplate")
 	proto.RegisterType((*PodTemplateList)(nil), "k8s.io.api.core.v1.PodTemplateList")
 	proto.RegisterType((*PodTemplateSpec)(nil), "k8s.io.api.core.v1.PodTemplateSpec")
+	proto.RegisterType((*PortStatus)(nil), "k8s.io.api.core.v1.PortStatus")
 	proto.RegisterType((*PortworxVolumeSource)(nil), "k8s.io.api.core.v1.PortworxVolumeSource")
 	proto.RegisterType((*Preconditions)(nil), "k8s.io.api.core.v1.Preconditions")
 	proto.RegisterType((*PreferAvoidPodsEntry)(nil), "k8s.io.api.core.v1.PreferAvoidPodsEntry")
@@ -16845,6 +18605,7 @@ func init() {
 	proto.RegisterType((*ScaleIOVolumeSource)(nil), "k8s.io.api.core.v1.ScaleIOVolumeSource")
 	proto.RegisterType((*ScopeSelector)(nil), "k8s.io.api.core.v1.ScopeSelector")
 	proto.RegisterType((*ScopedResourceSelectorRequirement)(nil), "k8s.io.api.core.v1.ScopedResourceSelectorRequirement")
+	proto.RegisterType((*SeccompProfile)(nil), "k8s.io.api.core.v1.SeccompProfile")
 	proto.RegisterType((*Secret)(nil), "k8s.io.api.core.v1.Secret")
 	proto.RegisterMapType((map[string][]byte)(nil), "k8s.io.api.core.v1.Secret.DataEntry")
 	proto.RegisterMapType((map[string]string)(nil), "k8s.io.api.core.v1.Secret.StringDataEntry")
@@ -16875,6 +18636,7 @@ func init() {
 	proto.RegisterType((*Toleration)(nil), "k8s.io.api.core.v1.Toleration")
 	proto.RegisterType((*TopologySelectorLabelRequirement)(nil), "k8s.io.api.core.v1.TopologySelectorLabelRequirement")
 	proto.RegisterType((*TopologySelectorTerm)(nil), "k8s.io.api.core.v1.TopologySelectorTerm")
+	proto.RegisterType((*TopologySpreadConstraint)(nil), "k8s.io.api.core.v1.TopologySpreadConstraint")
 	proto.RegisterType((*TypedLocalObjectReference)(nil), "k8s.io.api.core.v1.TypedLocalObjectReference")
 	proto.RegisterType((*Volume)(nil), "k8s.io.api.core.v1.Volume")
 	proto.RegisterType((*VolumeDevice)(nil), "k8s.io.api.core.v1.VolumeDevice")
@@ -16884,6 +18646,7 @@ func init() {
 	proto.RegisterType((*VolumeSource)(nil), "k8s.io.api.core.v1.VolumeSource")
 	proto.RegisterType((*VsphereVirtualDiskVolumeSource)(nil), "k8s.io.api.core.v1.VsphereVirtualDiskVolumeSource")
 	proto.RegisterType((*WeightedPodAffinityTerm)(nil), "k8s.io.api.core.v1.WeightedPodAffinityTerm")
+	proto.RegisterType((*WindowsSecurityContextOptions)(nil), "k8s.io.api.core.v1.WindowsSecurityContextOptions")
 }
 
 func init() {
@@ -16891,605 +18654,660 @@ func init() {
 }
 
 var fileDescriptor_6c07b07c062484ab = []byte{
-	// 9554 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x7d, 0x6d, 0x8c, 0x25, 0x57,
-	0x76, 0x10, 0xf5, 0x5e, 0x77, 0xbf, 0x7e, 0xa7, 0xbf, 0xef, 0x74, 0x8f, 0xdf, 0xb4, 0xc7, 0xe3,
-	0x71, 0xd9, 0x3b, 0x9e, 0xf5, 0xda, 0x3d, 0xb6, 0x77, 0x3c, 0x6b, 0x7b, 0xec, 0x19, 0xf7, 0xf4,
-	0xeb, 0x9e, 0x69, 0xcf, 0x87, 0x9f, 0xab, 0xc7, 0x9e, 0x75, 0x02, 0x98, 0xea, 0xaa, 0xdb, 0xdd,
-	0xb5, 0x5d, 0xaf, 0xea, 0xb9, 0xaa, 0x5e, 0xf7, 0xf4, 0x2a, 0x91, 0x20, 0x82, 0xb0, 0x21, 0x51,
-	0xd8, 0xa0, 0xb0, 0x1b, 0x56, 0x0b, 0x09, 0x89, 0x50, 0x40, 0x4a, 0x80, 0x08, 0xc1, 0x46, 0x20,
-	0x82, 0x40, 0x20, 0xd8, 0x1f, 0x48, 0x20, 0x21, 0x22, 0x3e, 0xb2, 0x02, 0xf3, 0x83, 0xfc, 0x24,
-	0x02, 0x24, 0x7e, 0xa2, 0xfb, 0x59, 0xf7, 0xd6, 0xd7, 0x7b, 0xdd, 0xf3, 0xc6, 0x36, 0x62, 0xff,
-	0xd5, 0x3d, 0xf7, 0x9e, 0x53, 0xf7, 0xf3, 0xdc, 0x73, 0xce, 0x3d, 0xf7, 0x5c, 0x30, 0xf7, 0x5f,
-	0x8f, 0x57, 0xbc, 0xf0, 0x92, 0xdd, 0xf3, 0x2e, 0x39, 0x61, 0x84, 0x2f, 0x1d, 0xbc, 0x72, 0x69,
-	0x17, 0x07, 0x38, 0xb2, 0x13, 0xec, 0xae, 0xf4, 0xa2, 0x30, 0x09, 0x11, 0x62, 0x65, 0x56, 0xec,
-	0x9e, 0xb7, 0x42, 0xca, 0xac, 0x1c, 0xbc, 0xb2, 0x7c, 0x39, 0xc5, 0xeb, 0xda, 0xce, 0x9e, 0x17,
-	0xe0, 0xe8, 0xe8, 0x52, 0x6f, 0x7f, 0x97, 0x12, 0x8a, 0x70, 0x1c, 0xf6, 0x23, 0x07, 0x67, 0x29,
-	0x55, 0x62, 0xc5, 0x97, 0xba, 0x38, 0xb1, 0x0b, 0xfe, 0xbf, 0x7c, 0xa9, 0x0c, 0x2b, 0xea, 0x07,
-	0x89, 0xd7, 0xcd, 0xff, 0xe6, 0xca, 0x20, 0x84, 0xd8, 0xd9, 0xc3, 0x5d, 0x3b, 0x87, 0xf7, 0xd5,
-	0x32, 0xbc, 0x7e, 0xe2, 0xf9, 0x97, 0xbc, 0x20, 0x89, 0x93, 0x28, 0x8b, 0x64, 0x7e, 0xdb, 0x80,
-	0xf3, 0xab, 0x0f, 0xb6, 0xd6, 0x7d, 0x3b, 0x4e, 0x3c, 0xe7, 0x86, 0x1f, 0x3a, 0xfb, 0x5b, 0x49,
-	0x18, 0xe1, 0x0f, 0x43, 0xbf, 0xdf, 0xc5, 0x5b, 0xb4, 0x23, 0xd0, 0x32, 0x4c, 0x1e, 0xd0, 0xf4,
-	0x66, 0xbb, 0x65, 0x9c, 0x37, 0x2e, 0x36, 0x2d, 0x99, 0x46, 0xa7, 0x61, 0x62, 0x27, 0xbe, 0x7f,
-	0xd4, 0xc3, 0xad, 0x1a, 0xcd, 0xe1, 0x29, 0x74, 0x16, 0x9a, 0x3d, 0x3b, 0x4a, 0xbc, 0xc4, 0x0b,
-	0x83, 0x56, 0xfd, 0xbc, 0x71, 0x71, 0xdc, 0x4a, 0x01, 0x84, 0x62, 0x84, 0x6d, 0xf7, 0xbd, 0xc0,
-	0x3f, 0x6a, 0x8d, 0x9d, 0x37, 0x2e, 0x4e, 0x5a, 0x32, 0x6d, 0x7e, 0x6a, 0xc0, 0xe4, 0xea, 0xce,
-	0x8e, 0x17, 0x78, 0xc9, 0x11, 0x6a, 0xc3, 0x74, 0x10, 0xba, 0x58, 0xa4, 0xe9, 0xef, 0xa7, 0x5e,
-	0x3d, 0xbf, 0x92, 0x1f, 0xd4, 0x95, 0x7b, 0x4a, 0x39, 0x4b, 0xc3, 0x42, 0xab, 0x30, 0xd5, 0x0b,
-	0x5d, 0x49, 0xa4, 0x46, 0x89, 0x3c, 0x5d, 0x44, 0xa4, 0x93, 0x16, 0xb3, 0x54, 0x1c, 0x74, 0x17,
-	0xe6, 0x48, 0x32, 0x48, 0x3c, 0x49, 0xa6, 0x4e, 0xc9, 0x3c, 0x5b, 0x46, 0x46, 0x29, 0x6a, 0x65,
-	0x71, 0xcd, 0x36, 0xcc, 0xae, 0x26, 0x89, 0xed, 0xec, 0x61, 0x97, 0x75, 0x35, 0x42, 0x30, 0x16,
-	0xd8, 0x5d, 0xcc, 0x3b, 0x98, 0x7e, 0xa3, 0x73, 0x00, 0x2e, 0x3e, 0xf0, 0x1c, 0xdc, 0xb1, 0x93,
-	0x3d, 0xde, 0xc1, 0x0a, 0xc4, 0xfc, 0x18, 0x9a, 0xab, 0x07, 0xa1, 0xe7, 0x76, 0x42, 0x37, 0x46,
-	0x16, 0xcc, 0xf5, 0x22, 0xbc, 0x83, 0x23, 0x09, 0x6a, 0x19, 0xe7, 0xeb, 0x17, 0xa7, 0x5e, 0xbd,
-	0x58, 0x58, 0x43, 0xbd, 0xe8, 0x7a, 0x90, 0x44, 0xa4, 0x9a, 0x3a, 0xd4, 0xfc, 0x81, 0x01, 0x4b,
-	0xab, 0xdf, 0xec, 0x47, 0xb8, 0xed, 0xc5, 0xfb, 0xd9, 0x39, 0xe1, 0x7a, 0xf1, 0xfe, 0xbd, 0xb4,
-	0xca, 0x32, 0x8d, 0x5a, 0xd0, 0x20, 0xdf, 0x1f, 0x58, 0x9b, 0xbc, 0xce, 0x22, 0x89, 0xce, 0xc3,
-	0x94, 0x43, 0xe7, 0xe6, 0xee, 0xdd, 0xd0, 0xc5, 0xb4, 0x07, 0x9b, 0x96, 0x0a, 0x52, 0xe6, 0xd3,
-	0x98, 0x36, 0x9f, 0xd4, 0x19, 0x33, 0xae, 0xcf, 0x18, 0xd2, 0x75, 0xfb, 0x5e, 0xe0, 0xb6, 0x26,
-	0x58, 0xd7, 0x91, 0x6f, 0xf3, 0x6f, 0x18, 0xf0, 0x34, 0xad, 0xf9, 0x86, 0xe7, 0xe3, 0x0e, 0x8e,
-	0x62, 0x2f, 0x4e, 0x70, 0x90, 0x68, 0x6d, 0x38, 0x07, 0x10, 0x63, 0x27, 0xc2, 0x89, 0xd2, 0x0a,
-	0x05, 0x42, 0xe6, 0x70, 0xbc, 0x67, 0x47, 0x98, 0x66, 0xb3, 0x96, 0xa4, 0x00, 0xad, 0x46, 0xf5,
-	0x4c, 0x8d, 0x2e, 0xc2, 0x5c, 0x4a, 0x27, 0xee, 0xd9, 0x8e, 0x68, 0x4e, 0x16, 0x6c, 0x7e, 0xc2,
-	0x3b, 0x98, 0x54, 0xf3, 0xb3, 0xa9, 0x9c, 0xf9, 0xcb, 0x06, 0x34, 0x6e, 0x78, 0x81, 0xeb, 0x05,
-	0xbb, 0xe8, 0x0e, 0x4c, 0x12, 0xc6, 0xe5, 0xda, 0x89, 0xcd, 0xd7, 0xd6, 0xcb, 0xca, 0x6c, 0x91,
-	0x7c, 0x64, 0xa5, 0xb7, 0xbf, 0x4b, 0x00, 0xf1, 0x0a, 0x29, 0x4d, 0xe6, 0xcf, 0x7b, 0xdb, 0xdf,
-	0xc0, 0x4e, 0x72, 0x17, 0x27, 0xb6, 0x25, 0x29, 0xa0, 0xab, 0x30, 0x91, 0xd8, 0xd1, 0x2e, 0x4e,
-	0xf8, 0x12, 0x2b, 0x5c, 0x1b, 0x0c, 0xd3, 0x22, 0x13, 0x0d, 0x07, 0x0e, 0xb6, 0x38, 0x8a, 0xf9,
-	0xef, 0xc6, 0xe0, 0xcc, 0xda, 0xd6, 0x66, 0xc9, 0x58, 0x9d, 0x86, 0x09, 0x37, 0xf2, 0x0e, 0x70,
-	0xc4, 0xbb, 0x82, 0xa7, 0x90, 0x09, 0xd3, 0x8c, 0x17, 0xdd, 0xb2, 0x03, 0xd7, 0x17, 0x3d, 0xa1,
-	0xc1, 0x2a, 0x47, 0xaa, 0x6c, 0xbe, 0x85, 0x30, 0xcf, 0x68, 0xac, 0x26, 0x49, 0xe4, 0x6d, 0xf7,
-	0x13, 0x1c, 0xb7, 0xc6, 0xe9, 0x72, 0x5a, 0x2b, 0x6a, 0x54, 0x69, 0xc5, 0x57, 0x3e, 0xcc, 0x50,
-	0x61, 0x2b, 0x2d, 0x47, 0x1c, 0x39, 0xb0, 0xec, 0x84, 0x41, 0x12, 0x85, 0xbe, 0x8f, 0xa3, 0x4e,
-	0x7f, 0xdb, 0xf7, 0xe2, 0xbd, 0x2d, 0x3a, 0xdc, 0x16, 0xde, 0xa1, 0x53, 0xbb, 0xa4, 0x3f, 0x65,
-	0x21, 0xde, 0x9f, 0x15, 0x64, 0xd0, 0x16, 0x20, 0xc2, 0x18, 0xb7, 0x12, 0x7b, 0x17, 0xa7, 0xc4,
-	0x1b, 0xc3, 0x13, 0x2f, 0x40, 0x47, 0x0f, 0x60, 0x91, 0x40, 0x73, 0x75, 0x9e, 0x1c, 0x9e, 0x6c,
-	0x21, 0x81, 0xe5, 0x35, 0x58, 0x2a, 0xec, 0x3d, 0x34, 0x0f, 0xf5, 0x7d, 0x7c, 0xc4, 0x67, 0x02,
-	0xf9, 0x44, 0x8b, 0x30, 0x7e, 0x60, 0xfb, 0x7d, 0x31, 0xfe, 0x2c, 0xf1, 0x66, 0xed, 0x75, 0xc3,
-	0xbc, 0x0c, 0xd3, 0x6b, 0x76, 0xcf, 0xde, 0xf6, 0x7c, 0x2f, 0xf1, 0x70, 0x4c, 0x70, 0x6d, 0xd7,
-	0xa5, 0xac, 0xb1, 0x69, 0x91, 0x4f, 0xc2, 0x3e, 0xdc, 0x28, 0xec, 0xb5, 0x6a, 0x14, 0x44, 0xbf,
-	0xcd, 0xff, 0x6a, 0xc0, 0xd9, 0x35, 0xdc, 0xdb, 0xdb, 0xd8, 0x2a, 0x99, 0x8f, 0xcb, 0x30, 0xd9,
-	0x0d, 0x03, 0x2f, 0x09, 0xa3, 0x98, 0xd3, 0x92, 0x69, 0x42, 0xb0, 0x97, 0x32, 0x6c, 0xfa, 0x4d,
-	0x60, 0xfd, 0x18, 0x47, 0x9c, 0xe5, 0xd1, 0xef, 0x74, 0x89, 0x93, 0xc5, 0xcf, 0xe7, 0x9f, 0x02,
-	0x41, 0xab, 0xd0, 0x8c, 0x65, 0x6f, 0x8e, 0x0f, 0xdf, 0x9b, 0x29, 0x96, 0x36, 0xf5, 0x27, 0x32,
-	0x7c, 0xe0, 0x3f, 0x1b, 0x80, 0x58, 0x1b, 0x3f, 0xf3, 0x96, 0x6d, 0xe4, 0x5b, 0x56, 0xb8, 0x4b,
-	0xdd, 0x09, 0x1d, 0xdb, 0xcf, 0x32, 0x8c, 0x21, 0x9b, 0xf7, 0x3b, 0x64, 0x08, 0xbd, 0xc0, 0xc5,
-	0x51, 0xf9, 0x10, 0x1e, 0x5b, 0xac, 0xa9, 0x62, 0x25, 0xda, 0x70, 0x8d, 0x9d, 0x64, 0xb8, 0xcc,
-	0xdf, 0x22, 0x43, 0x42, 0xeb, 0xfc, 0x58, 0x6b, 0xba, 0x91, 0xaf, 0xe9, 0x49, 0xba, 0xdf, 0x7c,
-	0x1d, 0x66, 0xd7, 0x7c, 0x0f, 0x07, 0xc9, 0x66, 0x67, 0x2d, 0x0c, 0x76, 0xbc, 0x5d, 0x74, 0x01,
-	0x66, 0x89, 0x8c, 0x1a, 0xf6, 0x93, 0x2d, 0xec, 0x84, 0x01, 0x95, 0x41, 0x88, 0xec, 0x97, 0x81,
-	0x9a, 0x3d, 0x40, 0x6b, 0x61, 0xb7, 0x17, 0x06, 0x38, 0x48, 0xd6, 0xc2, 0xc0, 0x65, 0x62, 0x21,
-	0x82, 0xb1, 0x84, 0xb4, 0x84, 0xcb, 0x40, 0xe4, 0x9b, 0xb4, 0x2f, 0x4e, 0xec, 0xa4, 0x1f, 0x8b,
-	0xf6, 0xb1, 0x14, 0x11, 0x32, 0xba, 0x38, 0x8e, 0xed, 0x5d, 0x21, 0x46, 0x88, 0x24, 0xe1, 0x05,
-	0x38, 0x8a, 0xc2, 0x88, 0xcf, 0x3b, 0x96, 0x30, 0x7f, 0xd3, 0x80, 0x39, 0xf9, 0xcb, 0x2d, 0x46,
-	0x63, 0xb4, 0xbb, 0xdf, 0x06, 0x80, 0x23, 0x9a, 0x12, 0x53, 0x6e, 0x32, 0xf5, 0xea, 0x85, 0xc2,
-	0xcd, 0x22, 0xd7, 0x72, 0x4b, 0xc1, 0x34, 0xbf, 0x6f, 0xc0, 0xa9, 0x4c, 0x4d, 0xef, 0x78, 0x71,
-	0x82, 0xde, 0xcd, 0xd5, 0x76, 0x65, 0xb8, 0xda, 0x12, 0xec, 0x4c, 0x5d, 0xdf, 0x80, 0x71, 0x2f,
-	0xc1, 0x5d, 0x51, 0xcd, 0x67, 0x2b, 0xab, 0xc9, 0xea, 0x60, 0x31, 0x0c, 0xf3, 0x0f, 0x6a, 0xd0,
-	0x64, 0xa3, 0x7d, 0xd7, 0xee, 0x8d, 0x5c, 0x80, 0x18, 0xa3, 0x94, 0x58, 0xad, 0x9e, 0x2f, 0xae,
-	0x15, 0xff, 0xf5, 0x4a, 0xdb, 0x4e, 0x6c, 0xb6, 0x9b, 0x52, 0x24, 0x74, 0x17, 0x60, 0xdb, 0x0b,
-	0xec, 0xe8, 0x88, 0x64, 0xb4, 0xea, 0x94, 0xc4, 0x4b, 0xd5, 0x24, 0x6e, 0xc8, 0xf2, 0x8c, 0x90,
-	0x42, 0x60, 0xf9, 0x6b, 0xd0, 0x94, 0x19, 0xc7, 0xd9, 0x71, 0x96, 0xdf, 0x86, 0xb9, 0x0c, 0xdd,
-	0x41, 0xe8, 0xd3, 0xea, 0x86, 0xf5, 0x8b, 0x84, 0x07, 0x88, 0x1a, 0xae, 0x07, 0x07, 0x9c, 0x07,
-	0xfc, 0x71, 0x58, 0xf4, 0x0b, 0x96, 0x23, 0xef, 0xf4, 0xe1, 0x97, 0x6f, 0x21, 0x15, 0xc2, 0x2d,
-	0xc2, 0x1e, 0x99, 0x7e, 0xb6, 0x4f, 0x6b, 0x34, 0x69, 0xc9, 0xb4, 0xf9, 0xeb, 0x06, 0x2c, 0xca,
-	0x0a, 0xdd, 0xc6, 0x47, 0x5b, 0xd8, 0xc7, 0x4e, 0x12, 0x46, 0x8f, 0xb9, 0x4a, 0xbc, 0xcf, 0x6a,
-	0x69, 0x9f, 0xa9, 0x95, 0xac, 0x67, 0x2a, 0xf9, 0x6d, 0x03, 0x66, 0x64, 0x25, 0x47, 0xbe, 0x5c,
-	0xbe, 0xaa, 0x2f, 0x97, 0xa7, 0x2a, 0x67, 0x95, 0x58, 0x28, 0x7f, 0xdf, 0x80, 0x33, 0x12, 0x48,
-	0xb4, 0x53, 0x96, 0xe0, 0xe3, 0x79, 0x16, 0x9a, 0x81, 0x54, 0x0e, 0xd8, 0xc4, 0x48, 0x01, 0x52,
-	0x1b, 0xac, 0x29, 0xda, 0xe0, 0x3c, 0xd4, 0xfb, 0x9e, 0xcb, 0xb9, 0x1d, 0xf9, 0x24, 0x6a, 0x86,
-	0xb0, 0x56, 0x7c, 0x48, 0xf6, 0xb8, 0x30, 0x10, 0x6a, 0x46, 0x06, 0x8c, 0x5e, 0x80, 0xf9, 0xfd,
-	0xfe, 0x36, 0xf6, 0x71, 0xc2, 0x2a, 0x71, 0x1b, 0x33, 0x35, 0xaa, 0x69, 0xe5, 0xe0, 0xe6, 0x3f,
-	0xa7, 0xfc, 0x87, 0xd7, 0xbb, 0x13, 0x85, 0x64, 0x58, 0x08, 0x8d, 0xc7, 0x3b, 0xdc, 0xc3, 0x74,
-	0xf1, 0x6d, 0x7c, 0x74, 0x3f, 0x24, 0x9a, 0x2f, 0xef, 0x62, 0x6d, 0x46, 0x8c, 0x65, 0x66, 0xc4,
-	0x1f, 0x1a, 0xb0, 0x24, 0x9b, 0xa1, 0x6d, 0xa7, 0x5f, 0xc0, 0x86, 0x9c, 0x87, 0x29, 0x17, 0xef,
-	0xd8, 0x7d, 0x3f, 0x91, 0x8a, 0xf1, 0xb8, 0xa5, 0x82, 0x2a, 0x9b, 0xfa, 0x3f, 0x1a, 0x94, 0x25,
-	0x27, 0x36, 0x99, 0xd1, 0x85, 0x96, 0x84, 0x45, 0x18, 0xf7, 0xba, 0x64, 0xaf, 0xe4, 0xdc, 0x8a,
-	0x26, 0xc8, 0x1e, 0xea, 0x84, 0xdd, 0xae, 0x1d, 0xb8, 0x94, 0x5d, 0x36, 0x2d, 0x91, 0x24, 0x34,
-	0xec, 0x68, 0x37, 0x6e, 0x8d, 0x31, 0x99, 0x98, 0x7c, 0x13, 0xa1, 0xee, 0x30, 0x8c, 0xf6, 0xbd,
-	0x60, 0xb7, 0xed, 0x45, 0x7c, 0xf6, 0x28, 0x10, 0xf4, 0x35, 0x18, 0xef, 0x85, 0x51, 0x12, 0xb7,
-	0x26, 0x68, 0xc3, 0x9f, 0x29, 0x59, 0x24, 0xac, 0x96, 0x9d, 0x30, 0x4a, 0x2c, 0x56, 0x1e, 0x5d,
-	0x85, 0x06, 0x0e, 0x0e, 0x36, 0xa2, 0xb0, 0xdb, 0x3a, 0x55, 0x8e, 0xba, 0xce, 0x8a, 0xb0, 0x31,
-	0xb4, 0x04, 0x06, 0x7a, 0x11, 0xea, 0x38, 0x38, 0x68, 0x35, 0x28, 0xe2, 0x72, 0x09, 0xe2, 0x87,
-	0x76, 0x64, 0x91, 0x62, 0x44, 0xf2, 0x11, 0x4b, 0x23, 0xe6, 0x0a, 0x4a, 0xe1, 0x78, 0x5b, 0xbc,
-	0x90, 0x85, 0x3f, 0xe9, 0x7b, 0x11, 0xee, 0xe2, 0x20, 0x89, 0xad, 0x14, 0x15, 0xad, 0x09, 0xb5,
-	0xf3, 0x6e, 0xd8, 0x0f, 0x92, 0xb8, 0xd5, 0xa4, 0xbf, 0x2f, 0x34, 0x29, 0x7d, 0x98, 0x96, 0xb3,
-	0x34, 0x24, 0xb4, 0x01, 0x33, 0x2c, 0xdd, 0xa6, 0x26, 0x9d, 0xb8, 0xb5, 0x44, 0xa9, 0x9c, 0x2f,
-	0xa7, 0xc2, 0x0a, 0x5a, 0x3a, 0x1a, 0xba, 0x0e, 0x33, 0xbe, 0x77, 0x80, 0x03, 0x1c, 0xc7, 0x9d,
-	0x28, 0xdc, 0xc6, 0x2d, 0xa0, 0x0d, 0x3b, 0x53, 0x6c, 0xf7, 0x09, 0xb7, 0xb1, 0xa5, 0x97, 0x47,
-	0xab, 0x30, 0x4b, 0x64, 0x43, 0x2f, 0xa5, 0x30, 0x35, 0x88, 0x42, 0x06, 0x01, 0x5d, 0x85, 0xa6,
-	0xef, 0xed, 0x60, 0xe7, 0xc8, 0xf1, 0x71, 0x6b, 0x9a, 0x62, 0x17, 0xce, 0xfc, 0x3b, 0xa2, 0x90,
-	0x95, 0x96, 0x47, 0x57, 0xe0, 0x74, 0x82, 0xa3, 0xae, 0x17, 0xd8, 0x64, 0x42, 0xdf, 0x65, 0x72,
-	0x1c, 0xb5, 0x79, 0xcd, 0xd0, 0x59, 0x56, 0x92, 0x8b, 0xde, 0x84, 0x56, 0x41, 0x4e, 0xe8, 0x7b,
-	0xce, 0x51, 0x6b, 0x91, 0x62, 0x96, 0xe6, 0x13, 0xde, 0x49, 0x17, 0x41, 0xa7, 0xef, 0xfb, 0x1c,
-	0x65, 0x96, 0xf1, 0xce, 0x0c, 0x18, 0xdd, 0xa5, 0xc6, 0x9c, 0x7e, 0xe4, 0x25, 0x47, 0x64, 0xfa,
-	0xe2, 0x87, 0x49, 0x6b, 0xae, 0x52, 0xba, 0x57, 0x8b, 0x5a, 0x59, 0x5c, 0xb2, 0x14, 0xe3, 0xc4,
-	0xf5, 0x82, 0xd6, 0x3c, 0x5d, 0xc5, 0x2c, 0x41, 0xcd, 0x39, 0xe4, 0xe3, 0x3d, 0xc2, 0x88, 0x16,
-	0x68, 0x4e, 0x0a, 0x20, 0xac, 0x3f, 0x49, 0x8e, 0x5a, 0x88, 0xc2, 0xc9, 0xa7, 0xd9, 0x86, 0x59,
-	0xb9, 0x96, 0x36, 0xbb, 0x5c, 0xec, 0xa5, 0xfb, 0x07, 0x57, 0xda, 0x58, 0x82, 0xd2, 0xf5, 0xbe,
-	0x89, 0x6f, 0x1c, 0x25, 0x98, 0x49, 0xd0, 0x75, 0x2b, 0x05, 0x98, 0x7f, 0x85, 0xed, 0x9a, 0xe9,
-	0x92, 0x2c, 0x64, 0x1e, 0xcb, 0x30, 0xb9, 0x17, 0xc6, 0x09, 0xc9, 0xa7, 0x24, 0xc6, 0x2d, 0x99,
-	0x46, 0xcf, 0xc1, 0x8c, 0xa3, 0x12, 0xe0, 0xac, 0x4b, 0x07, 0x12, 0x0a, 0xd4, 0xde, 0xec, 0x84,
-	0x3e, 0xdf, 0xa1, 0x64, 0x9a, 0x08, 0xf8, 0x84, 0xda, 0x66, 0x87, 0xb3, 0x14, 0x9e, 0x22, 0xfc,
-	0x3b, 0x6d, 0x22, 0x11, 0x41, 0x31, 0x5a, 0x83, 0xc6, 0xa1, 0xed, 0x25, 0x5e, 0xb0, 0xcb, 0x79,
-	0xf5, 0x97, 0x2b, 0x79, 0x0c, 0x45, 0x7a, 0xc0, 0x10, 0x2c, 0x81, 0x49, 0x88, 0x44, 0xfd, 0x20,
-	0x20, 0x44, 0x6a, 0xc3, 0x12, 0xb1, 0x18, 0x82, 0x25, 0x30, 0xd1, 0x1d, 0x00, 0x31, 0xb3, 0xb0,
-	0xcb, 0x2d, 0xc1, 0x2f, 0x0e, 0xa6, 0x73, 0x5f, 0xe2, 0x58, 0x0a, 0xbe, 0x69, 0xd3, 0x9d, 0x2a,
-	0xff, 0x3f, 0x74, 0x8b, 0xcc, 0x0a, 0x3b, 0x4a, 0xb0, 0xbb, 0x9a, 0xf0, 0x26, 0xbf, 0x30, 0x9c,
-	0x10, 0x73, 0xdf, 0xeb, 0x12, 0x55, 0x4d, 0x20, 0x9b, 0xbf, 0x5b, 0x83, 0x56, 0x59, 0x5d, 0xc8,
-	0xf0, 0xe0, 0x87, 0x5e, 0xb2, 0x46, 0xb6, 0x1e, 0xa6, 0xaf, 0xc9, 0x34, 0xd5, 0xbf, 0xbc, 0x5d,
-	0x21, 0x17, 0x8e, 0x5b, 0x3c, 0x45, 0xe0, 0x11, 0xb6, 0x63, 0x6e, 0xdd, 0x6f, 0x5a, 0x3c, 0xa5,
-	0xea, 0x65, 0x63, 0xba, 0x5e, 0xa6, 0x35, 0x66, 0xfc, 0x11, 0x1a, 0x83, 0xde, 0x05, 0xd8, 0xf1,
-	0x02, 0x2f, 0xde, 0xa3, 0xa4, 0x26, 0x8e, 0x4d, 0x4a, 0xc1, 0xa6, 0x26, 0x69, 0xb9, 0x90, 0xda,
-	0xd4, 0x16, 0xd6, 0xb4, 0x54, 0x90, 0xb9, 0x99, 0x1d, 0x1d, 0x3e, 0xa5, 0x94, 0x2e, 0x30, 0xca,
-	0xba, 0xa0, 0xa6, 0x75, 0x81, 0xf9, 0xdb, 0x35, 0xa2, 0x84, 0x2a, 0xb4, 0xfa, 0x71, 0xe1, 0x8a,
-	0x7b, 0x9d, 0xf0, 0x08, 0x3b, 0xc1, 0x7c, 0x86, 0x9a, 0x43, 0xcc, 0x50, 0x86, 0x80, 0xde, 0x81,
-	0xa6, 0x6f, 0xc7, 0x54, 0x65, 0xc3, 0x7c, 0x5e, 0x0e, 0x83, 0x9d, 0x22, 0x11, 0x3e, 0x42, 0x78,
-	0xbb, 0x38, 0x98, 0x61, 0x09, 0x64, 0xc2, 0x74, 0x84, 0xe9, 0x08, 0xac, 0x91, 0xcd, 0x8b, 0x8e,
-	0xdf, 0xb8, 0xa5, 0xc1, 0x52, 0x21, 0x63, 0x22, 0x23, 0x64, 0xd0, 0x0f, 0xd9, 0xb9, 0x22, 0x99,
-	0xed, 0xfa, 0xc9, 0x7c, 0xd7, 0x3f, 0x07, 0xb3, 0x6d, 0x1b, 0x77, 0xc3, 0x60, 0x3d, 0x70, 0x7b,
-	0xa1, 0x17, 0x50, 0xfe, 0x44, 0xd9, 0x0c, 0x9b, 0xa6, 0xf4, 0xdb, 0xfc, 0x3a, 0x2c, 0xb5, 0xc3,
-	0xc3, 0xe0, 0xd0, 0x8e, 0xdc, 0xd5, 0xce, 0xa6, 0x22, 0xb1, 0x5e, 0x17, 0xa2, 0x18, 0x3b, 0x08,
-	0x29, 0x5c, 0xe8, 0x0a, 0x26, 0xdb, 0x63, 0x37, 0x3c, 0x1f, 0x0b, 0x11, 0xfe, 0x3f, 0x19, 0x1a,
-	0xe9, 0xb4, 0x80, 0xb4, 0x84, 0x19, 0x8a, 0x25, 0x6c, 0x0d, 0x26, 0x77, 0x3c, 0xec, 0xbb, 0x16,
-	0xde, 0xe1, 0x03, 0xf7, 0x7c, 0xb9, 0x01, 0x7c, 0x83, 0x94, 0x14, 0xaa, 0x94, 0x25, 0x11, 0xd1,
-	0x07, 0x30, 0x2f, 0xc4, 0x8c, 0x0d, 0x41, 0xac, 0x5e, 0xce, 0xa7, 0x2c, 0xb5, 0xac, 0x24, 0x97,
-	0x23, 0x41, 0xea, 0xdb, 0x25, 0xcb, 0x7b, 0x8c, 0xf5, 0x1b, 0xf9, 0x36, 0x7f, 0x0a, 0x9e, 0xc8,
-	0x35, 0x8e, 0x8b, 0xc8, 0x8f, 0xda, 0x73, 0x59, 0x81, 0xb6, 0x96, 0x13, 0x68, 0xcd, 0x9f, 0x82,
-	0xc5, 0xf5, 0x6e, 0x2f, 0x39, 0x6a, 0x7b, 0x51, 0xd6, 0xd2, 0xdf, 0xc5, 0xae, 0xd7, 0xef, 0x8a,
-	0x55, 0xc5, 0x52, 0xe8, 0x0e, 0xdb, 0xc9, 0xee, 0x78, 0x5d, 0x4f, 0x9c, 0x2f, 0x54, 0x2a, 0x74,
-	0x2b, 0xa2, 0x0f, 0x56, 0xde, 0xef, 0xdb, 0x41, 0xe2, 0x25, 0x47, 0x56, 0x4a, 0xc0, 0xfc, 0xbe,
-	0x01, 0x73, 0x62, 0x52, 0xad, 0xba, 0x6e, 0x84, 0xe3, 0x18, 0xcd, 0x42, 0xcd, 0xeb, 0xf1, 0xbf,
-	0xd6, 0xbc, 0x9e, 0xd8, 0xf7, 0xe8, 0xea, 0x64, 0x4c, 0x4e, 0xa6, 0x49, 0x5e, 0x10, 0xba, 0xec,
-	0xf4, 0x85, 0xef, 0x68, 0x22, 0x8d, 0x56, 0xa1, 0xc9, 0xce, 0x34, 0xd2, 0x89, 0x30, 0xd4, 0x49,
-	0x48, 0x8a, 0x65, 0x5a, 0x30, 0x2d, 0x6a, 0x57, 0xba, 0x2d, 0x93, 0x29, 0x98, 0x6e, 0xc9, 0xf4,
-	0x5b, 0xdb, 0x68, 0xeb, 0xfa, 0x46, 0x6b, 0xfe, 0xc8, 0x80, 0x59, 0x41, 0x74, 0xab, 0xbf, 0x1d,
-	0xe3, 0x84, 0xd4, 0xd4, 0x66, 0x8d, 0xc7, 0x62, 0xa8, 0x9f, 0x2d, 0x16, 0xa1, 0xb5, 0x9e, 0xb2,
-	0x52, 0x2c, 0xf4, 0x3e, 0x2c, 0x04, 0x61, 0x62, 0x11, 0x26, 0xb1, 0x2a, 0x49, 0xd5, 0x86, 0x27,
-	0x95, 0xc7, 0x46, 0x57, 0x84, 0x22, 0x51, 0x2f, 0x97, 0x87, 0xd5, 0xde, 0xe1, 0x7a, 0x84, 0xf9,
-	0x5d, 0x03, 0x9a, 0x02, 0x3e, 0x6a, 0xe3, 0xde, 0x5b, 0xd0, 0x88, 0x69, 0x9f, 0x89, 0xc6, 0x99,
-	0x55, 0xb5, 0x62, 0xdd, 0x6b, 0x09, 0x14, 0x6a, 0x9d, 0x90, 0x35, 0xfb, 0x5c, 0xac, 0x13, 0xf2,
-	0xef, 0x82, 0xb5, 0xfd, 0x03, 0x5a, 0x25, 0x45, 0xa5, 0x22, 0x0b, 0xaf, 0x17, 0xe1, 0x1d, 0xef,
-	0xa1, 0x58, 0x78, 0x2c, 0x85, 0xde, 0x85, 0x69, 0x47, 0xda, 0x36, 0xe4, 0x8c, 0xbe, 0x50, 0x69,
-	0x03, 0x91, 0x76, 0x2b, 0x4b, 0xc3, 0xd5, 0x6d, 0xe4, 0xf5, 0x41, 0x36, 0xf2, 0x94, 0x8a, 0x62,
-	0x74, 0x8e, 0x60, 0x82, 0x69, 0x74, 0x65, 0x8a, 0x6e, 0xde, 0x2c, 0x87, 0xae, 0x41, 0x93, 0x7e,
-	0x50, 0x1d, 0xb3, 0x5e, 0xee, 0x43, 0xc0, 0x08, 0x8b, 0x7f, 0x4a, 0x14, 0xf3, 0x87, 0x35, 0xb2,
-	0x1e, 0xd3, 0x3c, 0x8d, 0xd5, 0x1b, 0xa3, 0x64, 0xf5, 0xb5, 0x47, 0x67, 0xf5, 0x16, 0xcc, 0x39,
-	0x8a, 0xb9, 0x2e, 0xed, 0xe9, 0x8b, 0x95, 0x43, 0xa6, 0x58, 0xf6, 0xac, 0x2c, 0x01, 0xb4, 0x09,
-	0xd3, 0x6c, 0x04, 0x38, 0x41, 0x76, 0x68, 0xf0, 0xa5, 0xf2, 0xa1, 0x53, 0xa9, 0x69, 0xa8, 0xe6,
-	0xf7, 0x26, 0x60, 0x7c, 0xfd, 0x00, 0x07, 0xc9, 0x88, 0x57, 0xe8, 0x6d, 0x98, 0xf5, 0x82, 0x83,
-	0xd0, 0x3f, 0xc0, 0x2e, 0xcb, 0x3f, 0x0e, 0xeb, 0xcd, 0xa0, 0x9e, 0x40, 0xba, 0xfd, 0x1a, 0x4c,
-	0xb0, 0x71, 0xe0, 0xa2, 0x6d, 0xa1, 0x2d, 0x80, 0xb6, 0x9b, 0x4f, 0x2f, 0x5e, 0x1c, 0x59, 0x30,
-	0xbb, 0xe3, 0x45, 0x71, 0x42, 0x24, 0xd3, 0x38, 0xb1, 0xbb, 0xbd, 0x13, 0x08, 0xb4, 0x19, 0x0a,
-	0xa8, 0x03, 0x33, 0x44, 0xa0, 0x4b, 0x49, 0x36, 0x8e, 0x4d, 0x52, 0x27, 0x40, 0xd6, 0x95, 0x43,
-	0x05, 0xbf, 0x49, 0xba, 0xdb, 0xb0, 0x84, 0x3c, 0xb0, 0x69, 0x2a, 0x07, 0x36, 0x77, 0xa1, 0x89,
-	0x49, 0x33, 0x09, 0x2e, 0xb7, 0x44, 0x5c, 0x1a, 0xee, 0xbf, 0x77, 0x3d, 0x27, 0x0a, 0x99, 0xac,
-	0x2f, 0x29, 0xd0, 0x7e, 0xc5, 0x91, 0x87, 0x63, 0x6e, 0x93, 0xa8, 0xe8, 0x57, 0x5a, 0xcc, 0xe2,
-	0xc5, 0xc9, 0x10, 0xda, 0x54, 0x0c, 0xa4, 0xe6, 0x88, 0xa6, 0xc5, 0x53, 0xe8, 0x6d, 0x68, 0x44,
-	0xd8, 0xa7, 0x7a, 0xdb, 0xcc, 0xf0, 0x13, 0x44, 0xe0, 0xa0, 0x15, 0x40, 0x11, 0x26, 0xfb, 0x8d,
-	0x17, 0xec, 0xca, 0x13, 0x12, 0x6e, 0x3a, 0x28, 0xc8, 0x41, 0x2f, 0xc2, 0x82, 0x84, 0x6e, 0x06,
-	0x71, 0x62, 0x13, 0x05, 0x7f, 0x8e, 0x16, 0xcf, 0x67, 0x98, 0xdf, 0x22, 0x5b, 0x18, 0x69, 0xcc,
-	0xc8, 0x37, 0x89, 0x4b, 0xfa, 0x26, 0x71, 0xa6, 0xb4, 0x1b, 0xc5, 0x06, 0xf1, 0x1d, 0x03, 0xa6,
-	0x94, 0x7e, 0x4d, 0x67, 0x80, 0xa1, 0xce, 0x80, 0x9f, 0x84, 0x79, 0x32, 0x51, 0xde, 0xdb, 0x8e,
-	0x71, 0x74, 0x80, 0x5d, 0x3a, 0xe8, 0xb5, 0x93, 0x0d, 0x7a, 0x8e, 0x10, 0x33, 0x95, 0x08, 0x45,
-	0xa6, 0xc9, 0x55, 0x1c, 0xf3, 0xba, 0xa8, 0x97, 0x34, 0xa4, 0x3b, 0x72, 0x1c, 0xb8, 0x21, 0x5d,
-	0x02, 0xc8, 0x0c, 0x25, 0x32, 0x9b, 0x30, 0xa4, 0x93, 0x6f, 0xf3, 0x02, 0xc0, 0xfa, 0x43, 0xec,
-	0xac, 0xb2, 0xf9, 0xa0, 0x18, 0x41, 0x0d, 0xcd, 0x08, 0x6a, 0xfe, 0x82, 0x01, 0xb3, 0x1b, 0x6b,
-	0x59, 0xaf, 0x1c, 0x26, 0xa4, 0x3d, 0x78, 0x70, 0x4f, 0x58, 0x5a, 0x14, 0x08, 0x9a, 0x87, 0xba,
-	0xdf, 0x0f, 0xb8, 0x48, 0x46, 0x3e, 0x95, 0xf3, 0xd9, 0x7a, 0xe9, 0xf9, 0x6c, 0xc6, 0x05, 0x8e,
-	0xb4, 0xfb, 0xf0, 0xd0, 0x73, 0x99, 0xc7, 0x49, 0xd3, 0x62, 0x09, 0xf3, 0xf7, 0x6a, 0xb0, 0xbc,
-	0xe1, 0xe3, 0x87, 0xc7, 0xf4, 0x90, 0x29, 0x3b, 0x20, 0x3e, 0xde, 0x56, 0x3c, 0xf0, 0xf8, 0x3d,
-	0xdb, 0x86, 0x0f, 0xa0, 0xc1, 0xec, 0xd3, 0xc2, 0x6f, 0xe6, 0x6a, 0x11, 0xf1, 0xf2, 0xf6, 0xac,
-	0xbc, 0xc7, 0xb0, 0xd9, 0xc1, 0x9c, 0xa0, 0xb5, 0xfc, 0x26, 0x4c, 0xab, 0x19, 0xc7, 0x72, 0x05,
-	0xf9, 0x3b, 0x35, 0x98, 0x27, 0x3f, 0x7c, 0xa4, 0x6e, 0xdb, 0xc8, 0x77, 0xdb, 0x23, 0xbb, 0x2e,
-	0x64, 0xfb, 0xee, 0x76, 0xb6, 0xef, 0x5e, 0x29, 0xeb, 0xbb, 0xc7, 0xdc, 0x63, 0x1f, 0xc1, 0xa9,
-	0x0d, 0x3f, 0x74, 0xf6, 0x33, 0xfe, 0x08, 0x44, 0xb9, 0xb3, 0x13, 0x3b, 0xd6, 0x9c, 0xd3, 0x54,
-	0x90, 0x52, 0xe2, 0x83, 0x0f, 0x36, 0xdb, 0x9c, 0xb0, 0x0a, 0x32, 0x7f, 0xce, 0x80, 0xa7, 0x6e,
-	0xae, 0xad, 0xa7, 0x83, 0x9f, 0x73, 0x31, 0x24, 0xf2, 0xa8, 0xab, 0xfc, 0x80, 0xa7, 0x1e, 0x83,
-	0xcb, 0x69, 0x08, 0xa7, 0x6e, 0x7a, 0x89, 0x85, 0x7b, 0x61, 0x76, 0xb1, 0x13, 0x0e, 0x1d, 0x7b,
-	0x49, 0x18, 0x89, 0x0e, 0x53, 0x20, 0x8c, 0xe4, 0x81, 0x47, 0xcf, 0xdd, 0x58, 0x55, 0x64, 0x9a,
-	0x54, 0xc6, 0xf5, 0x22, 0x2a, 0xff, 0x1c, 0xf1, 0x95, 0x9f, 0x02, 0xcc, 0x5f, 0x35, 0xe0, 0xe9,
-	0x9b, 0x7e, 0x3f, 0x4e, 0x70, 0xb4, 0x13, 0x97, 0xac, 0xe7, 0xb3, 0xd0, 0xc4, 0x42, 0x68, 0x17,
-	0x7c, 0x4d, 0x02, 0x0a, 0x3d, 0x71, 0xaa, 0x5c, 0x3e, 0x56, 0x00, 0x49, 0xe4, 0xac, 0x53, 0x62,
-	0x41, 0x8e, 0x89, 0x61, 0x49, 0x56, 0xf0, 0xf1, 0x55, 0xcb, 0xfc, 0x7d, 0x03, 0x66, 0x6e, 0xdd,
-	0xbf, 0xdf, 0xb9, 0x89, 0x13, 0xce, 0x8e, 0x8b, 0x0c, 0x2b, 0x6d, 0x45, 0xd3, 0xad, 0x12, 0x12,
-	0xfb, 0x89, 0xe7, 0xaf, 0x30, 0x4f, 0xe7, 0x95, 0xcd, 0x20, 0x79, 0x2f, 0xda, 0x4a, 0x22, 0x2f,
-	0xd8, 0xe5, 0xba, 0xb1, 0xd8, 0x0a, 0xea, 0xe9, 0x56, 0x40, 0xad, 0x9b, 0xce, 0x1e, 0x96, 0x4a,
-	0x3c, 0x4f, 0xa1, 0x77, 0x60, 0x6a, 0x2f, 0x49, 0x7a, 0xb7, 0xb0, 0xed, 0xe2, 0x48, 0xac, 0xc2,
-	0x73, 0x45, 0xab, 0x90, 0xd4, 0x9e, 0x15, 0xb3, 0x54, 0x14, 0xf3, 0x0a, 0x40, 0x9a, 0x35, 0xbc,
-	0xaa, 0x62, 0xfe, 0x63, 0x03, 0x1a, 0xcc, 0x6f, 0x31, 0x42, 0xaf, 0xc2, 0x18, 0x7e, 0x88, 0x1d,
-	0xbe, 0xf7, 0x17, 0xfe, 0x3e, 0xdd, 0xc8, 0x2c, 0x5a, 0x16, 0x5d, 0x85, 0x06, 0xa9, 0xc6, 0x4d,
-	0xe9, 0x84, 0xf9, 0x4c, 0x59, 0xad, 0x65, 0x9f, 0x5b, 0x02, 0x83, 0x5a, 0x2e, 0x9c, 0xde, 0x16,
-	0x59, 0xf1, 0x49, 0xd5, 0x9e, 0x70, 0x7f, 0xad, 0xc3, 0x0a, 0x71, 0x02, 0x29, 0x96, 0xf9, 0x06,
-	0x34, 0x6f, 0x85, 0x71, 0xb2, 0xea, 0x7b, 0x76, 0xde, 0xa2, 0x72, 0x16, 0x9a, 0xc2, 0x82, 0x12,
-	0x73, 0x7f, 0xbb, 0x14, 0x60, 0x5e, 0x83, 0x45, 0x82, 0xda, 0xb1, 0x93, 0x3d, 0x6d, 0xca, 0x15,
-	0x4d, 0x09, 0x21, 0x79, 0xd6, 0x52, 0xc9, 0xd3, 0xfc, 0x7e, 0x1d, 0x9e, 0xdc, 0xdc, 0x2a, 0xf7,
-	0x21, 0x35, 0x61, 0x9a, 0x6d, 0xd5, 0x9d, 0x30, 0x4a, 0x6c, 0x9f, 0xd3, 0xd3, 0x60, 0x84, 0x3b,
-	0x7a, 0x9f, 0x88, 0xe5, 0x4c, 0x3e, 0xc5, 0x96, 0x5e, 0x4f, 0xb7, 0xf4, 0x0b, 0x30, 0xeb, 0xc5,
-	0x4e, 0xec, 0x6d, 0x06, 0x64, 0x79, 0xa4, 0xeb, 0x28, 0x03, 0x55, 0x18, 0xd5, 0x78, 0xe9, 0xd6,
-	0x9f, 0xf1, 0x5a, 0x23, 0xd2, 0x48, 0x8f, 0xd6, 0x24, 0xa6, 0x47, 0x9a, 0x4d, 0x4b, 0x24, 0x89,
-	0x20, 0xe9, 0xec, 0xd9, 0xbd, 0xd5, 0x7e, 0xb2, 0xd7, 0xf6, 0x62, 0x27, 0x3c, 0xc0, 0xd1, 0x11,
-	0x95, 0xc6, 0x27, 0xad, 0x7c, 0x06, 0xba, 0x08, 0x73, 0x02, 0xb8, 0x85, 0x63, 0xca, 0xa2, 0xa6,
-	0x68, 0xd9, 0x2c, 0x58, 0x97, 0x03, 0xe0, 0x44, 0x72, 0xc0, 0x73, 0x30, 0xe3, 0x05, 0x5e, 0xe2,
-	0xd9, 0x49, 0x18, 0x51, 0x86, 0xcd, 0x24, 0x6e, 0x1d, 0x68, 0x7e, 0xb7, 0x0e, 0x0b, 0x74, 0x78,
-	0x7e, 0x3c, 0x28, 0x03, 0x07, 0x65, 0x23, 0x3f, 0x28, 0x27, 0x92, 0x32, 0x86, 0x1b, 0x99, 0x75,
-	0x68, 0x4a, 0x8f, 0x84, 0x02, 0xf9, 0xa0, 0xc4, 0xeb, 0xb3, 0x9b, 0x7a, 0x2a, 0x30, 0x7b, 0xf2,
-	0x4f, 0x43, 0x53, 0x1e, 0xef, 0xa2, 0x37, 0xa0, 0xd9, 0x0b, 0xe9, 0x99, 0x42, 0x24, 0x8e, 0xae,
-	0x9e, 0x2c, 0xe4, 0x44, 0x8c, 0xd7, 0x59, 0x69, 0x69, 0xf4, 0x1a, 0x34, 0x7a, 0x11, 0xde, 0x4a,
-	0xa8, 0x4f, 0xee, 0x40, 0x44, 0x51, 0xd6, 0xfc, 0x4b, 0x06, 0x00, 0x35, 0xee, 0x5a, 0x76, 0xb0,
-	0x8b, 0x47, 0x6c, 0x5d, 0xb8, 0x02, 0x63, 0x71, 0x0f, 0x3b, 0x55, 0x07, 0x32, 0xe9, 0xbf, 0xb7,
-	0x7a, 0xd8, 0xb1, 0x68, 0x79, 0xf3, 0xbf, 0x37, 0x60, 0x36, 0xcd, 0xd8, 0x4c, 0x70, 0xb7, 0xd0,
-	0xcb, 0xf1, 0x6d, 0xa8, 0x77, 0xed, 0x87, 0x5c, 0x37, 0xfb, 0x4a, 0x35, 0x75, 0x42, 0x64, 0xe5,
-	0xae, 0xfd, 0x90, 0xc9, 0x79, 0x04, 0x8f, 0xa2, 0x7b, 0x01, 0xb7, 0x97, 0x0e, 0x85, 0xee, 0x05,
-	0x02, 0xdd, 0x0b, 0xd0, 0x26, 0x34, 0xb8, 0x65, 0x9e, 0x3a, 0x7c, 0xe8, 0xba, 0x5b, 0x19, 0x89,
-	0x36, 0xc3, 0xe0, 0xd2, 0x26, 0xc7, 0x47, 0x7f, 0x12, 0x66, 0xf9, 0xa7, 0x85, 0x3f, 0xe9, 0xe3,
-	0x38, 0xe1, 0x7b, 0xe7, 0x95, 0xe1, 0x29, 0x72, 0x44, 0x46, 0x38, 0x43, 0x0d, 0xf5, 0x60, 0xb1,
-	0x6b, 0x3f, 0x64, 0x88, 0x0c, 0x64, 0xd9, 0x89, 0x17, 0x72, 0x9f, 0x93, 0xb7, 0x86, 0xeb, 0xb9,
-	0x1c, 0x3a, 0xfb, 0x57, 0x21, 0xe5, 0xe5, 0x1d, 0x98, 0x14, 0x9d, 0x5d, 0xb0, 0x36, 0xda, 0xea,
-	0x26, 0x7e, 0xfc, 0x13, 0x09, 0xc5, 0x6d, 0x90, 0xfc, 0x87, 0x8f, 0xca, 0x63, 0xfd, 0xcf, 0x37,
-	0x60, 0x5a, 0x1d, 0xba, 0xc7, 0xfa, 0xaf, 0x4f, 0xe0, 0x54, 0xc1, 0xa0, 0x3e, 0xd6, 0x5f, 0x1e,
-	0xc2, 0x99, 0xd2, 0x11, 0x7e, 0x9c, 0x3f, 0x26, 0xec, 0x47, 0x59, 0xe9, 0x23, 0xb7, 0xdf, 0x5c,
-	0xd6, 0xed, 0x37, 0xe7, 0xaa, 0x67, 0xba, 0x30, 0xe2, 0xdc, 0x51, 0xeb, 0x44, 0xd8, 0x12, 0x7a,
-	0x13, 0x26, 0x7c, 0x02, 0x11, 0xe7, 0x3d, 0xe6, 0xe0, 0x25, 0x63, 0x71, 0x0c, 0xf3, 0xbb, 0x06,
-	0x8c, 0x8d, 0xbc, 0x61, 0x6b, 0x7a, 0xc3, 0x5e, 0x2a, 0x25, 0xc4, 0xef, 0x3f, 0xae, 0x58, 0xf6,
-	0xe1, 0xfa, 0xc3, 0x04, 0x07, 0x64, 0xa3, 0x14, 0xed, 0x5c, 0x85, 0x53, 0x77, 0x42, 0xdb, 0xbd,
-	0x61, 0xfb, 0x76, 0xe0, 0xe0, 0x68, 0x33, 0xd8, 0x1d, 0x78, 0xa2, 0x57, 0xd3, 0x4f, 0xf4, 0xcc,
-	0x07, 0x80, 0x54, 0x12, 0xfc, 0x74, 0x7e, 0x15, 0x1a, 0x1e, 0x23, 0xc6, 0xfb, 0xeb, 0xf9, 0xe2,
-	0x6d, 0x38, 0xf7, 0x6f, 0x4b, 0xe0, 0x99, 0x2f, 0xc0, 0x62, 0xd1, 0x36, 0x5d, 0xa4, 0x13, 0x98,
-	0xd7, 0x61, 0x81, 0x96, 0x1d, 0x28, 0xff, 0x96, 0x28, 0xc1, 0xe6, 0x47, 0x30, 0x77, 0x2f, 0x73,
-	0xa1, 0xe3, 0x34, 0xb5, 0xa0, 0x2a, 0x16, 0x0e, 0x96, 0x3a, 0xb6, 0xae, 0xf6, 0xaf, 0x0d, 0x68,
-	0x4a, 0x05, 0x71, 0xc4, 0xdb, 0xeb, 0x6b, 0xda, 0xf6, 0x5a, 0xa8, 0xb2, 0xc8, 0x5f, 0xa7, 0xbb,
-	0x2b, 0xba, 0x2a, 0x2f, 0x07, 0x54, 0x28, 0x2b, 0x29, 0x22, 0xf3, 0x63, 0xe7, 0x28, 0xf4, 0x50,
-	0x4e, 0xe6, 0x7d, 0x2e, 0x87, 0x72, 0xf2, 0xef, 0x62, 0x1a, 0x5f, 0x52, 0x6a, 0x44, 0x57, 0xeb,
-	0x39, 0xea, 0xe9, 0x62, 0xfb, 0xde, 0x37, 0xb1, 0xbc, 0x8e, 0xa3, 0x40, 0xcc, 0xe7, 0x61, 0x2e,
-	0xd3, 0x3c, 0xa2, 0x56, 0xf6, 0xf6, 0xec, 0x58, 0xcc, 0x2b, 0x96, 0x30, 0x7f, 0xcf, 0x80, 0xb1,
-	0x7b, 0xa1, 0x3b, 0xea, 0x71, 0x7b, 0x59, 0x1b, 0xb7, 0xb3, 0x65, 0xf7, 0x72, 0x95, 0x21, 0xbb,
-	0x92, 0x19, 0xb2, 0x73, 0xa5, 0x38, 0xfa, 0x68, 0x5d, 0x85, 0x29, 0x7a, 0xc3, 0x97, 0x9f, 0xd5,
-	0x17, 0x09, 0x51, 0x2d, 0x68, 0xf0, 0x73, 0x69, 0xe1, 0x77, 0xc3, 0x93, 0xe6, 0xef, 0xd4, 0x60,
-	0x5a, 0xbd, 0x1f, 0x8c, 0xbe, 0x65, 0xc0, 0x4a, 0xc4, 0x7c, 0x3b, 0xdd, 0x76, 0x3f, 0xf2, 0x82,
-	0xdd, 0x2d, 0x67, 0x0f, 0xbb, 0x7d, 0xdf, 0x0b, 0x76, 0x37, 0x77, 0x83, 0x50, 0x82, 0x89, 0x7e,
-	0xdd, 0xa7, 0x16, 0xa5, 0x01, 0x57, 0x8f, 0xe5, 0x69, 0xd7, 0x31, 0xe9, 0xa2, 0xbf, 0x6c, 0xc0,
-	0x25, 0x76, 0xef, 0x76, 0xf8, 0xba, 0x54, 0xc8, 0x89, 0x1d, 0x41, 0x2a, 0x25, 0x72, 0x1f, 0x47,
-	0x5d, 0xeb, 0xb8, 0xff, 0x30, 0x7f, 0xa3, 0x06, 0x33, 0xdc, 0x6b, 0xfd, 0x04, 0xd7, 0x73, 0xbe,
-	0x0e, 0x0b, 0xbe, 0x1d, 0x27, 0xb7, 0xb0, 0x1d, 0x25, 0xdb, 0xd8, 0x66, 0xa7, 0x41, 0xf5, 0x63,
-	0x9f, 0x42, 0xe5, 0x89, 0xa0, 0x9f, 0x00, 0x44, 0x8f, 0xa6, 0x22, 0x3b, 0x88, 0x69, 0xbd, 0x28,
-	0xe9, 0xb1, 0x63, 0x93, 0x2e, 0xa0, 0xa2, 0x1c, 0xfb, 0x8d, 0x97, 0x1d, 0xfb, 0x4d, 0xe8, 0x1e,
-	0x5d, 0x1f, 0xc3, 0x7c, 0xce, 0xb5, 0xff, 0x36, 0x34, 0xe5, 0xf9, 0x29, 0x5f, 0x19, 0xd5, 0xf7,
-	0x50, 0xb2, 0x14, 0xac, 0x14, 0xdf, 0xfc, 0x5f, 0x86, 0xf6, 0x07, 0xd6, 0xbb, 0xef, 0xc0, 0xa4,
-	0x1d, 0xc7, 0xde, 0x6e, 0x80, 0x5d, 0x3e, 0x2f, 0x9f, 0x2b, 0x9b, 0x97, 0x1a, 0x5d, 0x89, 0x85,
-	0xde, 0x62, 0xa7, 0x63, 0x07, 0x42, 0xf0, 0x19, 0x0e, 0x9f, 0xe3, 0xa0, 0x77, 0xd9, 0xf9, 0xe2,
-	0xed, 0x20, 0x3c, 0x0c, 0x6e, 0x86, 0xa1, 0xf0, 0x80, 0x1c, 0x8e, 0x88, 0x8e, 0x5a, 0x72, 0x5d,
-	0xcb, 0x81, 0x53, 0x04, 0x51, 0xf7, 0xfe, 0x8a, 0xd1, 0x1d, 0x98, 0xe3, 0xf7, 0x15, 0x04, 0x8c,
-	0xb7, 0xbf, 0x50, 0x8c, 0xd1, 0xb1, 0xad, 0x2c, 0xaa, 0xf9, 0xb3, 0x06, 0x4c, 0x92, 0xbf, 0x8c,
-	0x9c, 0xf9, 0xaf, 0xe8, 0xcc, 0xbf, 0x55, 0xd6, 0x2f, 0x82, 0xef, 0x5f, 0x60, 0x63, 0xdc, 0x89,
-	0xc2, 0x87, 0x47, 0xdc, 0x58, 0x5f, 0xb4, 0xeb, 0x9b, 0x3f, 0x34, 0xd8, 0x9a, 0xb4, 0xa4, 0x23,
-	0xfa, 0x6d, 0x98, 0x74, 0xec, 0x9e, 0xed, 0xb0, 0xe0, 0x08, 0xa5, 0xba, 0x9b, 0x86, 0xb4, 0xb2,
-	0xc6, 0x31, 0x98, 0xda, 0x23, 0x09, 0x2c, 0xef, 0xc3, 0x8c, 0x96, 0xf5, 0x58, 0xe5, 0xe5, 0x6d,
-	0xc6, 0x92, 0xe5, 0x6d, 0x22, 0x0b, 0x16, 0x02, 0x25, 0x4d, 0x98, 0x96, 0x90, 0xb9, 0x9e, 0x1b,
-	0xc4, 0x74, 0x29, 0x87, 0xcb, 0xa3, 0x9b, 0x1f, 0xc3, 0x13, 0x1a, 0x6f, 0x4e, 0xbd, 0xf9, 0x0b,
-	0x9a, 0x46, 0x6f, 0x58, 0xe0, 0xc8, 0x4e, 0xc2, 0x48, 0x08, 0x87, 0x22, 0x4d, 0x18, 0x03, 0xad,
-	0x79, 0xcc, 0x2f, 0x4a, 0xf0, 0x94, 0xf9, 0x0f, 0xf9, 0xea, 0x54, 0x7f, 0x8b, 0x1e, 0xc0, 0x7c,
-	0xd7, 0x4e, 0x9c, 0xbd, 0xf5, 0x87, 0xbd, 0x88, 0xd9, 0x73, 0x44, 0x43, 0xbe, 0x32, 0x70, 0xf7,
-	0x48, 0x6b, 0x68, 0xe5, 0x88, 0xa0, 0xbb, 0x30, 0x45, 0x61, 0xd4, 0xd5, 0x23, 0xae, 0xda, 0x05,
-	0xca, 0x68, 0xaa, 0xf8, 0xe6, 0x9f, 0xaf, 0xb1, 0xe9, 0x4f, 0x25, 0x0d, 0x6a, 0xe3, 0x72, 0xd7,
-	0x36, 0xdb, 0x16, 0xef, 0x13, 0x91, 0x24, 0x32, 0x48, 0x2f, 0x0a, 0x0f, 0x3c, 0x97, 0x7a, 0x69,
-	0x32, 0xeb, 0xb9, 0x02, 0x41, 0xcf, 0xc1, 0x4c, 0x3f, 0x88, 0xd9, 0x76, 0x62, 0x6f, 0xf3, 0xfb,
-	0xbe, 0x93, 0x96, 0x0e, 0x44, 0xaf, 0xc0, 0x44, 0x62, 0xd3, 0x43, 0x83, 0xf1, 0xf2, 0x03, 0xe8,
-	0xfb, 0xa4, 0x84, 0xc5, 0x0b, 0xa2, 0x5b, 0xc2, 0xf1, 0x88, 0x31, 0x0e, 0xee, 0x17, 0x31, 0x1c,
-	0x93, 0xd1, 0x30, 0x49, 0x13, 0xf0, 0xc3, 0x04, 0x47, 0x81, 0xed, 0xcb, 0xd3, 0x28, 0x05, 0x62,
-	0xfe, 0xd5, 0x06, 0x40, 0x2a, 0x73, 0xa0, 0x5b, 0xb9, 0x45, 0xf5, 0x62, 0xb5, 0x94, 0x52, 0xb6,
-	0xa2, 0xd0, 0xfb, 0x30, 0x65, 0xfb, 0x7e, 0xe8, 0xd8, 0x09, 0xed, 0x99, 0x5a, 0xf5, 0x0a, 0xe5,
-	0xc4, 0x56, 0x53, 0x0c, 0x46, 0x4f, 0xa5, 0x91, 0xca, 0x77, 0x75, 0x45, 0xbe, 0x43, 0xab, 0xda,
-	0xe5, 0xd3, 0xb1, 0xf2, 0x6b, 0x34, 0xda, 0x96, 0xae, 0xde, 0x3b, 0x45, 0x6f, 0xab, 0xce, 0x80,
-	0xe3, 0xe5, 0x17, 0x5a, 0x14, 0x31, 0x4c, 0x77, 0x04, 0x9c, 0x73, 0x75, 0x6e, 0xcd, 0x07, 0xec,
-	0xf9, 0x32, 0x22, 0x19, 0xe6, 0x6e, 0x65, 0xf1, 0xd1, 0x35, 0xe6, 0x64, 0xb9, 0x19, 0xec, 0x84,
-	0xdc, 0x83, 0xc5, 0x2c, 0xed, 0xba, 0xa3, 0x38, 0xc1, 0x5d, 0x52, 0xd2, 0x92, 0x38, 0x44, 0xd7,
-	0xa5, 0xbe, 0xc6, 0x71, 0x6b, 0xb2, 0x5c, 0xd7, 0xd5, 0xaf, 0x51, 0x58, 0x1c, 0x23, 0x0d, 0x2c,
-	0x11, 0x6f, 0x06, 0x1f, 0xc4, 0x98, 0xde, 0xf0, 0x91, 0x81, 0x25, 0x18, 0x8c, 0xec, 0x46, 0x3c,
-	0x2d, 0x82, 0xb9, 0xb4, 0xa0, 0xfc, 0x47, 0x7a, 0xc0, 0x17, 0x2b, 0x8b, 0x4a, 0xb6, 0x64, 0x36,
-	0x69, 0xb9, 0xa7, 0xcb, 0xa0, 0x89, 0xce, 0xe5, 0x63, 0x86, 0xf3, 0x99, 0xf2, 0xee, 0xe5, 0x00,
-	0xe6, 0xb3, 0x93, 0xf4, 0xb1, 0xee, 0x15, 0x3f, 0x53, 0x87, 0x59, 0x7d, 0x94, 0xd1, 0x59, 0x68,
-	0x72, 0x22, 0xf2, 0x52, 0x7c, 0x0a, 0xa0, 0x01, 0x08, 0x68, 0x59, 0xe5, 0xf8, 0x59, 0x81, 0x10,
-	0x7e, 0xbe, 0x1d, 0x86, 0x89, 0xe4, 0x67, 0x3c, 0x45, 0x78, 0xd9, 0x3e, 0x8e, 0x02, 0xec, 0xeb,
-	0xf7, 0x29, 0x75, 0x20, 0xe1, 0x95, 0x61, 0x4c, 0xa7, 0x0b, 0x97, 0x13, 0x45, 0x12, 0xbd, 0x0e,
-	0x4f, 0x48, 0xff, 0x75, 0x8b, 0xd9, 0x2b, 0x04, 0x25, 0x26, 0x38, 0x96, 0x65, 0xa3, 0x0b, 0x30,
-	0xcb, 0xc5, 0x13, 0x81, 0xc0, 0xbc, 0xe5, 0x33, 0x50, 0x71, 0x93, 0x93, 0x8a, 0x0a, 0xa2, 0xe4,
-	0x64, 0x7a, 0x93, 0x53, 0x85, 0xa3, 0x8b, 0x30, 0xc7, 0x76, 0x30, 0x22, 0xef, 0xd3, 0xc6, 0x73,
-	0x4f, 0xad, 0x2c, 0x98, 0xcc, 0x76, 0x3b, 0x72, 0xf6, 0xbc, 0x04, 0x3b, 0x49, 0x3f, 0x62, 0x7e,
-	0x5b, 0x4d, 0x4b, 0x83, 0x99, 0x5b, 0x70, 0xaa, 0xc0, 0x9f, 0x91, 0x74, 0xb5, 0xdd, 0xf3, 0x44,
-	0x55, 0xf8, 0x29, 0x79, 0x0a, 0x21, 0x03, 0x45, 0x3d, 0x1e, 0x95, 0x18, 0x46, 0x29, 0xc0, 0xfc,
-	0xb7, 0x06, 0xcc, 0x15, 0x18, 0x46, 0x68, 0x3c, 0x1f, 0x23, 0x8d, 0xe7, 0xa3, 0x5f, 0x97, 0xad,
-	0x95, 0x5d, 0x97, 0xad, 0xe7, 0xaf, 0xcb, 0x8e, 0xa5, 0xd7, 0x65, 0xf5, 0x9a, 0x8e, 0xe7, 0x6a,
-	0x5a, 0x70, 0x9d, 0x76, 0xa2, 0xf8, 0x3a, 0xad, 0xd6, 0xa6, 0x46, 0xb6, 0x4d, 0x9f, 0x1a, 0x30,
-	0x9f, 0x3d, 0x82, 0x1c, 0xb9, 0x3b, 0xb2, 0xaa, 0x77, 0x17, 0x47, 0x78, 0xca, 0x1e, 0x82, 0xa6,
-	0x3a, 0xf8, 0x8d, 0x8c, 0x0e, 0xfe, 0xc2, 0x50, 0xf8, 0xba, 0x3e, 0xfe, 0x47, 0x06, 0x2c, 0x65,
-	0x8b, 0xac, 0xf9, 0xb6, 0xd7, 0x1d, 0x71, 0x4b, 0x57, 0xb5, 0x96, 0xbe, 0x34, 0x4c, 0x4d, 0x69,
-	0x35, 0x94, 0xe6, 0xde, 0xcc, 0x34, 0xf7, 0xd2, 0xf0, 0x44, 0xf4, 0x36, 0xff, 0x56, 0x0d, 0xce,
-	0x15, 0x96, 0x3b, 0x99, 0x8e, 0xcc, 0xbd, 0x34, 0xe9, 0x05, 0xca, 0x13, 0xea, 0xc7, 0x3a, 0x81,
-	0x2f, 0x98, 0x6e, 0xfc, 0x37, 0x0d, 0x38, 0x53, 0xd8, 0x5d, 0x23, 0xd7, 0xb7, 0xae, 0xeb, 0xfa,
-	0xd6, 0x97, 0x87, 0x1e, 0x60, 0xa1, 0x80, 0xfd, 0x52, 0xbd, 0xa4, 0xaa, 0x54, 0x36, 0x3e, 0x0f,
-	0x53, 0xb6, 0xe3, 0xe0, 0x38, 0xbe, 0x1b, 0xba, 0xf2, 0x82, 0xa5, 0x0a, 0x42, 0xef, 0xc1, 0x64,
-	0xcc, 0x19, 0x22, 0xef, 0xee, 0xaf, 0x0e, 0xd9, 0x18, 0x7b, 0x1b, 0xfb, 0xa9, 0x6f, 0xb8, 0x20,
-	0xa2, 0x5f, 0x54, 0xae, 0x9d, 0xfc, 0xa2, 0xf2, 0x39, 0x00, 0x26, 0x67, 0xdc, 0x4b, 0xf9, 0xa3,
-	0x02, 0x21, 0xdb, 0x49, 0x9c, 0x84, 0x91, 0xbd, 0x4b, 0x9a, 0x1b, 0x53, 0x07, 0x20, 0x11, 0x18,
-	0x20, 0x0b, 0x4f, 0x69, 0xd1, 0x2b, 0x3d, 0x13, 0x2a, 0x2d, 0x7a, 0x45, 0xfd, 0x2e, 0x00, 0x19,
-	0x0d, 0x2e, 0xad, 0x37, 0xca, 0x17, 0xec, 0xfd, 0xa3, 0x1e, 0x76, 0x0b, 0x8f, 0xae, 0x15, 0x02,
-	0xe6, 0x1f, 0xd5, 0xe0, 0xc9, 0x8a, 0x55, 0x59, 0x6c, 0xe8, 0xcc, 0x8e, 0x55, 0x2d, 0x3f, 0x56,
-	0x1f, 0x29, 0xd2, 0x3d, 0x3b, 0x31, 0x7d, 0xfb, 0x98, 0x0c, 0xa1, 0x54, 0xdc, 0xb7, 0x0a, 0xa4,
-	0xf0, 0x57, 0x87, 0x26, 0x5e, 0x28, 0x96, 0x7f, 0xb6, 0x4a, 0xf9, 0x9f, 0x80, 0x67, 0x0a, 0xab,
-	0x96, 0x75, 0x01, 0x73, 0x08, 0x50, 0xf1, 0xcd, 0x4b, 0x01, 0xda, 0x11, 0x42, 0x2d, 0x73, 0x84,
-	0xf0, 0xd7, 0x0c, 0x58, 0xcc, 0xd2, 0x1f, 0x39, 0x33, 0x78, 0x53, 0x67, 0x06, 0xcf, 0x0d, 0xd3,
-	0xff, 0x82, 0x0f, 0xfc, 0xad, 0x19, 0x38, 0x5d, 0xe2, 0x3d, 0xf4, 0x31, 0x2c, 0xec, 0x3a, 0x58,
-	0xf7, 0x57, 0xe4, 0x75, 0x2d, 0x74, 0xcf, 0xac, 0x74, 0x6e, 0xb4, 0xf2, 0xb4, 0xd0, 0x1e, 0x2c,
-	0xda, 0x87, 0x71, 0x2e, 0x14, 0x27, 0x1f, 0xd4, 0xcb, 0x85, 0x2a, 0xc5, 0x80, 0xd0, 0x9d, 0x56,
-	0x21, 0x45, 0xd4, 0xe6, 0x17, 0xba, 0x89, 0xf4, 0x52, 0xe1, 0xc2, 0x5a, 0xe4, 0x8c, 0x65, 0x49,
-	0x4c, 0xf4, 0x3e, 0x34, 0x77, 0x85, 0x8b, 0x60, 0x01, 0xd3, 0x4b, 0x3b, 0xa2, 0xda, 0xd1, 0xd1,
-	0x4a, 0xa9, 0xa0, 0xd7, 0xa0, 0x1e, 0xec, 0xc4, 0x55, 0xb1, 0xce, 0x32, 0x87, 0x5b, 0x16, 0x29,
-	0x8f, 0xae, 0x43, 0x3d, 0xda, 0x76, 0xb9, 0xba, 0x59, 0xc8, 0x71, 0xac, 0x1b, 0xed, 0x92, 0xbf,
-	0x13, 0x4c, 0xb4, 0x0e, 0xe3, 0xd4, 0x4d, 0x88, 0x33, 0xad, 0x42, 0x01, 0xa1, 0xc2, 0xb3, 0xcc,
-	0x62, 0xd8, 0xe8, 0x16, 0x4c, 0x38, 0x34, 0x7a, 0x17, 0x0f, 0x2d, 0xf1, 0x72, 0xa1, 0xbe, 0x59,
-	0x11, 0x93, 0xcc, 0xe2, 0xf8, 0x94, 0x12, 0xee, 0xed, 0xed, 0xc4, 0x54, 0x60, 0x2f, 0xa3, 0x54,
-	0x11, 0xa0, 0xce, 0xe2, 0xf8, 0xe8, 0x55, 0xa8, 0xed, 0x38, 0xdc, 0x85, 0xa8, 0x50, 0x2d, 0xd5,
-	0x3d, 0xdc, 0xad, 0xda, 0x8e, 0x83, 0x56, 0xa1, 0xb1, 0xc3, 0xdc, 0x7e, 0xb9, 0x2a, 0xfa, 0x7c,
-	0xb1, 0xff, 0x71, 0xce, 0x33, 0xd8, 0x12, 0x78, 0xe8, 0x1e, 0xc0, 0x8e, 0xf4, 0x4f, 0xe6, 0x01,
-	0x21, 0x56, 0x8e, 0xe7, 0x01, 0x6e, 0x29, 0x14, 0xc8, 0x64, 0xb3, 0x45, 0x9c, 0x4c, 0x7e, 0x6f,
-	0xa3, 0x70, 0xb2, 0x0d, 0x88, 0xf9, 0x69, 0xa5, 0x54, 0xd0, 0xd7, 0x61, 0xe6, 0x20, 0xee, 0xed,
-	0x61, 0xb1, 0x64, 0xe8, 0x25, 0x8e, 0x12, 0x7e, 0xfd, 0x21, 0x2f, 0xe8, 0x45, 0x49, 0xdf, 0xf6,
-	0x73, 0xab, 0x59, 0x27, 0x44, 0xfa, 0xef, 0x93, 0x7e, 0xb8, 0x7d, 0x94, 0x60, 0x1e, 0x29, 0xa2,
-	0xb0, 0xff, 0xde, 0x67, 0x45, 0xf4, 0xfe, 0xe3, 0x78, 0xe8, 0x26, 0x6f, 0x2f, 0xe5, 0x32, 0xf3,
-	0xe5, 0x97, 0xc2, 0x0a, 0xa3, 0xb3, 0x5a, 0x29, 0x2e, 0xe1, 0x2a, 0xbd, 0xbd, 0x30, 0x09, 0x83,
-	0x0c, 0xe7, 0x5a, 0x28, 0xe7, 0x2a, 0x9d, 0x82, 0xf2, 0x3a, 0x57, 0x29, 0xa2, 0x88, 0x3a, 0x30,
-	0xdb, 0x0b, 0xa3, 0xe4, 0x30, 0x8c, 0xc4, 0xb0, 0xa3, 0x0a, 0xed, 0x44, 0x2b, 0xc9, 0xe9, 0x66,
-	0xf0, 0xd1, 0x6d, 0x68, 0xc4, 0x8e, 0xed, 0xe3, 0xcd, 0xf7, 0x5a, 0xa7, 0xca, 0x19, 0xed, 0x16,
-	0x2b, 0x52, 0x32, 0xe0, 0x82, 0x02, 0xba, 0x0a, 0xe3, 0x34, 0x5e, 0x0f, 0x8d, 0x0c, 0x52, 0x72,
-	0x77, 0x2d, 0x77, 0xf6, 0x6e, 0x31, 0x1c, 0x32, 0xfd, 0xb8, 0x38, 0x14, 0xc6, 0xad, 0xa5, 0xf2,
-	0xe9, 0xb7, 0xc5, 0x0a, 0xbd, 0x57, 0xb6, 0x2a, 0x53, 0x2a, 0x84, 0x69, 0x11, 0x8e, 0x73, 0xba,
-	0xe2, 0x7c, 0xa8, 0x94, 0xdf, 0x10, 0x4c, 0xf3, 0xd7, 0xc6, 0xf3, 0x9b, 0x29, 0x15, 0x57, 0xad,
-	0x9c, 0xf9, 0xf2, 0xca, 0xb0, 0x0a, 0x62, 0xa9, 0x64, 0xb3, 0x0d, 0xa7, 0x7b, 0x85, 0x75, 0xe1,
-	0xdb, 0xd3, 0x70, 0x2a, 0x24, 0xab, 0x7d, 0x09, 0xa5, 0xac, 0xe8, 0x56, 0xcf, 0x8b, 0x6e, 0xd7,
-	0x61, 0x92, 0x0a, 0x1a, 0x03, 0x22, 0x2c, 0x66, 0xa5, 0x4a, 0x89, 0x84, 0xda, 0xf0, 0x54, 0xf6,
-	0xe7, 0x16, 0xa6, 0xb9, 0x3c, 0x06, 0x0c, 0x93, 0x7d, 0xab, 0x0b, 0x15, 0x0a, 0xcd, 0x13, 0x25,
-	0x42, 0xb3, 0x09, 0xd3, 0xdd, 0xb0, 0x1f, 0x24, 0xfc, 0x58, 0x87, 0x3b, 0x90, 0x6a, 0xb0, 0x8c,
-	0x60, 0x3d, 0x99, 0x13, 0xac, 0xdf, 0xcd, 0x44, 0xc1, 0x6e, 0x96, 0xdf, 0xc0, 0x65, 0xd5, 0x2d,
-	0x8f, 0x85, 0xfd, 0xd9, 0x8a, 0x93, 0x7f, 0xaa, 0x40, 0x9a, 0xaa, 0x12, 0xde, 0x4b, 0x23, 0x67,
-	0x94, 0x5d, 0xc8, 0x34, 0xef, 0xc1, 0xf9, 0x41, 0xec, 0x8a, 0x9e, 0xa4, 0xb9, 0xd2, 0x4a, 0x48,
-	0xbf, 0x4b, 0xfd, 0x67, 0xfe, 0x91, 0x01, 0xf5, 0x4e, 0xe8, 0x8e, 0xd8, 0x88, 0x71, 0x49, 0x33,
-	0x62, 0x3c, 0x59, 0x12, 0x32, 0x5c, 0x31, 0x59, 0xbc, 0x96, 0x31, 0x59, 0x3c, 0x55, 0x86, 0xa2,
-	0x1b, 0x28, 0xfe, 0x5e, 0x0d, 0xa6, 0x94, 0x10, 0xe6, 0xe8, 0xe7, 0x4f, 0xe2, 0xe6, 0x50, 0xaf,
-	0x8a, 0x6a, 0xce, 0x29, 0xd3, 0x03, 0xb7, 0xcf, 0xd9, 0xd3, 0xe1, 0x01, 0xf6, 0x76, 0xf7, 0x12,
-	0xec, 0x66, 0xab, 0x75, 0x6c, 0x4f, 0x87, 0xbf, 0x6d, 0xc0, 0x5c, 0x86, 0x08, 0xfa, 0x08, 0x66,
-	0x7c, 0x55, 0x35, 0xe7, 0x93, 0xe0, 0x44, 0x5a, 0xbd, 0x4e, 0x89, 0xac, 0x76, 0x69, 0xb9, 0x14,
-	0x0a, 0xaa, 0x02, 0x21, 0x6c, 0x30, 0x09, 0x7b, 0xa1, 0x1f, 0xee, 0x1e, 0xdd, 0xc6, 0xe2, 0xf2,
-	0x90, 0x0a, 0x32, 0x7f, 0x50, 0x63, 0x15, 0x56, 0x22, 0xca, 0xff, 0x78, 0xa8, 0x87, 0x1a, 0xea,
-	0x6f, 0x19, 0x30, 0x4f, 0x88, 0xd0, 0x33, 0x17, 0xc1, 0x7e, 0x65, 0x44, 0x2e, 0x43, 0x8d, 0xc8,
-	0x45, 0xad, 0x76, 0x6e, 0xd8, 0x4f, 0xb8, 0x16, 0xcb, 0x53, 0x1c, 0x8e, 0xa3, 0x88, 0x3b, 0xc8,
-	0xf1, 0x94, 0x88, 0xd1, 0x35, 0x26, 0x63, 0x74, 0xb1, 0x9b, 0xa9, 0xdc, 0xda, 0xcf, 0x37, 0x96,
-	0x14, 0x60, 0x7e, 0xaf, 0x06, 0xd3, 0x9d, 0xd0, 0xfd, 0xb1, 0xe9, 0xb0, 0xc8, 0x74, 0xf8, 0x8b,
-	0x06, 0xed, 0x9c, 0xf6, 0xbd, 0x2d, 0x1e, 0x58, 0xf8, 0x3c, 0x4c, 0xd1, 0x25, 0x42, 0x5d, 0x17,
-	0xa5, 0x09, 0x4e, 0x01, 0xa1, 0x65, 0x98, 0x8c, 0xb1, 0x1d, 0x39, 0x7b, 0x72, 0x51, 0xc9, 0x34,
-	0x7a, 0x27, 0xbd, 0x50, 0x59, 0x2f, 0x8f, 0xcb, 0xab, 0xfe, 0x90, 0xcd, 0x0d, 0x79, 0x8b, 0xd2,
-	0xbc, 0x06, 0x28, 0x9f, 0x7d, 0x8c, 0x6b, 0x5d, 0xbf, 0x66, 0xc0, 0x6c, 0x27, 0x74, 0xc9, 0x4c,
-	0xfc, 0x5c, 0xa7, 0x9d, 0x7a, 0xdd, 0x79, 0x42, 0xbf, 0xee, 0xfc, 0x67, 0x0d, 0x68, 0x74, 0x42,
-	0x77, 0xe4, 0xf6, 0x98, 0x97, 0x74, 0x7b, 0xcc, 0x13, 0x25, 0x5d, 0x2f, 0x4c, 0x30, 0xbf, 0x5d,
-	0x83, 0x19, 0x52, 0x8d, 0x70, 0x57, 0x74, 0x94, 0xd6, 0x20, 0x23, 0xdb, 0x20, 0xb2, 0x93, 0x87,
-	0xbe, 0x1f, 0x1e, 0x8a, 0x0e, 0x63, 0x29, 0x16, 0x0a, 0x07, 0x1f, 0x78, 0x21, 0xdf, 0x44, 0x27,
-	0x2d, 0x99, 0x26, 0x42, 0x59, 0xec, 0x05, 0x0e, 0x16, 0x41, 0xaa, 0xc7, 0x68, 0x60, 0x3c, 0x0d,
-	0x46, 0xc3, 0x95, 0x91, 0x34, 0x5d, 0x07, 0x27, 0x09, 0x57, 0x26, 0x90, 0xe9, 0xa5, 0x71, 0x11,
-	0x48, 0x21, 0xe6, 0x97, 0x8b, 0x14, 0x08, 0x69, 0x5f, 0x62, 0x7b, 0xfe, 0x1d, 0x2f, 0xc0, 0x31,
-	0xb5, 0x40, 0xd4, 0xad, 0x14, 0x40, 0xb0, 0xa9, 0xfb, 0x35, 0x0b, 0xe1, 0x37, 0x49, 0xb3, 0x15,
-	0x88, 0xf9, 0x12, 0x2c, 0x75, 0x42, 0x97, 0xe8, 0x53, 0x1b, 0x61, 0x74, 0x68, 0x47, 0xae, 0x32,
-	0xbf, 0x58, 0x18, 0x1d, 0xb2, 0x58, 0xc6, 0x45, 0x90, 0x9c, 0x2f, 0xd1, 0xad, 0x63, 0xa0, 0xa7,
-	0xd1, 0xeb, 0x94, 0x4f, 0x5a, 0x22, 0xc8, 0xe3, 0x4d, 0x3b, 0xc1, 0x3c, 0xd6, 0x1f, 0xe3, 0x56,
-	0xf7, 0x53, 0x4e, 0xa5, 0x03, 0xcd, 0x7f, 0x56, 0xa3, 0x4b, 0x25, 0x13, 0x07, 0x11, 0xbd, 0x0b,
-	0xb3, 0x31, 0xbe, 0xe3, 0x05, 0xfd, 0x87, 0x42, 0x12, 0xae, 0x70, 0xdc, 0xda, 0x5a, 0x57, 0x4b,
-	0x5a, 0x19, 0x4c, 0xd2, 0x61, 0x51, 0x3f, 0x58, 0x8d, 0x3f, 0x88, 0x71, 0x24, 0x82, 0x1a, 0x4a,
-	0x00, 0xbd, 0xb6, 0x4b, 0x12, 0x37, 0xa3, 0xb0, 0xcf, 0x82, 0x69, 0xd4, 0x2d, 0x05, 0x42, 0x43,
-	0x99, 0x91, 0xd4, 0xbd, 0x30, 0xb0, 0xc2, 0x30, 0xe1, 0x93, 0x43, 0x83, 0xa1, 0x15, 0x40, 0x71,
-	0xbf, 0xd7, 0xf3, 0xa9, 0x41, 0xdd, 0xf6, 0x29, 0x22, 0x33, 0xe8, 0xd6, 0xad, 0x82, 0x1c, 0xb2,
-	0xaa, 0x76, 0xf8, 0x0f, 0xc7, 0xe9, 0x0f, 0x45, 0x12, 0x5d, 0x86, 0x46, 0x7c, 0x14, 0x3b, 0x09,
-	0xbf, 0x3b, 0x56, 0x12, 0xa3, 0x74, 0x8b, 0x16, 0xb1, 0x44, 0x51, 0xf3, 0x1b, 0x94, 0xfd, 0x6d,
-	0x79, 0xbb, 0x81, 0x9d, 0xf4, 0x23, 0xc2, 0x9d, 0x67, 0x7a, 0x74, 0xaf, 0xe0, 0x2f, 0x3b, 0xf0,
-	0xce, 0xbb, 0x3c, 0xa4, 0x4c, 0x7a, 0x18, 0xe0, 0x28, 0x55, 0x87, 0x74, 0x52, 0xe6, 0xbf, 0x9f,
-	0xa6, 0xeb, 0x9e, 0xaa, 0x8e, 0x97, 0xa1, 0xc1, 0xdd, 0x12, 0xb8, 0x74, 0xb0, 0x5c, 0xae, 0x64,
-	0x58, 0xa2, 0x28, 0x5a, 0x87, 0x59, 0xb2, 0x27, 0x4b, 0x4f, 0x8a, 0xb8, 0xb5, 0x58, 0x19, 0x27,
-	0x99, 0x1f, 0x80, 0x67, 0x90, 0xd0, 0xdb, 0xd4, 0x7a, 0x2e, 0x48, 0xd4, 0x86, 0x21, 0xa1, 0x20,
-	0x90, 0xe9, 0xc9, 0xc3, 0xd1, 0x71, 0x5d, 0x8e, 0x49, 0x4e, 0x3a, 0x90, 0x68, 0x80, 0x4a, 0x4c,
-	0xd0, 0x9b, 0x91, 0x4d, 0xed, 0xb0, 0x1e, 0x9d, 0xb0, 0x0a, 0x2f, 0xa8, 0x2e, 0x84, 0x2e, 0xc3,
-	0x12, 0x73, 0x85, 0x6c, 0x63, 0xdb, 0xf5, 0xbd, 0x40, 0x72, 0x12, 0x36, 0xfa, 0xc5, 0x99, 0xf4,
-	0x52, 0x78, 0x10, 0xf3, 0xda, 0x4d, 0xf0, 0x4b, 0xe1, 0x02, 0x80, 0xde, 0x67, 0x5a, 0x9e, 0x94,
-	0x38, 0x1b, 0xe5, 0x11, 0xcc, 0xf9, 0x70, 0x69, 0x6e, 0x5e, 0x4c, 0x63, 0xd7, 0x48, 0xd0, 0x69,
-	0x8c, 0xa3, 0x03, 0xcf, 0xc1, 0xab, 0x0e, 0x8d, 0xd7, 0x41, 0x55, 0x55, 0xa6, 0x60, 0x16, 0xe4,
-	0xa0, 0x0b, 0x64, 0x91, 0xaa, 0x50, 0xee, 0x2f, 0x90, 0x81, 0xa2, 0x1b, 0x70, 0xd6, 0xee, 0x27,
-	0x21, 0x55, 0x62, 0xb7, 0xb4, 0xac, 0xfb, 0xe1, 0x3e, 0x0e, 0xa8, 0x85, 0x64, 0xd2, 0xaa, 0x2c,
-	0xa3, 0x45, 0x50, 0x83, 0x4c, 0x04, 0xb5, 0xf3, 0x30, 0xb5, 0x17, 0xc6, 0xc9, 0x3d, 0x9c, 0x1c,
-	0x86, 0xd1, 0x3e, 0xbf, 0x24, 0xa9, 0x82, 0xc8, 0x82, 0xa3, 0x86, 0xe8, 0xcd, 0x36, 0x35, 0x2e,
-	0x4e, 0x5a, 0x22, 0x29, 0x72, 0x36, 0x3b, 0x6b, 0xd4, 0x4e, 0xc8, 0x73, 0x36, 0x3b, 0x6b, 0x64,
-	0xd0, 0xe8, 0x0b, 0x39, 0x9d, 0x28, 0x74, 0x70, 0xac, 0x5c, 0x83, 0x7f, 0x92, 0x96, 0x2b, 0xce,
-	0x44, 0x9d, 0x7c, 0xf8, 0xd7, 0xd9, 0x72, 0xfd, 0x3b, 0xcf, 0xf9, 0xf2, 0x11, 0x60, 0xef, 0xc3,
-	0xbc, 0x8c, 0x31, 0xcb, 0x6e, 0xd5, 0xc6, 0xad, 0xb9, 0xf2, 0xa7, 0x9a, 0x0a, 0x0f, 0xca, 0x72,
-	0x14, 0xb4, 0xbb, 0x2d, 0xf3, 0x99, 0x68, 0x75, 0x67, 0xa1, 0x19, 0xf7, 0xb7, 0xdd, 0xb0, 0x6b,
-	0x7b, 0x01, 0xb5, 0xfc, 0x35, 0xad, 0x14, 0x80, 0x5e, 0x87, 0x49, 0x5b, 0x98, 0x16, 0x50, 0xb9,
-	0x23, 0xbf, 0x34, 0x28, 0xc8, 0xd2, 0x64, 0xc9, 0x71, 0x1f, 0x3f, 0xcc, 0xae, 0x97, 0x9e, 0x62,
-	0x4b, 0x4e, 0x03, 0xa2, 0x77, 0x88, 0x42, 0xe3, 0x53, 0x87, 0x13, 0xc2, 0xf7, 0x4f, 0x97, 0x5f,
-	0x60, 0xba, 0x2f, 0x8b, 0x59, 0x2a, 0x0a, 0xba, 0xce, 0xe6, 0x03, 0xbd, 0x54, 0x8e, 0xe3, 0xd6,
-	0x13, 0xe5, 0xac, 0x41, 0xde, 0x3d, 0xb7, 0x54, 0x0c, 0xf4, 0x22, 0x2c, 0xf4, 0x22, 0x2f, 0xa4,
-	0xa3, 0x20, 0x4d, 0x36, 0x2d, 0x16, 0x85, 0x27, 0x97, 0xc1, 0x44, 0x07, 0x06, 0x6c, 0x9d, 0x61,
-	0xf1, 0x50, 0x45, 0x1a, 0x5d, 0xa3, 0x6b, 0x98, 0x49, 0x81, 0xad, 0xe5, 0xf2, 0x3b, 0x01, 0xaa,
-	0xb4, 0x68, 0xa5, 0x28, 0xe8, 0x8e, 0x12, 0x6b, 0x99, 0xec, 0xaa, 0x71, 0xeb, 0x6c, 0xc5, 0x31,
-	0x55, 0x66, 0x0b, 0xb6, 0x32, 0xb8, 0xe8, 0x05, 0x98, 0xe7, 0xd7, 0xa2, 0xd2, 0x66, 0x3d, 0xc5,
-	0x2c, 0x51, 0x59, 0x38, 0x0b, 0x01, 0x61, 0x6f, 0xfb, 0x98, 0xaf, 0xc6, 0x3b, 0x5e, 0xb0, 0x1f,
-	0xb7, 0xce, 0xd1, 0xb9, 0x5f, 0x90, 0xb3, 0x7c, 0x1d, 0x16, 0x72, 0xfc, 0xe5, 0x58, 0xd1, 0x43,
-	0xfe, 0xdc, 0x18, 0x34, 0xa5, 0x8d, 0xa2, 0xc4, 0xe2, 0xf3, 0x4e, 0xc1, 0xa3, 0x19, 0x65, 0xfd,
-	0x59, 0xec, 0xb6, 0x58, 0xfe, 0x10, 0x48, 0xaa, 0x76, 0x8c, 0x69, 0x6a, 0xc7, 0x8b, 0xb0, 0x10,
-	0x84, 0x3c, 0xf6, 0xed, 0x3d, 0xc1, 0x82, 0xa6, 0xd8, 0x64, 0xc8, 0x65, 0x94, 0xc5, 0x27, 0x66,
-	0xe2, 0x95, 0xbb, 0xd9, 0x11, 0xd1, 0x4e, 0x69, 0x42, 0x06, 0xb9, 0xa5, 0x52, 0x63, 0xe3, 0x84,
-	0x41, 0x6e, 0xa9, 0xd4, 0xf8, 0x11, 0x2c, 0x69, 0xfb, 0x23, 0xeb, 0x46, 0x1c, 0x73, 0x17, 0xc3,
-	0x67, 0x07, 0x46, 0x75, 0xed, 0xc7, 0x56, 0x31, 0x05, 0xf4, 0x3e, 0x2c, 0x38, 0x39, 0xb2, 0x93,
-	0xc3, 0x93, 0xcd, 0x63, 0x93, 0x25, 0xf3, 0x49, 0x18, 0xd3, 0xc9, 0xc6, 0xf7, 0x0c, 0x99, 0x36,
-	0xbf, 0xc3, 0xec, 0x2b, 0x1c, 0x19, 0xc7, 0x7d, 0x3f, 0x19, 0xf9, 0xf5, 0x31, 0x55, 0x4d, 0x1e,
-	0xda, 0x5c, 0xf6, 0x7d, 0x83, 0x9a, 0xcb, 0xee, 0xe3, 0x6e, 0xcf, 0x27, 0x02, 0xee, 0x68, 0x2b,
-	0x75, 0x1d, 0x26, 0x13, 0x4e, 0xb9, 0x2a, 0x14, 0x9d, 0x52, 0x01, 0x6a, 0x00, 0x94, 0x48, 0xe6,
-	0x2f, 0xb3, 0x7e, 0x13, 0xb9, 0x23, 0x57, 0xcc, 0x5e, 0xd3, 0x15, 0xb3, 0xa7, 0x07, 0xd4, 0x4e,
-	0x28, 0x68, 0xdf, 0xd6, 0xab, 0x45, 0xe5, 0xc6, 0xcf, 0xd7, 0x5c, 0x6a, 0xee, 0xc0, 0x62, 0xd1,
-	0x81, 0xd2, 0xa8, 0x1f, 0x4e, 0x32, 0x9f, 0x81, 0x99, 0x4e, 0x84, 0x15, 0xe6, 0xc3, 0x9d, 0x0c,
-	0x0d, 0xe9, 0x64, 0x68, 0xfe, 0xc8, 0x80, 0xc5, 0xa2, 0xc7, 0x15, 0x51, 0x1b, 0xa6, 0x7b, 0x8a,
-	0x48, 0x5f, 0x75, 0x9f, 0x4c, 0x15, 0xfd, 0x2d, 0x0d, 0x0b, 0xdd, 0x83, 0x69, 0x7c, 0xe0, 0x39,
-	0xd2, 0x40, 0x53, 0x3b, 0x36, 0x8b, 0xd1, 0xf0, 0x8f, 0x1f, 0xe8, 0xd0, 0x3c, 0x84, 0x27, 0x4a,
-	0xee, 0x98, 0x11, 0x62, 0x87, 0xd4, 0x52, 0xc7, 0x63, 0xc4, 0xf1, 0x14, 0x6a, 0x03, 0x30, 0x43,
-	0x1d, 0x7d, 0x66, 0x63, 0xc0, 0x85, 0x23, 0xed, 0x4e, 0x87, 0x82, 0x67, 0x7e, 0xa7, 0x06, 0xe3,
-	0xec, 0xb1, 0x81, 0xd7, 0xa0, 0xb1, 0xc7, 0xa2, 0x3f, 0x0c, 0x13, 0x59, 0x42, 0x94, 0x45, 0x2f,
-	0xc3, 0x29, 0x16, 0xf7, 0xc2, 0x6f, 0x63, 0xdf, 0x3e, 0x12, 0x22, 0x3b, 0x0b, 0xd6, 0x56, 0x94,
-	0x55, 0xf0, 0x9c, 0x55, 0xbd, 0xe8, 0x39, 0x2b, 0x22, 0x07, 0xf5, 0x72, 0x4a, 0xc4, 0xb8, 0xa5,
-	0x03, 0xe9, 0xb1, 0x51, 0x9f, 0x9e, 0x66, 0xdd, 0xdf, 0x8b, 0x70, 0xbc, 0x17, 0xfa, 0x2e, 0x8f,
-	0xa3, 0x9d, 0x83, 0x93, 0xb2, 0x3b, 0xb6, 0xe7, 0xf7, 0x23, 0x9c, 0x96, 0x9d, 0x60, 0x65, 0xb3,
-	0x70, 0xf3, 0x08, 0x96, 0x78, 0xd0, 0x6b, 0xe1, 0x5c, 0xce, 0xa7, 0xff, 0x35, 0x68, 0x08, 0x17,
-	0xb2, 0x8a, 0x8b, 0x34, 0x0c, 0x25, 0x0d, 0x9b, 0x6d, 0x09, 0xa4, 0x21, 0x82, 0x38, 0xff, 0x45,
-	0x03, 0x4e, 0x15, 0x9c, 0x63, 0xb3, 0x45, 0xb4, 0xeb, 0xc5, 0x89, 0x0c, 0x9c, 0x25, 0xd3, 0xf4,
-	0x2e, 0x0d, 0x3b, 0x1f, 0xe6, 0x0b, 0x8f, 0xa5, 0x2a, 0xc3, 0x57, 0x89, 0x47, 0xe6, 0xc6, 0x94,
-	0x47, 0xe6, 0x16, 0x61, 0x7c, 0x57, 0x6a, 0xdc, 0x4d, 0x8b, 0x25, 0xcc, 0x9f, 0xad, 0xc1, 0x99,
-	0x52, 0x6f, 0x8f, 0xca, 0xc7, 0xed, 0x8a, 0xdf, 0x48, 0x29, 0x8b, 0xdf, 0x47, 0xa3, 0x2f, 0xcb,
-	0xe7, 0x0c, 0xe8, 0xb7, 0xac, 0xe5, 0xb8, 0x52, 0xcb, 0x16, 0x34, 0xf6, 0xf1, 0x51, 0xe4, 0x05,
-	0xbb, 0xc2, 0xc6, 0xc9, 0x93, 0x7a, 0xe0, 0x9d, 0xc6, 0x23, 0x07, 0xe0, 0x9b, 0xcc, 0xf0, 0xaa,
-	0x3f, 0x53, 0x83, 0x39, 0xeb, 0x46, 0xfb, 0x0b, 0xdb, 0xfc, 0x8d, 0x7c, 0xf3, 0x1f, 0x39, 0x90,
-	0x5e, 0xb6, 0x0f, 0x7e, 0xce, 0x80, 0x39, 0x1a, 0xc6, 0x80, 0xdf, 0x56, 0xf0, 0xc2, 0x60, 0xc4,
-	0x5b, 0xd5, 0x22, 0x8c, 0x47, 0xe4, 0x07, 0xa2, 0xd7, 0x68, 0x82, 0x3e, 0x29, 0xc9, 0x1e, 0x21,
-	0x33, 0x2e, 0x4e, 0xb3, 0xe7, 0xc9, 0xa8, 0xc3, 0xb4, 0x85, 0x7b, 0xbe, 0xc7, 0xea, 0x91, 0x1a,
-	0x60, 0x3e, 0x7b, 0x87, 0xe9, 0xc2, 0x6a, 0x1c, 0xd7, 0x61, 0xba, 0x98, 0x88, 0x2e, 0x60, 0xfd,
-	0x47, 0x03, 0xce, 0x15, 0x96, 0x3b, 0xd9, 0xa9, 0x47, 0xf1, 0x19, 0x45, 0x7d, 0xc4, 0x67, 0x14,
-	0x63, 0x65, 0x1b, 0xe1, 0x78, 0xde, 0xbd, 0xb9, 0xb0, 0x71, 0x9f, 0x8b, 0x7b, 0x73, 0x61, 0x4d,
-	0x84, 0xc8, 0xf6, 0xbb, 0xb5, 0x92, 0xaa, 0x52, 0xe1, 0x8d, 0xae, 0x20, 0x9a, 0x29, 0x9e, 0x6b,
-	0x94, 0x69, 0x74, 0x11, 0xe6, 0xba, 0x5e, 0x40, 0x03, 0xb4, 0xeb, 0x7b, 0x5b, 0x16, 0x8c, 0x1e,
-	0x28, 0x2e, 0xd0, 0xb5, 0xf2, 0x88, 0x9f, 0xa5, 0xd5, 0x58, 0xd1, 0x0d, 0x59, 0xa9, 0x2b, 0xb4,
-	0x2a, 0x47, 0xd7, 0x4f, 0x20, 0x47, 0x2f, 0x5f, 0x85, 0x99, 0x93, 0x2b, 0xb1, 0xff, 0xa2, 0x06,
-	0x4f, 0x56, 0x4c, 0xf5, 0xca, 0xce, 0x7b, 0x15, 0x16, 0x77, 0xfa, 0xbe, 0x7f, 0x44, 0x8f, 0x83,
-	0xb1, 0x6b, 0x89, 0x72, 0x6c, 0x23, 0x2d, 0xcc, 0x63, 0x56, 0x4c, 0xdb, 0x3d, 0x92, 0x85, 0xb9,
-	0x28, 0xa1, 0x01, 0x89, 0x0a, 0x6b, 0x1f, 0xd8, 0x1e, 0xbd, 0x5a, 0x29, 0x4b, 0x32, 0x59, 0x22,
-	0x9f, 0x41, 0x34, 0xff, 0x90, 0xc7, 0xd5, 0xbd, 0xc9, 0x1e, 0x80, 0x17, 0x21, 0x32, 0xeb, 0x56,
-	0x41, 0x4e, 0xc6, 0x8d, 0x79, 0xa2, 0xdc, 0x8d, 0xb9, 0x7a, 0x6d, 0x6b, 0xaf, 0x5a, 0xfe, 0x06,
-	0x65, 0x7f, 0x05, 0x11, 0xcc, 0xb5, 0x27, 0x84, 0x14, 0x97, 0x62, 0x1d, 0xc8, 0xfa, 0x39, 0x4e,
-	0x5d, 0x8e, 0xa8, 0x44, 0xc1, 0x43, 0x68, 0xdf, 0x82, 0x86, 0xeb, 0x1d, 0x78, 0x71, 0x18, 0xf1,
-	0x09, 0x72, 0x5c, 0x97, 0x15, 0x81, 0x6e, 0xfe, 0x07, 0x03, 0x66, 0x44, 0x2d, 0xdf, 0xef, 0x87,
-	0x89, 0x3d, 0x62, 0xe6, 0xfc, 0x86, 0xc6, 0x9c, 0xbf, 0x54, 0xe5, 0xd1, 0x4f, 0x7f, 0xaf, 0x30,
-	0xe5, 0xeb, 0x19, 0xa6, 0xfc, 0xfc, 0x60, 0x64, 0x9d, 0x19, 0xff, 0x8a, 0x01, 0x0b, 0x5a, 0xfe,
-	0xc8, 0xf9, 0xd4, 0xd7, 0x74, 0x3e, 0xf5, 0xcc, 0xc0, 0x1a, 0x0a, 0xfe, 0xf4, 0xeb, 0xb5, 0x4c,
-	0xd5, 0x28, 0x5f, 0x5a, 0x83, 0xb1, 0x3d, 0x3b, 0x72, 0xab, 0xee, 0xb5, 0xe7, 0x90, 0x56, 0x6e,
-	0xd9, 0x91, 0xcb, 0x5f, 0x05, 0x25, 0xc8, 0x2c, 0xc2, 0x67, 0xd8, 0x93, 0x87, 0xc2, 0x3c, 0x85,
-	0x6e, 0xc2, 0x0c, 0xfd, 0x92, 0xe6, 0xf6, 0x7a, 0x79, 0xe8, 0x99, 0x2d, 0xb5, 0xa0, 0xa5, 0xe3,
-	0x2d, 0xef, 0x42, 0x53, 0xfe, 0xf3, 0xb1, 0x3a, 0x53, 0xfd, 0xef, 0x1a, 0x9c, 0x2a, 0x18, 0x5f,
-	0xb4, 0xae, 0x75, 0xd3, 0x2b, 0x43, 0x4e, 0x8b, 0x5c, 0x47, 0xad, 0x53, 0xe9, 0xcd, 0xe5, 0x63,
-	0x37, 0x34, 0x99, 0x0f, 0x62, 0x2c, 0xc8, 0x10, 0xf4, 0xcf, 0xac, 0x3b, 0xc8, 0x8f, 0xe4, 0xbf,
-	0x1f, 0x6b, 0xbf, 0x7f, 0xbb, 0x0e, 0x8b, 0x45, 0xd7, 0x6c, 0xd0, 0x9d, 0x4c, 0x28, 0xad, 0xcb,
-	0xc3, 0x5e, 0xd0, 0x61, 0xf1, 0xb5, 0x78, 0xa0, 0x66, 0x4e, 0x03, 0x59, 0x84, 0xc1, 0xd1, 0x80,
-	0x65, 0x62, 0xfd, 0x5c, 0x19, 0x9a, 0x1e, 0x8f, 0x74, 0xc6, 0x29, 0x4a, 0x3a, 0xcb, 0x1e, 0x4c,
-	0x29, 0xbf, 0x7a, 0xac, 0xc3, 0xb1, 0x4f, 0x18, 0xa7, 0x52, 0x8b, 0xc7, 0x1c, 0x3b, 0x62, 0x56,
-	0x3f, 0x22, 0x96, 0xba, 0x87, 0xa1, 0xe8, 0x1e, 0x08, 0xc6, 0xa2, 0xd0, 0x97, 0x31, 0x62, 0xc9,
-	0xb7, 0x14, 0x37, 0xeb, 0x8a, 0xb8, 0xb9, 0x08, 0xe3, 0x3e, 0x3e, 0xc0, 0x42, 0x99, 0x61, 0x09,
-	0xf3, 0xff, 0xd4, 0xe0, 0xa9, 0x4a, 0xd7, 0x62, 0x22, 0x1a, 0xee, 0xda, 0x09, 0x3e, 0xb4, 0x45,
-	0x2b, 0x45, 0x92, 0x32, 0x1d, 0x76, 0xdf, 0x56, 0x08, 0xb0, 0xec, 0x9a, 0xed, 0x08, 0x62, 0xae,
-	0x9f, 0x03, 0x88, 0x63, 0x7f, 0x9d, 0x9a, 0xeb, 0x5d, 0xee, 0xf6, 0xa1, 0x40, 0xd0, 0x0b, 0x30,
-	0xdf, 0x8b, 0xc2, 0x84, 0xa9, 0xf2, 0x6d, 0x76, 0xe2, 0xc3, 0x2f, 0x74, 0x65, 0xe1, 0x44, 0xbf,
-	0xe7, 0xfe, 0xaa, 0x1d, 0xa2, 0xcb, 0x31, 0x05, 0x4d, 0x05, 0x29, 0x25, 0xa8, 0x05, 0xa0, 0xa1,
-	0x95, 0xa0, 0xbe, 0xa9, 0xfa, 0x05, 0xb3, 0xc9, 0xdc, 0x05, 0xb3, 0x54, 0x81, 0x6c, 0x96, 0x9a,
-	0xd9, 0x20, 0xa3, 0xb6, 0xfd, 0xcf, 0x1a, 0x9c, 0xe2, 0x5d, 0xff, 0x88, 0x1d, 0x3e, 0xaa, 0x68,
-	0xed, 0xff, 0x3f, 0xf4, 0x7a, 0x04, 0x33, 0xda, 0x46, 0x87, 0xec, 0xd2, 0x38, 0x26, 0xaf, 0x95,
-	0xee, 0x92, 0xae, 0xe0, 0x4f, 0x43, 0x45, 0x34, 0x31, 0xfb, 0xf0, 0xcc, 0x40, 0x34, 0x7a, 0x7a,
-	0x49, 0x0a, 0xa9, 0xf7, 0xcd, 0x24, 0xe0, 0x44, 0x61, 0x5b, 0xfe, 0xb0, 0x06, 0x13, 0x6c, 0x8d,
-	0x8d, 0x58, 0xbe, 0x7b, 0x5d, 0x7b, 0xc0, 0xfc, 0xb9, 0xf2, 0xb5, 0x9d, 0x7b, 0xbd, 0xfc, 0x5d,
-	0x80, 0x98, 0x46, 0x2b, 0xa7, 0xaf, 0x97, 0xb3, 0xab, 0x83, 0x2f, 0x54, 0xe0, 0x6f, 0xc9, 0xc2,
-	0xfc, 0xe9, 0xf2, 0x14, 0xbb, 0x88, 0xc9, 0x1d, 0xeb, 0x39, 0xf3, 0xe9, 0xcc, 0x73, 0xe6, 0x99,
-	0x7f, 0x1d, 0x4b, 0x7f, 0xfa, 0x79, 0x03, 0xe6, 0x32, 0xaf, 0x39, 0x7d, 0x8e, 0x6f, 0x99, 0xff,
-	0xaa, 0x01, 0x0b, 0xb9, 0x07, 0x8a, 0xbe, 0x50, 0x0f, 0x99, 0xff, 0x05, 0x03, 0x80, 0xd5, 0x70,
-	0xe4, 0xe2, 0xf9, 0xcb, 0xba, 0x78, 0xbe, 0x5c, 0xb1, 0xf3, 0x70, 0xb9, 0xfc, 0x9f, 0x1a, 0x30,
-	0xcf, 0x20, 0xff, 0xef, 0xbe, 0x03, 0xbe, 0x26, 0xe6, 0x5f, 0x65, 0xe4, 0xcd, 0xea, 0x00, 0x13,
-	0xe6, 0x6f, 0x1a, 0x80, 0x18, 0x95, 0xec, 0x0b, 0x11, 0x6c, 0x8f, 0x50, 0x58, 0x93, 0x02, 0xf9,
-	0x3c, 0xde, 0x02, 0xff, 0x41, 0x9d, 0xb6, 0x57, 0x73, 0x38, 0x69, 0xc3, 0xb4, 0x63, 0xf7, 0xec,
-	0x6d, 0xcf, 0xf7, 0x12, 0x0f, 0xc7, 0x55, 0x47, 0x4f, 0x6b, 0x4a, 0x39, 0x4b, 0xc3, 0x62, 0x71,
-	0xa0, 0xbc, 0x03, 0xcf, 0xc7, 0xbb, 0x54, 0x4d, 0xa0, 0x7b, 0x60, 0x0a, 0x29, 0xf0, 0xf0, 0xab,
-	0x8f, 0xc6, 0xc3, 0x6f, 0xac, 0xda, 0xc3, 0x6f, 0x72, 0xa0, 0x87, 0xdf, 0x78, 0x81, 0x87, 0xdf,
-	0x15, 0x38, 0x2d, 0x76, 0x3e, 0x92, 0xde, 0xf0, 0x7c, 0xcc, 0x25, 0x08, 0xe6, 0xa0, 0x59, 0x92,
-	0x8b, 0xde, 0x84, 0x96, 0xed, 0xfb, 0xe1, 0x61, 0x47, 0x34, 0x7c, 0x3d, 0x76, 0x6c, 0x9f, 0x59,
-	0x54, 0x1a, 0x14, 0xb3, 0x34, 0x9f, 0xbe, 0x50, 0x12, 0x85, 0xce, 0x5d, 0xc5, 0xb3, 0x2a, 0x05,
-	0x98, 0x5f, 0x87, 0x53, 0x5b, 0x38, 0xf2, 0x68, 0x68, 0x4f, 0x37, 0x9d, 0xac, 0xab, 0xd0, 0x8c,
-	0x32, 0x6b, 0x6c, 0xb8, 0xd7, 0x24, 0xd3, 0x93, 0xb3, 0x7f, 0x69, 0x40, 0x83, 0xbb, 0x76, 0x8c,
-	0x78, 0xbf, 0xfb, 0xaa, 0x66, 0xcf, 0x78, 0xba, 0x98, 0xa3, 0xd0, 0x1f, 0x2b, 0x96, 0x8c, 0x37,
-	0x32, 0x96, 0x8c, 0x67, 0xaa, 0xd0, 0x74, 0x1b, 0xc6, 0x0f, 0x6a, 0x30, 0xab, 0x3b, 0x93, 0x8d,
-	0xb8, 0x41, 0x6f, 0x43, 0x23, 0xe6, 0x2e, 0x59, 0x15, 0x8f, 0x58, 0xe6, 0x5e, 0x07, 0xe3, 0x38,
-	0x85, 0xae, 0x5d, 0xf5, 0x47, 0x76, 0xed, 0x1a, 0xe4, 0x6e, 0x37, 0x36, 0xd8, 0xdd, 0xce, 0xfc,
-	0x1e, 0xe5, 0x60, 0x2a, 0x7c, 0xe4, 0xfb, 0xcb, 0xeb, 0x3a, 0xb7, 0x33, 0x2b, 0x86, 0x95, 0x57,
-	0x41, 0xec, 0x33, 0x3f, 0x0d, 0x4f, 0x15, 0xd4, 0x59, 0xd9, 0x73, 0x96, 0x61, 0xd2, 0xee, 0xbb,
-	0x9e, 0x5c, 0x03, 0x4d, 0x4b, 0xa6, 0xd1, 0x8b, 0xb0, 0x80, 0x1f, 0xf6, 0x3c, 0x66, 0xbb, 0x54,
-	0x0f, 0x75, 0xeb, 0x56, 0x3e, 0x43, 0x3a, 0x3b, 0xd7, 0x15, 0x67, 0xe7, 0x5f, 0x30, 0x60, 0x4a,
-	0xba, 0x3e, 0x8d, 0xb8, 0x53, 0x5e, 0xd1, 0x3b, 0xe5, 0xc9, 0x8a, 0x4e, 0x11, 0xbd, 0xf1, 0x4f,
-	0xd2, 0xea, 0x54, 0xbd, 0xc9, 0x2e, 0x1f, 0x7a, 0xad, 0x65, 0x5e, 0x54, 0x17, 0x0f, 0xc3, 0xd6,
-	0x95, 0x87, 0x61, 0x3b, 0xe2, 0xe1, 0x32, 0xfa, 0x7a, 0xf2, 0xd8, 0x09, 0x1f, 0xd2, 0x51, 0x68,
-	0x08, 0xff, 0x4d, 0x4a, 0x8f, 0x59, 0x9e, 0x65, 0xda, 0xfc, 0x32, 0x65, 0x65, 0xb4, 0x01, 0x83,
-	0x1c, 0xcd, 0x7f, 0x7f, 0x5c, 0x36, 0x76, 0x8b, 0xdd, 0x7c, 0x53, 0xbc, 0xd6, 0xab, 0x59, 0x8a,
-	0xf2, 0xf6, 0x2b, 0xda, 0xcc, 0x9d, 0x3e, 0xbc, 0x34, 0x80, 0x19, 0x95, 0x9e, 0x37, 0xd0, 0xf0,
-	0x16, 0x34, 0x22, 0xc1, 0x66, 0x47, 0x3c, 0xdd, 0x24, 0x01, 0x52, 0xb6, 0x1e, 0x53, 0x0c, 0x08,
-	0xe7, 0x61, 0x4a, 0x06, 0x13, 0xec, 0x88, 0x57, 0xdb, 0x54, 0x10, 0xba, 0x08, 0x73, 0x31, 0xd3,
-	0x79, 0xe4, 0x25, 0x4e, 0xa6, 0xd5, 0x65, 0xc1, 0xe8, 0x02, 0xcc, 0xfa, 0x6a, 0x34, 0xf1, 0x0e,
-	0xd7, 0xee, 0x32, 0x50, 0xb2, 0x0f, 0xa9, 0x10, 0x7e, 0xb5, 0xd6, 0x0e, 0x76, 0x71, 0xcc, 0x63,
-	0xd5, 0x95, 0xe6, 0x93, 0xfd, 0x51, 0x54, 0x4e, 0x71, 0xbf, 0xd5, 0x60, 0xe8, 0x32, 0x2c, 0x89,
-	0xf4, 0xfd, 0xc8, 0xde, 0xd9, 0xf1, 0x1c, 0xee, 0xb7, 0xcc, 0x1c, 0xe5, 0x8a, 0x33, 0xd1, 0xcb,
-	0x70, 0x6a, 0x0f, 0xdb, 0x7e, 0xb2, 0xb7, 0xb6, 0x87, 0x9d, 0xfd, 0x7b, 0x62, 0x7e, 0x4c, 0x33,
-	0x17, 0x8b, 0x82, 0x2c, 0xd2, 0x8e, 0x5e, 0x7f, 0xdb, 0xf7, 0xe2, 0xbd, 0x7b, 0xb9, 0x67, 0x84,
-	0x99, 0xff, 0x6e, 0x69, 0x3e, 0xfa, 0x18, 0x96, 0x32, 0xdd, 0xc7, 0xfd, 0x32, 0x67, 0xcb, 0x2f,
-	0xcc, 0x6f, 0x15, 0x21, 0x58, 0xc5, 0x74, 0x1e, 0xed, 0xe4, 0xe8, 0x27, 0x09, 0xb2, 0xb2, 0x89,
-	0xa1, 0x77, 0x61, 0x5a, 0x1d, 0x12, 0xce, 0x5a, 0x2e, 0x0c, 0x0a, 0x28, 0xcf, 0xb7, 0x40, 0x0d,
-	0xd7, 0x7c, 0x00, 0x4b, 0x85, 0x2d, 0x41, 0xd7, 0x60, 0xd2, 0xf1, 0x3d, 0x1c, 0x24, 0x9b, 0x9d,
-	0xaa, 0x1b, 0x16, 0x6b, 0xbc, 0x0c, 0x6f, 0xbf, 0xc4, 0x31, 0x3f, 0x35, 0xe0, 0xe9, 0x01, 0xb7,
-	0xd8, 0x33, 0xd6, 0x07, 0x23, 0x67, 0x7d, 0xb8, 0x28, 0xe2, 0x22, 0xde, 0xcb, 0x48, 0xd4, 0x59,
-	0xf0, 0x89, 0x5e, 0x47, 0xd4, 0x8c, 0x68, 0xe3, 0xc7, 0x10, 0x88, 0xd2, 0x37, 0x84, 0xff, 0xc0,
-	0x80, 0x25, 0xd9, 0xc8, 0x2f, 0x50, 0xd3, 0x36, 0xf2, 0x4d, 0x3b, 0x89, 0xb9, 0xca, 0x7c, 0x15,
-	0x26, 0xd8, 0x8d, 0x92, 0x63, 0xdc, 0x50, 0xdb, 0x87, 0xb9, 0xcc, 0xb3, 0x5e, 0xf2, 0xdd, 0x35,
-	0x63, 0x24, 0xef, 0xae, 0xa9, 0x4f, 0x70, 0xfe, 0x92, 0x01, 0xe3, 0x34, 0xd8, 0xeb, 0xb0, 0x2b,
-	0x8a, 0x74, 0x27, 0xde, 0xd9, 0xc1, 0x8e, 0x78, 0xbf, 0x8d, 0xa7, 0xd0, 0x2d, 0x68, 0x26, 0x5e,
-	0x17, 0xaf, 0xba, 0x2e, 0x37, 0xcc, 0x1d, 0xd3, 0xe1, 0x56, 0x22, 0x9b, 0xdf, 0x31, 0x00, 0x52,
-	0x07, 0xf4, 0x63, 0x06, 0x08, 0x96, 0x95, 0xae, 0x17, 0x57, 0x7a, 0x4c, 0xab, 0xf4, 0x8b, 0xb0,
-	0x90, 0xba, 0xb7, 0xeb, 0x57, 0x47, 0xf2, 0x19, 0xe6, 0x1d, 0x38, 0x7f, 0x9f, 0xdf, 0xfe, 0x15,
-	0xdc, 0x88, 0x9e, 0x1a, 0x57, 0x87, 0x33, 0x4e, 0x6d, 0x5f, 0x35, 0xcd, 0xf6, 0xf5, 0x33, 0x06,
-	0x2c, 0x66, 0xc9, 0x51, 0xef, 0xbd, 0x6f, 0xc0, 0x12, 0xb5, 0xcf, 0x51, 0xda, 0x79, 0x9b, 0xdf,
-	0xe5, 0x62, 0x87, 0xfd, 0xea, 0x7a, 0x59, 0xc5, 0x24, 0xcd, 0x8f, 0xe1, 0x4c, 0x69, 0x10, 0x30,
-	0x2a, 0xec, 0xf5, 0x3c, 0xa6, 0xdc, 0x09, 0x61, 0x8f, 0xa7, 0x65, 0x6c, 0xc8, 0x9a, 0x12, 0x1b,
-	0xb2, 0x20, 0xfa, 0xa3, 0xb9, 0x0d, 0x13, 0x3c, 0x88, 0x48, 0xd1, 0x0a, 0x68, 0x8b, 0xe0, 0xae,
-	0x5a, 0x0c, 0x8b, 0xf3, 0xe5, 0xde, 0x71, 0x22, 0xaa, 0xb0, 0x8a, 0x65, 0xde, 0x80, 0x69, 0x96,
-	0xdb, 0xc6, 0x54, 0xb5, 0x2a, 0xfa, 0xd3, 0x39, 0x00, 0x97, 0xe6, 0x2a, 0xe1, 0x2f, 0x15, 0x88,
-	0xf9, 0xd7, 0x0d, 0x98, 0xfa, 0x90, 0x47, 0x7a, 0xe0, 0x2f, 0x2a, 0x17, 0xc9, 0x7a, 0x65, 0x11,
-	0xb5, 0x68, 0x18, 0x54, 0x82, 0xd8, 0x49, 0x65, 0xda, 0x14, 0x80, 0x5a, 0xf4, 0xd5, 0x7a, 0x9a,
-	0xc7, 0xbd, 0x38, 0x79, 0x12, 0xbd, 0x00, 0xf3, 0xac, 0x58, 0x14, 0xf6, 0xec, 0x5d, 0xa6, 0xbe,
-	0x72, 0x83, 0x75, 0x16, 0x6e, 0x5a, 0x80, 0xf2, 0x61, 0x25, 0xd0, 0x5b, 0xec, 0xbc, 0xca, 0x8b,
-	0x64, 0x0c, 0xfa, 0xc1, 0x6f, 0x23, 0x48, 0x0c, 0xf3, 0x87, 0x35, 0x98, 0xcf, 0x3a, 0x1e, 0xa2,
-	0xb7, 0x60, 0x82, 0xf1, 0xb0, 0xaa, 0xa0, 0xf6, 0x59, 0x7b, 0x94, 0xc5, 0x71, 0xd0, 0x6d, 0x98,
-	0x72, 0xc3, 0xc3, 0xe0, 0xd0, 0x8e, 0xdc, 0xd5, 0xce, 0x66, 0xd5, 0x4b, 0xea, 0xed, 0xb4, 0x98,
-	0x42, 0x47, 0xc5, 0x46, 0xeb, 0x6a, 0x0c, 0xff, 0x8a, 0x03, 0x77, 0x19, 0xc3, 0x5f, 0x21, 0x94,
-	0x62, 0x22, 0x07, 0x4e, 0xc5, 0x25, 0x0a, 0x5b, 0x59, 0x34, 0x9b, 0x2a, 0x3d, 0xc8, 0x2a, 0xa2,
-	0x66, 0xfe, 0x68, 0x4e, 0x4c, 0x44, 0xbe, 0x89, 0xa9, 0xf1, 0xbd, 0x8c, 0x13, 0xc7, 0xf7, 0x6a,
-	0xc3, 0x24, 0xee, 0xf6, 0x92, 0xa3, 0xb6, 0x17, 0x55, 0x45, 0x20, 0x5c, 0xe7, 0x65, 0x74, 0x2a,
-	0x02, 0xb3, 0x38, 0x6c, 0x5a, 0xfd, 0x33, 0x08, 0x9b, 0x36, 0x36, 0xf2, 0xb0, 0x69, 0xab, 0xd0,
-	0xd8, 0x65, 0xcf, 0xc4, 0xf2, 0xbd, 0xb9, 0x70, 0x46, 0x14, 0xbc, 0x24, 0x6b, 0x09, 0x3c, 0x74,
-	0x4d, 0xce, 0xf0, 0x89, 0x72, 0xe1, 0x2f, 0x6f, 0x68, 0x94, 0x73, 0x9c, 0x07, 0x48, 0x6b, 0x1c,
-	0x33, 0x40, 0xda, 0x55, 0x11, 0xdf, 0x6c, 0xb2, 0xdc, 0xef, 0x24, 0xf7, 0x34, 0xa3, 0x88, 0x6a,
-	0x76, 0x53, 0x8d, 0xf3, 0xd6, 0x2c, 0x5f, 0x55, 0x85, 0xef, 0xc5, 0xaa, 0xd1, 0xdd, 0xf6, 0x61,
-	0xa9, 0x57, 0x14, 0x5c, 0x90, 0x47, 0x27, 0x7b, 0x6d, 0xe8, 0x40, 0x89, 0xda, 0x0f, 0x8a, 0x69,
-	0x92, 0x9e, 0x8a, 0xb6, 0x5d, 0x1e, 0xbf, 0xec, 0xd9, 0x92, 0x98, 0x70, 0xf9, 0x48, 0x70, 0xed,
-	0x82, 0xb8, 0x65, 0xcf, 0x0d, 0xf3, 0xfa, 0xb2, 0x16, 0xad, 0xec, 0x9a, 0x0c, 0x04, 0x37, 0x53,
-	0x3e, 0xcc, 0x2c, 0x10, 0x5c, 0x61, 0xf8, 0xb7, 0x6b, 0x32, 0xfc, 0x5b, 0xc5, 0x55, 0x43, 0x16,
-	0xfe, 0xad, 0x30, 0xe8, 0x9b, 0x12, 0xc0, 0x6d, 0xee, 0x84, 0x01, 0xdc, 0xee, 0xea, 0xdc, 0x94,
-	0x85, 0x20, 0xfb, 0xca, 0x00, 0x6e, 0xaa, 0x91, 0xd2, 0xf8, 0x29, 0x0b, 0x43, 0xb7, 0x70, 0xac,
-	0x30, 0x74, 0x37, 0xd5, 0x98, 0x6f, 0x68, 0x40, 0x0c, 0x34, 0x52, 0xa8, 0x2c, 0xd2, 0xdb, 0x4d,
-	0x95, 0x99, 0x9f, 0x2a, 0x27, 0x24, 0x99, 0xb9, 0x4e, 0x28, 0x65, 0xe7, 0xb9, 0x90, 0x71, 0x8b,
-	0x8f, 0x21, 0x64, 0xdc, 0xd2, 0x28, 0x42, 0xc6, 0x9d, 0x7e, 0x0c, 0x21, 0xe3, 0x9e, 0x18, 0x79,
-	0xc8, 0xb8, 0x9b, 0xd4, 0x20, 0xce, 0x6e, 0x2e, 0xf0, 0xcb, 0x94, 0xc5, 0xb1, 0x7b, 0x8b, 0xae,
-	0x37, 0x58, 0x29, 0x6e, 0x41, 0xec, 0xb9, 0xd6, 0x23, 0xc6, 0x9e, 0x5b, 0x4d, 0x63, 0xcf, 0x9d,
-	0x29, 0x1f, 0x90, 0x02, 0x2f, 0x85, 0x34, 0xe2, 0xdc, 0x4d, 0x35, 0x68, 0xdc, 0x93, 0x15, 0x26,
-	0x89, 0x22, 0x4d, 0x54, 0x09, 0x15, 0x67, 0xfe, 0x5d, 0x03, 0xce, 0x55, 0x4f, 0xa7, 0x54, 0x6f,
-	0xed, 0xa4, 0x06, 0x36, 0x05, 0x52, 0x7a, 0xdb, 0xe9, 0x45, 0x58, 0x90, 0x9e, 0x07, 0xbe, 0xe7,
-	0x1c, 0x29, 0x61, 0x82, 0xf3, 0x19, 0xd4, 0x8c, 0xa5, 0x02, 0x37, 0xdb, 0x5c, 0xae, 0xcc, 0x82,
-	0xcd, 0x3f, 0x6d, 0xc0, 0x13, 0x25, 0x51, 0x7b, 0x4a, 0xaf, 0x09, 0xdd, 0x85, 0xb9, 0x9e, 0x5e,
-	0x74, 0xc0, 0xbd, 0x39, 0x2d, 0x16, 0x50, 0x16, 0xf7, 0xc6, 0xe2, 0xbf, 0xfa, 0xf4, 0x9c, 0xf1,
-	0x6f, 0x3e, 0x3d, 0x67, 0xfc, 0x97, 0x4f, 0xcf, 0x19, 0xbf, 0xf2, 0xdf, 0xce, 0xfd, 0xb1, 0x9f,
-	0xa8, 0x1d, 0xbc, 0xf2, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x7f, 0x4d, 0xce, 0x6e, 0x34, 0xaa,
-	0x00, 0x00,
+	// 10447 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x7d, 0x5b, 0x6c, 0x24, 0xd7,
+	0x95, 0x58, 0xaa, 0x9b, 0x8f, 0xee, 0xc3, 0xe7, 0x5c, 0x72, 0x46, 0x3d, 0xd4, 0x68, 0x34, 0x2a,
+	0xc9, 0xd2, 0x58, 0x96, 0x38, 0x92, 0x3c, 0x1a, 0x4b, 0x1a, 0x6b, 0x46, 0x1c, 0x36, 0x39, 0x43,
+	0xcd, 0xab, 0x55, 0xa4, 0x34, 0xd6, 0xc6, 0x89, 0x52, 0xac, 0xba, 0x24, 0xcb, 0xac, 0xae, 0x6a,
+	0x55, 0x55, 0x93, 0x43, 0x63, 0x17, 0xd8, 0x2c, 0x02, 0xc3, 0x9b, 0x5d, 0x2c, 0xbc, 0xc1, 0xc6,
+	0x76, 0x1c, 0x6f, 0x76, 0xb1, 0x8b, 0xc0, 0xd9, 0xc0, 0xc9, 0x7a, 0x11, 0x24, 0x5e, 0x24, 0x88,
+	0x81, 0x20, 0x09, 0x36, 0xfe, 0x48, 0x90, 0x7c, 0x05, 0x79, 0x39, 0x59, 0xe5, 0x63, 0xf3, 0x6b,
+	0x24, 0x01, 0x02, 0xe4, 0x27, 0xb8, 0xcf, 0xba, 0xb7, 0x5e, 0x6c, 0x72, 0x9a, 0x92, 0x80, 0xe8,
+	0xaf, 0xee, 0xe3, 0x9c, 0xba, 0xcf, 0x73, 0xcf, 0x39, 0xf7, 0x9c, 0x73, 0xc1, 0xdc, 0x7d, 0x2d,
+	0x5e, 0xf4, 0xc2, 0x4b, 0x76, 0xcf, 0xbb, 0xe4, 0x84, 0x11, 0xbe, 0xb4, 0xf7, 0xf2, 0xa5, 0x6d,
+	0x1c, 0xe0, 0xc8, 0x4e, 0xb0, 0xbb, 0xd8, 0x8b, 0xc2, 0x24, 0x44, 0x88, 0xd5, 0x59, 0xb4, 0x7b,
+	0xde, 0x22, 0xa9, 0xb3, 0xb8, 0xf7, 0xf2, 0xc2, 0xe5, 0x14, 0xae, 0x6b, 0x3b, 0x3b, 0x5e, 0x80,
+	0xa3, 0x83, 0x4b, 0xbd, 0xdd, 0x6d, 0x8a, 0x28, 0xc2, 0x71, 0xd8, 0x8f, 0x1c, 0x9c, 0xc5, 0x54,
+	0x09, 0x15, 0x5f, 0xea, 0xe2, 0xc4, 0x2e, 0xf8, 0xff, 0xc2, 0xa5, 0x32, 0xa8, 0xa8, 0x1f, 0x24,
+	0x5e, 0x37, 0xff, 0x9b, 0x2b, 0x87, 0x01, 0xc4, 0xce, 0x0e, 0xee, 0xda, 0x39, 0xb8, 0x2f, 0x96,
+	0xc1, 0xf5, 0x13, 0xcf, 0xbf, 0xe4, 0x05, 0x49, 0x9c, 0x44, 0x59, 0x20, 0xf3, 0x5b, 0x06, 0x5c,
+	0x58, 0x7a, 0xb0, 0xbe, 0xe2, 0xdb, 0x71, 0xe2, 0x39, 0x37, 0xfc, 0xd0, 0xd9, 0x5d, 0x4f, 0xc2,
+	0x08, 0xbf, 0x17, 0xfa, 0xfd, 0x2e, 0x5e, 0xa7, 0x03, 0x81, 0x16, 0xa0, 0xb1, 0x47, 0xd3, 0x6b,
+	0xed, 0x96, 0x71, 0xc1, 0xb8, 0xd8, 0xb4, 0x64, 0x1a, 0x9d, 0x81, 0xb1, 0xad, 0x78, 0xe3, 0xa0,
+	0x87, 0x5b, 0x35, 0x5a, 0xc2, 0x53, 0xe8, 0x1c, 0x34, 0x7b, 0x76, 0x94, 0x78, 0x89, 0x17, 0x06,
+	0xad, 0xfa, 0x05, 0xe3, 0xe2, 0xa8, 0x95, 0x66, 0x10, 0x8c, 0x11, 0xb6, 0xdd, 0xfb, 0x81, 0x7f,
+	0xd0, 0x1a, 0xb9, 0x60, 0x5c, 0x6c, 0x58, 0x32, 0x6d, 0x7e, 0x64, 0x40, 0x63, 0x69, 0x6b, 0xcb,
+	0x0b, 0xbc, 0xe4, 0x00, 0xb5, 0x61, 0x32, 0x08, 0x5d, 0x2c, 0xd2, 0xf4, 0xf7, 0x13, 0xaf, 0x5c,
+	0x58, 0xcc, 0x4f, 0xea, 0xe2, 0x3d, 0xa5, 0x9e, 0xa5, 0x41, 0xa1, 0x25, 0x98, 0xe8, 0x85, 0xae,
+	0x44, 0x52, 0xa3, 0x48, 0x9e, 0x2c, 0x42, 0xd2, 0x49, 0xab, 0x59, 0x2a, 0x0c, 0xba, 0x0b, 0x33,
+	0x24, 0x19, 0x24, 0x9e, 0x44, 0x53, 0xa7, 0x68, 0x9e, 0x2e, 0x43, 0xa3, 0x54, 0xb5, 0xb2, 0xb0,
+	0x66, 0x1b, 0xa6, 0x97, 0x92, 0xc4, 0x76, 0x76, 0xb0, 0xcb, 0x86, 0x1a, 0x21, 0x18, 0x09, 0xec,
+	0x2e, 0xe6, 0x03, 0x4c, 0xbf, 0xd1, 0x79, 0x00, 0x17, 0xef, 0x79, 0x0e, 0xee, 0xd8, 0xc9, 0x0e,
+	0x1f, 0x60, 0x25, 0xc7, 0xfc, 0x00, 0x9a, 0x4b, 0x7b, 0xa1, 0xe7, 0x76, 0x42, 0x37, 0x46, 0x16,
+	0xcc, 0xf4, 0x22, 0xbc, 0x85, 0x23, 0x99, 0xd5, 0x32, 0x2e, 0xd4, 0x2f, 0x4e, 0xbc, 0x72, 0xb1,
+	0xb0, 0x85, 0x7a, 0xd5, 0x95, 0x20, 0x89, 0x48, 0x33, 0xf5, 0x5c, 0xf3, 0xc7, 0x06, 0x9c, 0x5e,
+	0xfa, 0x7a, 0x3f, 0xc2, 0x6d, 0x2f, 0xde, 0xcd, 0xae, 0x09, 0xd7, 0x8b, 0x77, 0xef, 0xa5, 0x4d,
+	0x96, 0x69, 0xd4, 0x82, 0x71, 0xf2, 0xfd, 0xae, 0xb5, 0xc6, 0xdb, 0x2c, 0x92, 0xe8, 0x02, 0x4c,
+	0x38, 0x74, 0x6d, 0x6e, 0xdf, 0x0d, 0x5d, 0x4c, 0x47, 0xb0, 0x69, 0xa9, 0x59, 0xca, 0x7a, 0x1a,
+	0xd1, 0xd6, 0x93, 0xba, 0x62, 0x46, 0xf5, 0x15, 0x43, 0x86, 0x6e, 0xd7, 0x0b, 0xdc, 0xd6, 0x18,
+	0x1b, 0x3a, 0xf2, 0x6d, 0xfe, 0x6d, 0x03, 0x9e, 0xa4, 0x2d, 0x5f, 0xf5, 0x7c, 0xdc, 0xc1, 0x51,
+	0xec, 0xc5, 0x09, 0x0e, 0x12, 0xad, 0x0f, 0xe7, 0x01, 0x62, 0xec, 0x44, 0x38, 0x51, 0x7a, 0xa1,
+	0xe4, 0x90, 0x35, 0x1c, 0xef, 0xd8, 0x11, 0xa6, 0xc5, 0xac, 0x27, 0x69, 0x86, 0xd6, 0xa2, 0x7a,
+	0xa6, 0x45, 0x17, 0x61, 0x26, 0xc5, 0x13, 0xf7, 0x6c, 0x47, 0x74, 0x27, 0x9b, 0x6d, 0x7e, 0xc8,
+	0x07, 0x98, 0x34, 0xf3, 0xe3, 0x69, 0x9c, 0xf9, 0x5b, 0x06, 0x8c, 0xdf, 0xf0, 0x02, 0xd7, 0x0b,
+	0xb6, 0xd1, 0x1d, 0x68, 0x10, 0xc2, 0xe5, 0xda, 0x89, 0xcd, 0xf7, 0xd6, 0x4b, 0xca, 0x6a, 0x91,
+	0x74, 0x64, 0xb1, 0xb7, 0xbb, 0x4d, 0x32, 0xe2, 0x45, 0x52, 0x9b, 0xac, 0x9f, 0xfb, 0x9b, 0x5f,
+	0xc3, 0x4e, 0x72, 0x17, 0x27, 0xb6, 0x25, 0x31, 0xa0, 0xab, 0x30, 0x96, 0xd8, 0xd1, 0x36, 0x4e,
+	0xf8, 0x16, 0x2b, 0xdc, 0x1b, 0x0c, 0xd2, 0x22, 0x0b, 0x0d, 0x07, 0x0e, 0xb6, 0x38, 0x88, 0xf9,
+	0xe3, 0x51, 0x38, 0xbb, 0xbc, 0xbe, 0x56, 0x32, 0x57, 0x67, 0x60, 0xcc, 0x8d, 0xbc, 0x3d, 0x1c,
+	0xf1, 0xa1, 0xe0, 0x29, 0x64, 0xc2, 0x24, 0xa3, 0x45, 0xb7, 0xec, 0xc0, 0xf5, 0xc5, 0x48, 0x68,
+	0x79, 0x95, 0x33, 0x55, 0xb6, 0xde, 0x42, 0x98, 0x65, 0x38, 0x96, 0x92, 0x24, 0xf2, 0x36, 0xfb,
+	0x09, 0x8e, 0x5b, 0xa3, 0x74, 0x3b, 0x2d, 0x17, 0x75, 0xaa, 0xb4, 0xe1, 0x8b, 0xef, 0x65, 0xb0,
+	0xb0, 0x9d, 0x96, 0x43, 0x8e, 0x1c, 0x58, 0x70, 0xc2, 0x20, 0x89, 0x42, 0xdf, 0xc7, 0x51, 0xa7,
+	0xbf, 0xe9, 0x7b, 0xf1, 0xce, 0x3a, 0x9d, 0x6e, 0x0b, 0x6f, 0xd1, 0xa5, 0x5d, 0x32, 0x9e, 0xb2,
+	0x12, 0x1f, 0xcf, 0x0a, 0x34, 0x68, 0x1d, 0x10, 0x21, 0x8c, 0xeb, 0x89, 0xbd, 0x8d, 0x53, 0xe4,
+	0xe3, 0x83, 0x23, 0x2f, 0x00, 0x47, 0x0f, 0x60, 0x9e, 0xe4, 0xe6, 0xda, 0xdc, 0x18, 0x1c, 0x6d,
+	0x21, 0x02, 0x64, 0xc3, 0xd9, 0xb4, 0x2f, 0x2b, 0x0f, 0x7b, 0x76, 0xe0, 0xa6, 0xd8, 0x9b, 0x83,
+	0x63, 0x2f, 0xc7, 0xb2, 0xb0, 0x0c, 0xa7, 0x0b, 0x27, 0x08, 0xcd, 0x42, 0x7d, 0x17, 0x1f, 0xf0,
+	0xc5, 0x46, 0x3e, 0xd1, 0x3c, 0x8c, 0xee, 0xd9, 0x7e, 0x5f, 0x2c, 0x31, 0x96, 0x78, 0xa3, 0xf6,
+	0x9a, 0x61, 0xfe, 0x59, 0x0d, 0x66, 0x96, 0xd7, 0xd7, 0x06, 0x5a, 0xaf, 0xea, 0x5a, 0xac, 0x95,
+	0xae, 0xc5, 0xba, 0xb6, 0x16, 0x71, 0xc1, 0x5a, 0x1c, 0xa1, 0x6b, 0xf1, 0xf5, 0x92, 0xb5, 0x78,
+	0xac, 0x15, 0xf8, 0xd5, 0x92, 0x79, 0x1c, 0xa5, 0x23, 0x5d, 0x78, 0x8a, 0xdc, 0x09, 0x1d, 0xdb,
+	0xcf, 0x6e, 0xe8, 0x42, 0x2c, 0xc3, 0x19, 0xe9, 0xcb, 0x30, 0xb9, 0x6c, 0xf7, 0xec, 0x4d, 0xcf,
+	0xf7, 0x12, 0x0f, 0xc7, 0x04, 0xd6, 0x76, 0x5d, 0x7a, 0xce, 0x35, 0x2d, 0xf2, 0x49, 0xce, 0x02,
+	0x37, 0x0a, 0x7b, 0xad, 0x1a, 0xcd, 0xa2, 0xdf, 0xe6, 0x9f, 0x1a, 0x70, 0x6e, 0x19, 0xf7, 0x76,
+	0x56, 0xd7, 0x4b, 0x88, 0xcb, 0x02, 0x34, 0xba, 0x61, 0xe0, 0x25, 0x61, 0x14, 0x73, 0x5c, 0x32,
+	0x4d, 0x10, 0xf6, 0xd2, 0xd3, 0x97, 0x7e, 0x93, 0xbc, 0x7e, 0x8c, 0x23, 0x3e, 0x4d, 0xf4, 0x3b,
+	0xa5, 0xd7, 0x84, 0x92, 0x73, 0x62, 0xa2, 0xe4, 0xa0, 0x25, 0x68, 0xc6, 0x99, 0x21, 0x1d, 0x68,
+	0xf1, 0xa6, 0x50, 0xda, 0xda, 0x19, 0xcb, 0x10, 0xf5, 0xff, 0x6c, 0x00, 0x62, 0x7d, 0xfc, 0xd8,
+	0x7b, 0xb6, 0x9a, 0xef, 0xd9, 0xe0, 0x8b, 0x65, 0xc0, 0xee, 0xfd, 0x11, 0x99, 0x42, 0x2f, 0x70,
+	0x71, 0x54, 0x3e, 0x85, 0x47, 0xe6, 0x51, 0xab, 0xce, 0x05, 0x6d, 0xba, 0x46, 0x8e, 0x33, 0x5d,
+	0xe6, 0x0f, 0xc9, 0x94, 0xd0, 0x36, 0x9f, 0x68, 0x4b, 0x57, 0xf3, 0x2d, 0x3d, 0xce, 0xf0, 0x9b,
+	0xaf, 0xc1, 0xf4, 0xb2, 0xef, 0xe1, 0x20, 0x59, 0xeb, 0x2c, 0x87, 0xc1, 0x96, 0xb7, 0x8d, 0x9e,
+	0x85, 0x69, 0x22, 0x70, 0x84, 0xfd, 0x64, 0x1d, 0x3b, 0x61, 0x40, 0x19, 0x4a, 0xc2, 0xc8, 0x67,
+	0x72, 0xcd, 0x1e, 0xa0, 0xe5, 0xb0, 0xdb, 0x0b, 0x03, 0x1c, 0x24, 0xcb, 0x61, 0xe0, 0x32, 0x1e,
+	0x1f, 0xc1, 0x48, 0x42, 0x7a, 0xc2, 0x19, 0x5a, 0xf2, 0x4d, 0xfa, 0x17, 0x27, 0x76, 0xd2, 0x8f,
+	0x45, 0xff, 0x58, 0x8a, 0x70, 0x8c, 0x5d, 0x1c, 0xc7, 0xf6, 0xb6, 0x20, 0x7d, 0x22, 0x49, 0x68,
+	0x01, 0x8e, 0xa2, 0x30, 0xe2, 0xeb, 0x8e, 0x25, 0xcc, 0x1f, 0x18, 0x30, 0x23, 0x7f, 0xb9, 0xce,
+	0x70, 0x0c, 0x97, 0x95, 0x59, 0x05, 0x70, 0x44, 0x57, 0x62, 0x4a, 0x4d, 0x26, 0x5e, 0x79, 0xb6,
+	0x90, 0xda, 0xe6, 0x7a, 0x6e, 0x29, 0x90, 0xe6, 0xf7, 0x0d, 0x98, 0xcb, 0xb4, 0xf4, 0x8e, 0x17,
+	0x27, 0xe8, 0xed, 0x5c, 0x6b, 0x17, 0x07, 0x6b, 0x2d, 0x81, 0xce, 0xb4, 0xf5, 0x75, 0x18, 0xf5,
+	0x12, 0xdc, 0x15, 0xcd, 0x7c, 0xba, 0xb2, 0x99, 0xac, 0x0d, 0x16, 0x83, 0x30, 0xff, 0x6f, 0x0d,
+	0x9a, 0x6c, 0xb6, 0xef, 0xda, 0xbd, 0x21, 0x0f, 0xe1, 0x39, 0x68, 0x7a, 0xdd, 0x6e, 0x3f, 0xb1,
+	0x37, 0x39, 0xd9, 0x68, 0x58, 0x69, 0x06, 0xba, 0x0a, 0x23, 0xf4, 0x3f, 0xac, 0xcd, 0xcf, 0x15,
+	0xb7, 0x99, 0x37, 0x6c, 0xb1, 0x6d, 0x27, 0x36, 0x3b, 0xb6, 0x28, 0x10, 0xba, 0x0b, 0xb0, 0xe9,
+	0x05, 0x76, 0x74, 0x40, 0x0a, 0x5a, 0x75, 0x8a, 0xe2, 0xc5, 0x6a, 0x14, 0x37, 0x64, 0x7d, 0x86,
+	0x48, 0x41, 0xb0, 0xf0, 0x25, 0x68, 0xca, 0x82, 0xa3, 0x9c, 0x47, 0x0b, 0x6f, 0xc2, 0x4c, 0x06,
+	0xef, 0x61, 0xe0, 0x93, 0xea, 0x71, 0xf6, 0x1b, 0x84, 0x42, 0x88, 0x16, 0xae, 0x04, 0x7b, 0x9c,
+	0x42, 0x7c, 0x15, 0xe6, 0xfd, 0x82, 0xcd, 0xca, 0xa7, 0xe4, 0x08, 0x07, 0x71, 0x11, 0x16, 0x42,
+	0x4b, 0xc2, 0x1e, 0x59, 0x9c, 0xb6, 0x2f, 0x38, 0x10, 0x91, 0x36, 0x7f, 0xcf, 0x80, 0x79, 0xd9,
+	0xa0, 0xdb, 0xf8, 0x60, 0x1d, 0xfb, 0xd8, 0x49, 0xc2, 0xe8, 0x84, 0x9b, 0xc4, 0xc7, 0xac, 0x96,
+	0x8e, 0x99, 0xda, 0xc8, 0x7a, 0xa6, 0x91, 0xdf, 0x32, 0x60, 0x4a, 0x36, 0x72, 0xe8, 0x9b, 0xe9,
+	0x8b, 0xfa, 0x66, 0x7a, 0xa2, 0x72, 0x55, 0x89, 0x6d, 0xf4, 0x0f, 0x0d, 0x38, 0x2b, 0x33, 0xef,
+	0x85, 0x2e, 0x66, 0x09, 0x3e, 0x9f, 0xe7, 0xa0, 0x19, 0x48, 0x39, 0x90, 0x2d, 0x8c, 0x34, 0x43,
+	0x0a, 0xfe, 0x35, 0x45, 0xf0, 0x9f, 0x85, 0x7a, 0xdf, 0x73, 0x39, 0x2d, 0x24, 0x9f, 0x44, 0xa2,
+	0x14, 0x8a, 0xa9, 0xf7, 0xc8, 0x09, 0x18, 0x06, 0x42, 0xa2, 0xcc, 0x64, 0xa3, 0xe7, 0x61, 0x76,
+	0xb7, 0xbf, 0x89, 0x7d, 0x9c, 0xb0, 0x46, 0xdc, 0xc6, 0x4c, 0x62, 0x6e, 0x5a, 0xb9, 0x7c, 0xf3,
+	0x5f, 0x50, 0xea, 0xc4, 0xdb, 0xdd, 0x89, 0x42, 0x32, 0x2d, 0x04, 0xc7, 0xc9, 0x4e, 0xf7, 0x20,
+	0x43, 0x7c, 0x1b, 0x1f, 0x6c, 0x84, 0x1d, 0x3b, 0xd9, 0xe1, 0x43, 0xac, 0xad, 0x88, 0x91, 0xcc,
+	0x8a, 0xf8, 0x1f, 0x06, 0x9c, 0x96, 0xdd, 0xd0, 0x0e, 0xdb, 0x4f, 0x61, 0x47, 0x2e, 0xc0, 0x84,
+	0x8b, 0xb7, 0xec, 0xbe, 0x9f, 0x48, 0x1d, 0xc8, 0xa8, 0xa5, 0x66, 0x55, 0x76, 0xf5, 0x0f, 0x1b,
+	0x94, 0x60, 0x27, 0x36, 0x59, 0xd1, 0x85, 0x4a, 0xa3, 0x79, 0x18, 0xf5, 0xba, 0xe4, 0x24, 0xe5,
+	0xd4, 0x8a, 0x26, 0xc8, 0x09, 0xeb, 0x84, 0xdd, 0xae, 0x1d, 0xb8, 0x94, 0x5c, 0x36, 0x2d, 0x91,
+	0x24, 0x38, 0xec, 0x68, 0x9b, 0x49, 0x14, 0x4d, 0x8b, 0x7e, 0x13, 0x96, 0x6f, 0x3f, 0x8c, 0x76,
+	0xbd, 0x60, 0xbb, 0xed, 0x45, 0x7c, 0xf5, 0x28, 0x39, 0xe8, 0x4b, 0x30, 0xda, 0x0b, 0xa3, 0x24,
+	0x6e, 0x8d, 0xd1, 0x8e, 0x3f, 0x55, 0xb2, 0x49, 0x58, 0x2b, 0x3b, 0x61, 0x94, 0x58, 0xac, 0x3e,
+	0xba, 0x0a, 0xe3, 0x38, 0xd8, 0x5b, 0x8d, 0xc2, 0x6e, 0x6b, 0xae, 0x1c, 0x74, 0x85, 0x55, 0x61,
+	0x73, 0x68, 0x09, 0x08, 0xf4, 0x02, 0xd4, 0x71, 0xb0, 0xd7, 0x1a, 0xa7, 0x80, 0x0b, 0x25, 0x80,
+	0xef, 0xd9, 0x91, 0x45, 0xaa, 0x11, 0xbe, 0x48, 0x6c, 0x8d, 0x98, 0xcb, 0xa2, 0x85, 0xf3, 0x6d,
+	0xf1, 0x4a, 0x16, 0xfe, 0xb0, 0xef, 0x45, 0xb8, 0x8b, 0x83, 0x24, 0xb6, 0x52, 0x50, 0xb4, 0x2c,
+	0x34, 0x0c, 0x77, 0xc3, 0x7e, 0x90, 0xc4, 0xad, 0x26, 0xfd, 0x7d, 0xa1, 0xf6, 0xf0, 0xbd, 0xb4,
+	0x9e, 0xa5, 0x01, 0xa1, 0x55, 0x98, 0x62, 0xe9, 0x36, 0xd5, 0xde, 0xc5, 0xad, 0xd3, 0x14, 0xcb,
+	0x85, 0x72, 0x2c, 0xac, 0xa2, 0xa5, 0x83, 0xa1, 0xeb, 0x30, 0xe5, 0x7b, 0x7b, 0x38, 0xc0, 0x71,
+	0xdc, 0x89, 0xc2, 0x4d, 0xdc, 0x02, 0xda, 0xb1, 0xb3, 0xc5, 0x2a, 0xbe, 0x70, 0x13, 0x5b, 0x7a,
+	0x7d, 0xb4, 0x04, 0xd3, 0x84, 0x73, 0xf4, 0x52, 0x0c, 0x13, 0x87, 0x61, 0xc8, 0x00, 0xa0, 0x37,
+	0x61, 0x32, 0x4e, 0xec, 0x28, 0xe9, 0xf7, 0x18, 0x82, 0x33, 0x87, 0x21, 0xd0, 0xaa, 0xa3, 0xab,
+	0xd0, 0xf4, 0xbd, 0x2d, 0xec, 0x1c, 0x38, 0x3e, 0x6e, 0x4d, 0x52, 0xd8, 0xc2, 0x8d, 0x73, 0x47,
+	0x54, 0xb2, 0xd2, 0xfa, 0xe8, 0x0a, 0x9c, 0x49, 0x70, 0xd4, 0xf5, 0x02, 0x9b, 0xec, 0x87, 0xbb,
+	0x8c, 0x49, 0xa4, 0xda, 0xd1, 0x29, 0xba, 0x48, 0x4b, 0x4a, 0xd1, 0x1b, 0xd0, 0x2a, 0x28, 0x09,
+	0x7d, 0xcf, 0x39, 0x68, 0xcd, 0x53, 0xc8, 0xd2, 0x72, 0x42, 0x7a, 0xe9, 0x1e, 0xea, 0xf4, 0x7d,
+	0x9f, 0x83, 0x4c, 0x33, 0xd2, 0x9b, 0xc9, 0x46, 0x77, 0xa9, 0xda, 0xaf, 0x1f, 0x79, 0xc9, 0x01,
+	0x59, 0xfd, 0xf8, 0x61, 0xd2, 0x9a, 0xa9, 0x14, 0x1d, 0xd4, 0xaa, 0x56, 0x16, 0x96, 0xec, 0xe4,
+	0x38, 0x71, 0xbd, 0xa0, 0x35, 0x4b, 0x89, 0x00, 0x4b, 0x50, 0xc5, 0x1f, 0xf9, 0xb8, 0x4f, 0xe8,
+	0xd8, 0x29, 0xc6, 0x56, 0xc9, 0x0c, 0x72, 0x72, 0x24, 0xc9, 0x41, 0x0b, 0xd1, 0x7c, 0xf2, 0x69,
+	0xb6, 0x61, 0x5a, 0x6e, 0xc5, 0xb5, 0x2e, 0xe7, 0xa9, 0xe9, 0xf1, 0xc3, 0x25, 0x42, 0x96, 0xa0,
+	0x78, 0xbd, 0xaf, 0xe3, 0x1b, 0x07, 0x09, 0x66, 0xec, 0x79, 0xdd, 0x4a, 0x33, 0xcc, 0xbf, 0xc1,
+	0x0e, 0xdd, 0x74, 0x47, 0x17, 0xd2, 0x9e, 0x05, 0x68, 0xec, 0x84, 0x71, 0x42, 0xca, 0x29, 0x8a,
+	0x51, 0x4b, 0xa6, 0xd1, 0x33, 0x30, 0xe5, 0xa8, 0x08, 0x38, 0xe5, 0xd3, 0x33, 0x09, 0x06, 0x7a,
+	0x33, 0xe1, 0x84, 0x3e, 0x3f, 0xe0, 0x64, 0x9a, 0x48, 0x0f, 0x04, 0xdb, 0x5a, 0x87, 0x53, 0x24,
+	0x9e, 0x22, 0xe4, 0x3f, 0xed, 0x22, 0xe1, 0x6f, 0x31, 0x5a, 0x86, 0xf1, 0x7d, 0xdb, 0x4b, 0xbc,
+	0x60, 0x9b, 0x93, 0xfa, 0xcf, 0x57, 0x92, 0x28, 0x0a, 0xf4, 0x80, 0x01, 0x58, 0x02, 0x92, 0x20,
+	0x89, 0xfa, 0x41, 0x40, 0x90, 0xd4, 0x06, 0x45, 0x62, 0x31, 0x00, 0x4b, 0x40, 0xa2, 0x3b, 0x00,
+	0x62, 0x65, 0x61, 0x97, 0xdf, 0x19, 0xbc, 0x70, 0x38, 0x9e, 0x0d, 0x09, 0x63, 0x29, 0xf0, 0xa6,
+	0x4d, 0x0f, 0xba, 0xfc, 0xff, 0xd0, 0x2d, 0xb2, 0x2a, 0xec, 0x28, 0xc1, 0xee, 0x52, 0xc2, 0xbb,
+	0xfc, 0xfc, 0x60, 0x3c, 0xd0, 0x86, 0xd7, 0x25, 0x72, 0xa0, 0x00, 0x36, 0xff, 0xb8, 0x06, 0xad,
+	0xb2, 0xb6, 0x90, 0xe9, 0xc1, 0x0f, 0xbd, 0x64, 0x99, 0x9c, 0x5c, 0x4c, 0x18, 0x94, 0x69, 0x2a,
+	0xdc, 0x79, 0xdb, 0x82, 0xad, 0x1c, 0xb5, 0x78, 0x8a, 0xe4, 0x47, 0xd8, 0x8e, 0xf9, 0x3d, 0x50,
+	0xd3, 0xe2, 0x29, 0x55, 0xe8, 0x1b, 0xd1, 0x85, 0x3e, 0xad, 0x33, 0xa3, 0x8f, 0xd0, 0x19, 0xf4,
+	0x36, 0xc0, 0x96, 0x17, 0x78, 0xf1, 0x0e, 0x45, 0x35, 0x76, 0x64, 0x54, 0x0a, 0x34, 0xbd, 0xbc,
+	0x90, 0x1b, 0xa9, 0x4d, 0xb5, 0xa6, 0x4d, 0x4b, 0xcd, 0x32, 0xd7, 0xb2, 0xb3, 0xc3, 0x97, 0x94,
+	0x32, 0x04, 0x46, 0xd9, 0x10, 0xd4, 0xb4, 0x21, 0x30, 0xff, 0xa4, 0x46, 0x24, 0x5c, 0x05, 0x57,
+	0x3f, 0x2e, 0xdc, 0x71, 0xaf, 0x11, 0x1a, 0x61, 0x27, 0x98, 0xaf, 0x50, 0x73, 0x80, 0x15, 0xca,
+	0x00, 0xd0, 0x5b, 0xd0, 0xf4, 0xed, 0x98, 0xca, 0x83, 0x98, 0xaf, 0xcb, 0x41, 0xa0, 0x53, 0x20,
+	0x42, 0x47, 0xc8, 0xd1, 0x20, 0xae, 0xf0, 0x58, 0x02, 0x99, 0x30, 0x19, 0x61, 0x3a, 0x03, 0xcb,
+	0xe4, 0xec, 0xa3, 0xf3, 0x37, 0x6a, 0x69, 0x79, 0x29, 0x8f, 0x32, 0x96, 0xe1, 0x51, 0xe8, 0x87,
+	0x1c, 0x5c, 0x91, 0xcc, 0x0e, 0x7d, 0x23, 0x37, 0xf4, 0x04, 0x96, 0xcf, 0x3a, 0xd5, 0x0c, 0x37,
+	0x2c, 0x91, 0x34, 0x9f, 0x81, 0xe9, 0xb6, 0x8d, 0xbb, 0x61, 0xb0, 0x12, 0xb8, 0xbd, 0xd0, 0x0b,
+	0x28, 0xe5, 0xa2, 0x04, 0x88, 0x2d, 0x60, 0xfa, 0x6d, 0x7e, 0x05, 0x4e, 0xb7, 0xc3, 0xfd, 0x60,
+	0xdf, 0x8e, 0xdc, 0xa5, 0xce, 0x9a, 0xc2, 0x0a, 0x5f, 0x17, 0x3c, 0x1e, 0xbb, 0x4c, 0x2b, 0x24,
+	0x01, 0x0a, 0x24, 0x3b, 0xbc, 0x57, 0x3d, 0x1f, 0x0b, 0xd9, 0xe0, 0x3f, 0x19, 0x1a, 0xea, 0xb4,
+	0x82, 0x54, 0xc0, 0x19, 0x8a, 0x02, 0x6e, 0x19, 0x1a, 0x5b, 0x1e, 0xf6, 0x5d, 0x0b, 0x6f, 0xf1,
+	0x29, 0x7d, 0xae, 0xfc, 0x12, 0x65, 0x95, 0xd4, 0x14, 0x32, 0x9a, 0x25, 0x01, 0xd1, 0xbb, 0x30,
+	0x2b, 0xf8, 0x97, 0x55, 0x81, 0xac, 0x5e, 0x4e, 0xc1, 0x2c, 0xb5, 0xae, 0x44, 0x97, 0x43, 0x41,
+	0xda, 0xdb, 0x25, 0x1b, 0x7f, 0x84, 0x8d, 0x1b, 0xf9, 0x36, 0x7f, 0x11, 0x1e, 0xcb, 0x75, 0x8e,
+	0xf3, 0xde, 0x8f, 0x3a, 0x72, 0x59, 0x4e, 0xb9, 0x96, 0xe3, 0x94, 0xcd, 0x5f, 0x84, 0xf9, 0x95,
+	0x6e, 0x2f, 0x39, 0x68, 0x7b, 0x51, 0x56, 0xfb, 0xde, 0xc5, 0xae, 0xd7, 0xef, 0x8a, 0xfd, 0xc6,
+	0x52, 0xe8, 0x0e, 0x3b, 0xe3, 0xee, 0x78, 0x5d, 0x4f, 0xdc, 0x51, 0x55, 0x4a, 0x8a, 0x8b, 0x62,
+	0x0c, 0x16, 0xdf, 0xe9, 0xdb, 0x41, 0xe2, 0x25, 0x07, 0x56, 0x8a, 0xc0, 0xfc, 0xbe, 0x01, 0x33,
+	0x62, 0x51, 0x2d, 0xb9, 0x6e, 0x84, 0xe3, 0x18, 0x4d, 0x43, 0xcd, 0xeb, 0xf1, 0xbf, 0xd6, 0xbc,
+	0x9e, 0x38, 0x11, 0xe9, 0xbe, 0x65, 0xe4, 0x4f, 0xa6, 0x49, 0x59, 0x10, 0xba, 0xec, 0x06, 0x8f,
+	0x9f, 0x75, 0x22, 0x8d, 0x96, 0xa0, 0xc9, 0xee, 0xc5, 0xd2, 0x85, 0x30, 0xd0, 0x6d, 0x5a, 0x0a,
+	0x65, 0x26, 0x30, 0x29, 0x5a, 0x57, 0x7a, 0x60, 0x93, 0x25, 0x98, 0x1e, 0xd6, 0xf4, 0x5b, 0x3b,
+	0x82, 0xeb, 0x99, 0x23, 0xf8, 0x02, 0x4c, 0xd8, 0x3d, 0xc2, 0xc8, 0xa9, 0x27, 0xb4, 0x9a, 0x65,
+	0xfe, 0xcc, 0x80, 0x69, 0xf1, 0xdb, 0xf5, 0xfe, 0x66, 0x8c, 0x13, 0xd2, 0x17, 0x9b, 0x0d, 0x0f,
+	0x16, 0x8b, 0xe1, 0xe9, 0x62, 0xee, 0x5d, 0x1b, 0x4b, 0x2b, 0x85, 0x42, 0xef, 0xc0, 0xa9, 0x20,
+	0x4c, 0x2c, 0x42, 0x60, 0x96, 0x24, 0xaa, 0xda, 0xe0, 0xa8, 0xf2, 0xd0, 0xe8, 0x8a, 0x90, 0x61,
+	0xea, 0xe5, 0xac, 0xb8, 0x3a, 0x7e, 0x5c, 0x84, 0x31, 0xbf, 0x63, 0x40, 0x53, 0xe4, 0x0f, 0x5b,
+	0xeb, 0xf8, 0x65, 0x18, 0x8f, 0xe9, 0x98, 0x89, 0xce, 0x99, 0x55, 0xad, 0x62, 0xc3, 0x6b, 0x09,
+	0x10, 0xaa, 0x18, 0x91, 0x2d, 0xfb, 0x44, 0x14, 0x23, 0xf2, 0xef, 0x82, 0xf8, 0xfd, 0x23, 0xda,
+	0x24, 0x45, 0x9a, 0x23, 0x5b, 0xb3, 0x17, 0xe1, 0x2d, 0xef, 0xa1, 0xd8, 0x9a, 0x2c, 0x85, 0xde,
+	0x86, 0x49, 0x47, 0xaa, 0x55, 0xe4, 0x9a, 0x7f, 0xb6, 0x52, 0xfd, 0x22, 0x55, 0x66, 0x96, 0x06,
+	0xab, 0x2b, 0xef, 0xeb, 0x87, 0x29, 0xef, 0x53, 0x2c, 0x8a, 0x36, 0x3c, 0x82, 0x31, 0x26, 0x4c,
+	0x96, 0xc9, 0xd8, 0x79, 0x8d, 0x20, 0xba, 0x06, 0x4d, 0xfa, 0x41, 0xc5, 0xdb, 0x7a, 0xb9, 0xa5,
+	0x0a, 0x43, 0x2c, 0xfe, 0x29, 0x41, 0xcc, 0x9f, 0xd6, 0xc8, 0x8e, 0x4d, 0xcb, 0xb4, 0xc3, 0xc0,
+	0x18, 0xe6, 0x61, 0x50, 0x7b, 0xf4, 0xc3, 0xc0, 0x82, 0x19, 0x47, 0xd1, 0x14, 0xa6, 0x23, 0x7d,
+	0xb1, 0x72, 0xca, 0x14, 0xa5, 0xa2, 0x95, 0x45, 0x80, 0xd6, 0x60, 0x92, 0xcd, 0x00, 0x47, 0xc8,
+	0x6e, 0x33, 0x3e, 0x57, 0x3e, 0x75, 0x2a, 0x36, 0x0d, 0xd4, 0xfc, 0x91, 0x01, 0x68, 0xa5, 0xb7,
+	0x83, 0xbb, 0x38, 0xb2, 0xfd, 0x54, 0x61, 0xb2, 0x03, 0x2d, 0x9c, 0xcb, 0x5d, 0x0e, 0xbb, 0x5d,
+	0xce, 0x9a, 0x95, 0xf0, 0xe6, 0x2b, 0x25, 0x30, 0x56, 0x29, 0x36, 0xf4, 0x12, 0xcc, 0x31, 0x52,
+	0x2c, 0x0b, 0x14, 0x4b, 0x8d, 0xa2, 0x22, 0xf3, 0x27, 0x0d, 0x68, 0x95, 0xfd, 0xe8, 0x33, 0x4d,
+	0xcf, 0x67, 0x9a, 0x9e, 0xcf, 0x34, 0x3d, 0x9f, 0x69, 0x7a, 0x2a, 0x35, 0x3d, 0xff, 0xd4, 0x80,
+	0xb9, 0x3c, 0x01, 0x19, 0x36, 0x8f, 0xf2, 0x15, 0x98, 0xcb, 0x13, 0xbd, 0xca, 0x2b, 0xd2, 0x7c,
+	0x9b, 0xac, 0x22, 0x14, 0xe6, 0x77, 0x0d, 0x38, 0x2d, 0xeb, 0x6a, 0xfc, 0xbc, 0x03, 0x73, 0x6c,
+	0x77, 0x2c, 0xfb, 0xb6, 0xd7, 0xdd, 0xc0, 0xdd, 0x9e, 0x4f, 0xa4, 0x56, 0xd6, 0x99, 0x97, 0x0b,
+	0xd7, 0x63, 0xc6, 0x4c, 0x40, 0x03, 0xb4, 0x8a, 0xb0, 0x55, 0x99, 0xe6, 0x98, 0xdf, 0x1b, 0x83,
+	0xd1, 0x95, 0x3d, 0x1c, 0x24, 0x43, 0x1e, 0xcc, 0xdb, 0x30, 0xed, 0x05, 0x7b, 0xa1, 0xbf, 0x87,
+	0x5d, 0x56, 0x7e, 0x14, 0x5e, 0x3f, 0x03, 0x7a, 0x0c, 0x45, 0xcb, 0x97, 0x60, 0x8c, 0x11, 0x3f,
+	0xae, 0x65, 0x29, 0xa4, 0x75, 0xb4, 0xdf, 0x9c, 0x42, 0xf3, 0xea, 0xc8, 0x82, 0xe9, 0x2d, 0x2f,
+	0x8a, 0x93, 0x0d, 0xaf, 0x4b, 0xe4, 0xfa, 0x6e, 0xef, 0x18, 0xba, 0x95, 0x0c, 0x06, 0xd4, 0x81,
+	0x29, 0xdf, 0x56, 0x51, 0x8e, 0x1f, 0x19, 0xa5, 0x8e, 0x80, 0x6c, 0x2b, 0x87, 0xea, 0x20, 0x1a,
+	0x54, 0xbc, 0x61, 0x09, 0x69, 0x98, 0xd0, 0x54, 0x0c, 0x13, 0xee, 0x42, 0x13, 0x93, 0x6e, 0x12,
+	0x58, 0x4e, 0x69, 0x2f, 0x0d, 0xf6, 0xdf, 0xbb, 0x9e, 0x13, 0x85, 0x4c, 0xed, 0x24, 0x31, 0xd0,
+	0x71, 0xc5, 0x91, 0x87, 0x63, 0x4e, 0x73, 0x2b, 0xc6, 0x95, 0x56, 0xb3, 0x78, 0x75, 0x32, 0x85,
+	0x36, 0xd5, 0x3b, 0x50, 0x7a, 0xd9, 0xb4, 0x78, 0x0a, 0xbd, 0x09, 0xe3, 0x11, 0xf6, 0xa9, 0x0a,
+	0x71, 0x6a, 0xf0, 0x05, 0x22, 0x60, 0xd0, 0x22, 0xa0, 0x08, 0x93, 0x73, 0xd9, 0x0b, 0xb6, 0xa5,
+	0x25, 0x00, 0xa7, 0x6d, 0x05, 0x25, 0xe8, 0x05, 0x38, 0x25, 0x73, 0xd7, 0x82, 0x38, 0xb1, 0x09,
+	0x05, 0x9a, 0xa1, 0xd5, 0xf3, 0x05, 0xe6, 0x37, 0x89, 0x44, 0x44, 0x3a, 0x33, 0x74, 0x99, 0xe3,
+	0x92, 0x2e, 0x73, 0x9c, 0x2d, 0x1d, 0x46, 0x21, 0x6f, 0xfc, 0xb2, 0x01, 0x13, 0xca, 0xb8, 0xa6,
+	0x2b, 0xc0, 0x50, 0x57, 0xc0, 0x9f, 0x87, 0x59, 0xb2, 0x50, 0xee, 0x6f, 0xc6, 0x38, 0xda, 0xc3,
+	0x2e, 0x9d, 0xf4, 0xda, 0xf1, 0x26, 0x3d, 0x87, 0xc8, 0xbc, 0x2e, 0x5a, 0x20, 0x2f, 0x7f, 0x1d,
+	0x39, 0xe2, 0xfc, 0xf2, 0x57, 0x66, 0x90, 0xb5, 0xb8, 0x13, 0xc6, 0x89, 0xb8, 0xfc, 0x25, 0xdf,
+	0xe6, 0xb3, 0x00, 0x2b, 0x0f, 0xb1, 0xb3, 0xc4, 0x66, 0x5e, 0x61, 0xe7, 0x0c, 0x8d, 0x9d, 0x33,
+	0x7f, 0xdd, 0x80, 0xe9, 0xd5, 0xe5, 0xac, 0xd1, 0x30, 0xe3, 0x2c, 0x1f, 0x3c, 0xb8, 0x27, 0xd4,
+	0xfb, 0x4a, 0x0e, 0x39, 0x33, 0xfc, 0x7e, 0xc0, 0xa5, 0x7d, 0xf2, 0x59, 0x6a, 0x73, 0x58, 0x61,
+	0xa1, 0x4f, 0x06, 0x75, 0x7f, 0xdf, 0x73, 0x99, 0x41, 0x6c, 0xd3, 0x62, 0x09, 0xf3, 0x27, 0x35,
+	0x58, 0x58, 0xf5, 0xf1, 0xc3, 0x23, 0x1a, 0xf0, 0x96, 0x99, 0x3c, 0x1d, 0x4d, 0x86, 0x3b, 0xd4,
+	0xa0, 0x2c, 0xdb, 0x87, 0x77, 0x61, 0x9c, 0xdd, 0xa9, 0x0a, 0xb3, 0xde, 0xab, 0x45, 0xc8, 0xcb,
+	0xfb, 0xb3, 0x78, 0x9f, 0x41, 0x33, 0x63, 0x12, 0x81, 0x6b, 0xe1, 0x0d, 0x98, 0x54, 0x0b, 0x8e,
+	0x64, 0xdc, 0xf8, 0x87, 0x35, 0x98, 0x25, 0x3f, 0x7c, 0xa4, 0x61, 0x5b, 0xcd, 0x0f, 0xdb, 0x23,
+	0x1b, 0xe3, 0x65, 0xc7, 0xee, 0x76, 0x76, 0xec, 0x5e, 0x2e, 0x1b, 0xbb, 0x13, 0x1e, 0xb1, 0xf7,
+	0x61, 0x6e, 0xd5, 0x0f, 0x9d, 0xdd, 0x8c, 0x85, 0xdd, 0x05, 0x98, 0x20, 0xd4, 0x23, 0xd6, 0x6c,
+	0xe7, 0xd5, 0x2c, 0xa5, 0xc6, 0xbb, 0xef, 0xae, 0xb5, 0x39, 0x62, 0x35, 0xcb, 0xfc, 0x55, 0x03,
+	0x9e, 0xb8, 0xb9, 0xbc, 0x92, 0x4e, 0x7e, 0xce, 0x03, 0xe2, 0x0c, 0x8c, 0xf5, 0x5c, 0xe5, 0x07,
+	0x3c, 0x75, 0x02, 0x1e, 0x31, 0x21, 0xcc, 0xdd, 0xf4, 0x12, 0x0b, 0xf7, 0xc2, 0xec, 0x66, 0x27,
+	0xb4, 0x38, 0xf6, 0x92, 0x30, 0x12, 0x03, 0xa6, 0xe4, 0x30, 0x94, 0x7b, 0x1e, 0xb5, 0x15, 0x61,
+	0x4d, 0x91, 0x69, 0xd2, 0x18, 0xd7, 0x8b, 0xa8, 0xe0, 0x7c, 0xc0, 0x77, 0x7e, 0x9a, 0x61, 0xfe,
+	0x8e, 0x01, 0x4f, 0xde, 0xf4, 0xfb, 0x71, 0x82, 0xa3, 0xad, 0xb8, 0x64, 0x3f, 0x9f, 0x83, 0x26,
+	0x16, 0xda, 0x1e, 0x41, 0xd7, 0x64, 0x46, 0xa1, 0x6d, 0x69, 0x95, 0x11, 0xe3, 0x22, 0x20, 0x09,
+	0x9c, 0xf5, 0x99, 0x28, 0x28, 0x31, 0x31, 0x9c, 0x96, 0x0d, 0x3c, 0xb9, 0x66, 0x99, 0xff, 0xde,
+	0x80, 0xa9, 0x5b, 0x1b, 0x1b, 0x9d, 0x9b, 0x38, 0xe1, 0xe4, 0xb8, 0x48, 0x67, 0xdf, 0x56, 0x94,
+	0xa8, 0x55, 0xec, 0x60, 0x3f, 0xf1, 0xfc, 0x45, 0xe6, 0x88, 0xb5, 0xb8, 0x16, 0x24, 0xf7, 0xa3,
+	0xf5, 0x24, 0xf2, 0x82, 0x6d, 0xae, 0x76, 0x15, 0x47, 0x41, 0x3d, 0x3d, 0x0a, 0xe8, 0x95, 0x9a,
+	0x43, 0x18, 0x62, 0xe1, 0x9d, 0xc0, 0x52, 0xe8, 0x2d, 0x98, 0xd8, 0x49, 0x92, 0xde, 0x2d, 0x6c,
+	0xbb, 0x84, 0xf7, 0x66, 0xbb, 0xf0, 0x7c, 0xd1, 0x2e, 0x24, 0xad, 0x67, 0xd5, 0x2c, 0x15, 0xc4,
+	0xbc, 0x02, 0x90, 0x16, 0x0d, 0xae, 0xe3, 0x22, 0x32, 0xc6, 0x38, 0x73, 0xab, 0x88, 0xd0, 0x2b,
+	0x30, 0x82, 0x1f, 0x62, 0x87, 0x9f, 0xf2, 0x85, 0xbf, 0x4f, 0x0f, 0x32, 0x8b, 0xd6, 0x45, 0x57,
+	0x61, 0x9c, 0x34, 0xe3, 0xa6, 0xf4, 0x11, 0x79, 0xaa, 0xac, 0xd5, 0x72, 0xcc, 0x2d, 0x01, 0x41,
+	0x95, 0xe2, 0x4e, 0x6f, 0x9d, 0xec, 0xf8, 0xa4, 0xea, 0x4c, 0xd8, 0x58, 0xee, 0xb0, 0x4a, 0x1c,
+	0x41, 0x0a, 0x65, 0xbe, 0x0e, 0xcd, 0x5b, 0x61, 0x9c, 0x2c, 0xf9, 0x9e, 0x9d, 0x57, 0xd6, 0x9f,
+	0x83, 0xa6, 0x50, 0xce, 0xc7, 0xdc, 0x82, 0x3c, 0xcd, 0x30, 0xaf, 0xc1, 0x3c, 0x01, 0x25, 0x52,
+	0xa6, 0xb6, 0xe4, 0x8a, 0x96, 0x84, 0xe0, 0x31, 0x6b, 0x29, 0x8f, 0x69, 0x7e, 0xbf, 0x0e, 0x8f,
+	0xaf, 0xad, 0x97, 0xbb, 0xb8, 0x98, 0x30, 0xc9, 0x8e, 0xea, 0x4e, 0x18, 0x25, 0xb6, 0xcf, 0xf1,
+	0x69, 0x79, 0x84, 0x3a, 0x7a, 0x1f, 0x8a, 0xed, 0x4c, 0x3e, 0xc5, 0x91, 0x5e, 0x4f, 0x8f, 0xf4,
+	0x67, 0x61, 0xda, 0x8b, 0x9d, 0xd8, 0x5b, 0x0b, 0xc8, 0xf6, 0x48, 0xf7, 0x51, 0x26, 0x57, 0x21,
+	0x54, 0xa3, 0xa5, 0x47, 0x7f, 0xc6, 0x0e, 0x9b, 0x70, 0x23, 0x3d, 0xda, 0x92, 0x98, 0x2a, 0x67,
+	0x9a, 0x96, 0x48, 0x12, 0x96, 0xd1, 0xd9, 0xb1, 0x7b, 0x4b, 0xfd, 0x64, 0xa7, 0xed, 0xc5, 0x4e,
+	0xb8, 0x87, 0xa3, 0x03, 0xca, 0x77, 0x37, 0xac, 0x7c, 0x01, 0x91, 0xb4, 0x45, 0xe6, 0x3a, 0x8e,
+	0x29, 0x89, 0x9a, 0xa0, 0x75, 0xb3, 0xd9, 0x3a, 0x1f, 0x00, 0xc7, 0xe2, 0x03, 0x9e, 0x81, 0x29,
+	0x2f, 0xf0, 0x12, 0xcf, 0x4e, 0x42, 0xa6, 0x84, 0x63, 0xbc, 0xb5, 0x9e, 0x69, 0x7e, 0xa7, 0x0e,
+	0xa7, 0xe8, 0xf4, 0x7c, 0x36, 0x29, 0x87, 0x4e, 0xca, 0x6a, 0x7e, 0x52, 0x8e, 0xc5, 0x65, 0x0c,
+	0x36, 0x33, 0x2b, 0xd0, 0x94, 0x56, 0x74, 0x05, 0xfc, 0x41, 0x89, 0x1f, 0x43, 0x37, 0xb5, 0xae,
+	0x63, 0x57, 0x95, 0xbf, 0x04, 0x4d, 0xa9, 0x69, 0x42, 0xaf, 0x43, 0xb3, 0x17, 0xd2, 0x8b, 0xec,
+	0x48, 0xd8, 0x4b, 0x3c, 0x5e, 0x48, 0x89, 0x18, 0xad, 0xb3, 0xd2, 0xda, 0xe8, 0x55, 0x18, 0xef,
+	0x45, 0x78, 0x3d, 0xa1, 0x5e, 0x26, 0x87, 0x02, 0x8a, 0xba, 0xe6, 0x5f, 0x33, 0x00, 0xe8, 0xbd,
+	0xa1, 0x65, 0x07, 0xdb, 0x78, 0xc8, 0x7a, 0x84, 0x2b, 0x30, 0x12, 0xf7, 0xb0, 0x53, 0x65, 0x05,
+	0x90, 0xfe, 0x7b, 0xbd, 0x87, 0x1d, 0x8b, 0xd6, 0x37, 0xff, 0x6c, 0x1c, 0xa6, 0xd3, 0x82, 0xb5,
+	0x04, 0x77, 0x0b, 0xed, 0xf6, 0xdf, 0x84, 0x7a, 0xd7, 0x7e, 0xc8, 0xa5, 0xb0, 0x2f, 0x54, 0x63,
+	0x27, 0x48, 0x16, 0xef, 0xda, 0x0f, 0x19, 0x9f, 0x47, 0xe0, 0x28, 0xb8, 0x17, 0xf0, 0x8b, 0xb6,
+	0x81, 0xc0, 0xbd, 0x40, 0x80, 0x7b, 0x01, 0x5a, 0x83, 0x71, 0x7e, 0xe9, 0xcb, 0xdd, 0x9e, 0x2e,
+	0x0d, 0x80, 0xa2, 0xcd, 0x20, 0x38, 0xb7, 0xc9, 0xe1, 0xd1, 0x5f, 0x84, 0x69, 0xfe, 0x69, 0xe1,
+	0x0f, 0xfb, 0x38, 0x4e, 0xf8, 0xd9, 0x79, 0x65, 0x70, 0x8c, 0x1c, 0x90, 0x21, 0xce, 0x60, 0x43,
+	0x3d, 0x98, 0xef, 0xda, 0x0f, 0x19, 0x20, 0xcb, 0xb2, 0xec, 0xc4, 0x0b, 0xb9, 0xf6, 0xfc, 0xcb,
+	0x83, 0x8d, 0x5c, 0x0e, 0x9c, 0xfd, 0xab, 0x10, 0xf3, 0xc2, 0x16, 0x34, 0xc4, 0x60, 0x17, 0xec,
+	0x8d, 0xb6, 0x7a, 0x88, 0x1f, 0xfd, 0xb2, 0x5b, 0x31, 0x75, 0x27, 0xff, 0xe1, 0xb3, 0x72, 0xa2,
+	0xff, 0xf9, 0x1a, 0x4c, 0xaa, 0x53, 0x77, 0xa2, 0xff, 0xfa, 0x10, 0xe6, 0x0a, 0x26, 0xf5, 0x44,
+	0x7f, 0xb9, 0x0f, 0x67, 0x4b, 0x67, 0xf8, 0x24, 0x7f, 0x4c, 0xc8, 0x8f, 0xb2, 0xd3, 0x87, 0xae,
+	0xa9, 0xb9, 0xac, 0x6b, 0x6a, 0xce, 0x57, 0xaf, 0x74, 0xa1, 0xae, 0xb9, 0xa3, 0xb6, 0x89, 0x90,
+	0x25, 0xf4, 0x06, 0x8c, 0xf9, 0x24, 0x47, 0x18, 0x0a, 0x98, 0x87, 0x6f, 0x19, 0x8b, 0x43, 0x98,
+	0xdf, 0x31, 0x60, 0x64, 0xe8, 0x1d, 0x5b, 0xd6, 0x3b, 0xf6, 0x62, 0x29, 0x22, 0x1e, 0x9e, 0x61,
+	0xd1, 0xb2, 0xf7, 0x57, 0x1e, 0x26, 0x38, 0x20, 0x07, 0xa5, 0xe8, 0xe7, 0x3e, 0xcc, 0xdd, 0x09,
+	0x6d, 0xf7, 0x86, 0xed, 0xdb, 0x81, 0x83, 0xa3, 0xb5, 0x60, 0xfb, 0x50, 0x63, 0x91, 0x5a, 0xc6,
+	0x58, 0xe4, 0xb2, 0xb8, 0x88, 0x1b, 0x29, 0x1f, 0x60, 0xc2, 0x8f, 0x08, 0xff, 0x1e, 0x66, 0xac,
+	0xf0, 0x00, 0x90, 0xfa, 0x63, 0x6e, 0x48, 0xb6, 0x04, 0xe3, 0x1e, 0x6b, 0x02, 0x1f, 0xe5, 0xe7,
+	0x8a, 0x0f, 0xef, 0x5c, 0x8b, 0x2d, 0x01, 0x67, 0x3e, 0x0f, 0xf3, 0x45, 0x87, 0x7b, 0x91, 0x24,
+	0x61, 0x5e, 0x87, 0x53, 0xb4, 0xee, 0xa1, 0x5c, 0x73, 0x89, 0xe8, 0x6c, 0xbe, 0x0f, 0x33, 0xf7,
+	0x32, 0x8e, 0x8d, 0x67, 0xa8, 0x86, 0x55, 0xd1, 0x8b, 0xb0, 0xd4, 0x91, 0x25, 0xbc, 0x7f, 0x6d,
+	0x40, 0x53, 0x8a, 0x95, 0x43, 0x3e, 0x94, 0x5f, 0xd5, 0x0e, 0xe5, 0x42, 0x41, 0x47, 0xfe, 0x3a,
+	0x3d, 0x93, 0xd1, 0x55, 0xe9, 0x24, 0x57, 0x21, 0xe2, 0xa4, 0x80, 0x6c, 0xbe, 0x39, 0x88, 0xf9,
+	0x6f, 0x0c, 0x40, 0xb2, 0xec, 0x78, 0xce, 0x78, 0xbf, 0x00, 0x88, 0xaa, 0xd1, 0x23, 0x3b, 0x88,
+	0x29, 0x34, 0xd5, 0x8f, 0x8e, 0x1c, 0x59, 0x19, 0x5f, 0x80, 0x45, 0xb9, 0xa2, 0x18, 0x2d, 0xbb,
+	0xa2, 0x18, 0xd3, 0x0d, 0x21, 0xbf, 0x65, 0xc0, 0x94, 0xec, 0xd0, 0x27, 0x62, 0xd4, 0x22, 0xff,
+	0x2e, 0x76, 0xf3, 0x25, 0xa5, 0x45, 0x94, 0x68, 0x9d, 0xa7, 0x56, 0xa6, 0xb6, 0xef, 0x7d, 0x1d,
+	0x4b, 0x3f, 0x5b, 0x25, 0xc7, 0x0c, 0x61, 0x26, 0x33, 0x5f, 0x44, 0xba, 0xee, 0xed, 0xd8, 0xb1,
+	0x98, 0x11, 0x96, 0x18, 0xdc, 0xeb, 0x30, 0x3f, 0xc5, 0x9a, 0xd7, 0xe1, 0x4f, 0x0c, 0x18, 0xb9,
+	0x17, 0xba, 0xc3, 0x5e, 0xd0, 0x2f, 0x69, 0x0b, 0xfa, 0x5c, 0x59, 0x14, 0x16, 0x65, 0x2d, 0x5f,
+	0xc9, 0xac, 0xe5, 0xf3, 0xa5, 0x30, 0xfa, 0x32, 0xbe, 0x0a, 0x13, 0x34, 0x9e, 0x0b, 0xb7, 0xaa,
+	0x2b, 0x5a, 0xbe, 0x2d, 0x18, 0xe7, 0xf6, 0x61, 0xc2, 0x76, 0x96, 0x27, 0xcd, 0x3f, 0xaa, 0xc1,
+	0xa4, 0x1a, 0x0d, 0x06, 0x7d, 0xd3, 0x80, 0xc5, 0x88, 0x5d, 0xfa, 0xbb, 0xed, 0x7e, 0xe4, 0x05,
+	0xdb, 0xeb, 0xce, 0x0e, 0x76, 0xfb, 0xbe, 0x17, 0x6c, 0xaf, 0x6d, 0x07, 0xa1, 0xcc, 0x5e, 0x79,
+	0x88, 0x9d, 0x3e, 0x55, 0xd0, 0x1d, 0x12, 0x68, 0x46, 0x5a, 0x9d, 0x1c, 0x11, 0x2f, 0xfa, 0xeb,
+	0x06, 0x5c, 0x62, 0x51, 0x56, 0x06, 0x6f, 0x4b, 0x05, 0xdb, 0xdd, 0x11, 0xa8, 0x52, 0x24, 0x1b,
+	0x38, 0xea, 0x5a, 0x47, 0xfd, 0x87, 0xf9, 0xfb, 0x35, 0x98, 0xe2, 0x8e, 0x6b, 0xc7, 0x20, 0x19,
+	0x5f, 0x81, 0x53, 0x64, 0xb3, 0xdf, 0xc2, 0x76, 0x94, 0x6c, 0x62, 0x9b, 0x5d, 0xa3, 0xd5, 0x8f,
+	0x4c, 0x31, 0xf2, 0x48, 0x3e, 0x65, 0xc4, 0xe8, 0x03, 0x98, 0xcd, 0x79, 0xf7, 0xdd, 0x86, 0xa6,
+	0xb4, 0x63, 0xe2, 0x3b, 0xa3, 0xda, 0x15, 0x35, 0x8b, 0xc1, 0x4a, 0xe1, 0xcd, 0xff, 0x65, 0x68,
+	0x7f, 0x60, 0xa3, 0xfb, 0x16, 0x34, 0xec, 0x38, 0xf6, 0xb6, 0x03, 0xec, 0xf2, 0x75, 0xf9, 0x4c,
+	0xd9, 0xba, 0xd4, 0xf0, 0x4a, 0x28, 0xf4, 0x65, 0x76, 0xad, 0xb8, 0x27, 0xf8, 0xc8, 0xc1, 0xe0,
+	0x39, 0x0c, 0x7a, 0x9b, 0x5d, 0xcc, 0xde, 0x0e, 0xc2, 0xfd, 0xe0, 0x66, 0x18, 0x0a, 0x2f, 0x86,
+	0xc1, 0x90, 0xe8, 0xa0, 0x25, 0xfe, 0xdc, 0x0e, 0xcc, 0x11, 0x40, 0xdd, 0x4e, 0x3b, 0x46, 0x77,
+	0x60, 0x86, 0xbb, 0x2c, 0x8a, 0x3c, 0xde, 0xff, 0x42, 0xae, 0x50, 0x87, 0xb6, 0xb2, 0xa0, 0xe6,
+	0x37, 0x0c, 0x68, 0x90, 0xbf, 0x0c, 0xfd, 0x10, 0x59, 0xd4, 0x0f, 0x91, 0x56, 0xd9, 0xb8, 0x88,
+	0xf3, 0xe3, 0x59, 0x36, 0xc7, 0x9d, 0x28, 0x7c, 0x78, 0xc0, 0xef, 0x3e, 0x8a, 0xd8, 0x21, 0xf3,
+	0xa7, 0x06, 0xdb, 0x93, 0x96, 0xb4, 0x50, 0xba, 0x0d, 0x0d, 0xc7, 0xee, 0xd9, 0x0e, 0x0b, 0x85,
+	0x55, 0x2a, 0x0a, 0x6b, 0x40, 0x8b, 0xcb, 0x1c, 0x82, 0x49, 0x91, 0x12, 0xc1, 0xc2, 0x2e, 0x4c,
+	0x69, 0x45, 0x27, 0x2a, 0x7e, 0x6c, 0x32, 0x92, 0x2c, 0x1d, 0x8a, 0x2d, 0x38, 0x15, 0x28, 0x69,
+	0x42, 0xb4, 0x04, 0x33, 0xfa, 0xcc, 0x61, 0x44, 0x97, 0x52, 0xb8, 0x3c, 0xb8, 0xf9, 0x01, 0x3c,
+	0xa6, 0xd1, 0xe6, 0xd4, 0xcc, 0xab, 0xa0, 0x6b, 0xd4, 0xc9, 0x12, 0x47, 0x76, 0x12, 0x46, 0x82,
+	0xd7, 0x16, 0x69, 0x42, 0x18, 0x68, 0xcb, 0x63, 0x6e, 0x41, 0xc7, 0x53, 0xe6, 0x3f, 0xe6, 0xbb,
+	0x53, 0xfd, 0x2d, 0x7a, 0x00, 0xb3, 0x5d, 0x3b, 0x71, 0x76, 0x56, 0x1e, 0xf6, 0x22, 0xa6, 0x1e,
+	0x13, 0x1d, 0xf9, 0xc2, 0xa1, 0xa7, 0x47, 0xda, 0x42, 0x2b, 0x87, 0x04, 0xdd, 0x85, 0x09, 0x9a,
+	0x47, 0x4d, 0x2e, 0xe3, 0xaa, 0x53, 0xa0, 0x0c, 0xa7, 0x0a, 0x4f, 0x28, 0x7c, 0x43, 0x9c, 0xce,
+	0x4c, 0x65, 0xe8, 0x2e, 0xaf, 0xb5, 0x2d, 0x3e, 0x26, 0x22, 0x49, 0xad, 0xbf, 0xd9, 0xa7, 0xd0,
+	0x26, 0xca, 0x34, 0xe1, 0x73, 0x7a, 0x51, 0xb8, 0xe7, 0xb9, 0xd4, 0x0b, 0x83, 0x5d, 0x54, 0x28,
+	0x39, 0xe8, 0x19, 0x98, 0xea, 0x07, 0x31, 0x3b, 0x6a, 0x14, 0xaf, 0x7f, 0x3d, 0x13, 0xbd, 0x0c,
+	0x63, 0x89, 0x4d, 0xef, 0x67, 0x46, 0xcb, 0x6f, 0xf5, 0x37, 0x48, 0x0d, 0x8b, 0x57, 0x44, 0xb7,
+	0x84, 0x71, 0x30, 0x23, 0x2a, 0xdc, 0xd8, 0x64, 0x30, 0x02, 0xa4, 0x41, 0x92, 0x2e, 0xe0, 0x87,
+	0x09, 0x8e, 0x02, 0xdb, 0x97, 0x17, 0x7f, 0x4a, 0x8e, 0xf9, 0xdb, 0xe3, 0x00, 0x29, 0x3f, 0x82,
+	0x6e, 0xe5, 0x36, 0xdc, 0x0b, 0xd5, 0x1c, 0x4c, 0xd9, 0x6e, 0x43, 0xef, 0xc0, 0x84, 0xed, 0xfb,
+	0xa1, 0x63, 0xb3, 0x78, 0x08, 0xb5, 0xea, 0xdd, 0xcb, 0x91, 0x2d, 0xa5, 0x10, 0x0c, 0x9f, 0x8a,
+	0x23, 0xe5, 0x21, 0xeb, 0x2a, 0x0f, 0xb9, 0xa4, 0xf1, 0x90, 0x23, 0xe5, 0xb6, 0x97, 0xda, 0x71,
+	0xaf, 0xb2, 0x8f, 0xe8, 0x4d, 0xd5, 0x60, 0x7f, 0xb4, 0xdc, 0x0a, 0x52, 0x61, 0xd1, 0x74, 0x63,
+	0xfd, 0x19, 0x57, 0xa7, 0xe4, 0x7c, 0xc2, 0x9e, 0x2b, 0x43, 0x92, 0x21, 0xfc, 0x56, 0x16, 0x1e,
+	0x5d, 0x63, 0xae, 0x12, 0x6b, 0xc1, 0x56, 0xc8, 0xcd, 0x82, 0xcc, 0xd2, 0xa1, 0x3b, 0x88, 0x13,
+	0xdc, 0x25, 0x35, 0x2d, 0x09, 0x83, 0xde, 0x80, 0x31, 0x6a, 0xc2, 0x17, 0xb7, 0x1a, 0xe5, 0x6a,
+	0x05, 0xdd, 0x4d, 0xd2, 0xe2, 0x10, 0x69, 0x88, 0xb1, 0x78, 0x2d, 0x78, 0x37, 0xc6, 0xd4, 0x2c,
+	0x54, 0x86, 0x18, 0x63, 0x79, 0xe4, 0xa4, 0xe2, 0x69, 0x11, 0xd6, 0xaf, 0x05, 0xe5, 0x3f, 0xd2,
+	0x43, 0xff, 0x59, 0x59, 0x50, 0x72, 0x5c, 0xb3, 0x45, 0xcb, 0xcd, 0x87, 0x0e, 0x5b, 0xe8, 0x9c,
+	0x77, 0x66, 0x30, 0x1f, 0x2b, 0x5d, 0x5f, 0x08, 0x60, 0x36, 0xbb, 0x48, 0x4f, 0xf4, 0x1c, 0xf9,
+	0x95, 0x3a, 0x4c, 0xeb, 0xb3, 0x8c, 0xce, 0x41, 0x93, 0x23, 0x91, 0x11, 0x75, 0xd2, 0x0c, 0x1a,
+	0xbd, 0x88, 0xd6, 0x55, 0x6e, 0xfa, 0x95, 0x1c, 0x42, 0xeb, 0x37, 0xc3, 0x30, 0x91, 0xf4, 0x8c,
+	0xa7, 0x08, 0x2d, 0xdb, 0xc5, 0x51, 0x80, 0x7d, 0x3d, 0xdc, 0x82, 0x9e, 0x49, 0xe8, 0x68, 0x18,
+	0xd3, 0xe5, 0xc2, 0x79, 0x48, 0x91, 0x44, 0xaf, 0xc1, 0x63, 0xd2, 0x3f, 0xcd, 0x62, 0xaa, 0x21,
+	0x81, 0x89, 0x31, 0x95, 0x65, 0xc5, 0xe8, 0x59, 0x98, 0xe6, 0xac, 0x8b, 0x00, 0x60, 0xde, 0x70,
+	0x99, 0x5c, 0x11, 0xe8, 0x81, 0xb2, 0x11, 0xa2, 0x66, 0x23, 0x0d, 0xf4, 0xa0, 0xe6, 0xa3, 0x8b,
+	0x30, 0xc3, 0x4e, 0x37, 0x22, 0x0b, 0xd0, 0xce, 0x73, 0xf3, 0xb7, 0x6c, 0x36, 0x59, 0xed, 0x76,
+	0xe4, 0xec, 0x78, 0x09, 0x76, 0x92, 0x7e, 0xc4, 0x8c, 0xe1, 0x9a, 0x96, 0x96, 0x67, 0xae, 0xc3,
+	0x5c, 0x81, 0xcf, 0x01, 0x19, 0x6a, 0xbb, 0xe7, 0x89, 0xa6, 0x70, 0x83, 0x84, 0x34, 0x87, 0x4c,
+	0x14, 0xf5, 0x4a, 0x50, 0xa2, 0x59, 0xa6, 0x19, 0xe6, 0xbf, 0x33, 0x60, 0xa6, 0x40, 0x9b, 0x44,
+	0x23, 0x3b, 0x1a, 0x69, 0x64, 0x47, 0x3d, 0x9a, 0x46, 0xad, 0x2c, 0x9a, 0x46, 0x3d, 0x1f, 0x4d,
+	0x63, 0x24, 0x8d, 0xa6, 0xa1, 0xb7, 0x74, 0x34, 0xd7, 0xd2, 0x82, 0x68, 0x1b, 0x63, 0xc5, 0xd1,
+	0x36, 0xb4, 0x3e, 0x8d, 0x67, 0xfb, 0xf4, 0x91, 0x01, 0xb3, 0xd9, 0xdb, 0xde, 0xa1, 0xbb, 0x0c,
+	0xa9, 0x32, 0xf9, 0xc5, 0x41, 0x6c, 0x61, 0x15, 0xf9, 0xfc, 0x46, 0x46, 0x3e, 0x7f, 0x7e, 0x20,
+	0x78, 0x5d, 0x56, 0xff, 0xb9, 0x01, 0xa7, 0x0b, 0xcd, 0x6d, 0x87, 0xdc, 0xd3, 0x25, 0xad, 0xa7,
+	0x2f, 0x0e, 0x6c, 0xf5, 0xab, 0x74, 0xf7, 0x66, 0xa6, 0xbb, 0x97, 0x06, 0x47, 0xa2, 0xf7, 0xf9,
+	0x87, 0x35, 0x38, 0x5f, 0x58, 0xef, 0x78, 0xf2, 0x33, 0x37, 0x7d, 0xa5, 0x66, 0xf3, 0xc7, 0x94,
+	0x9d, 0x75, 0x04, 0x9f, 0x32, 0xb9, 0xf9, 0xef, 0x18, 0x70, 0xb6, 0x70, 0xb8, 0x86, 0x2e, 0x8b,
+	0x5d, 0xd7, 0x65, 0xb1, 0xcf, 0x0f, 0x3c, 0xc1, 0x42, 0x38, 0xfb, 0xcd, 0x7a, 0x49, 0x53, 0x29,
+	0xdf, 0x7c, 0x01, 0x26, 0x6c, 0xc7, 0xc1, 0x71, 0x7c, 0x37, 0x74, 0x65, 0x00, 0x05, 0x35, 0x0b,
+	0xdd, 0x87, 0x46, 0xcc, 0x09, 0x22, 0x1f, 0xee, 0x2f, 0x0e, 0xd8, 0x19, 0x7b, 0x13, 0xfb, 0xa9,
+	0xff, 0x96, 0x40, 0xa2, 0x7b, 0xb7, 0xd4, 0x8e, 0xef, 0xdd, 0x72, 0x1e, 0x80, 0xf1, 0x19, 0xf7,
+	0x52, 0xfa, 0xa8, 0xe4, 0x90, 0xe3, 0x24, 0x4e, 0xc2, 0xc8, 0xde, 0x26, 0xdd, 0x8d, 0xa9, 0xad,
+	0x95, 0x88, 0x1b, 0x94, 0xcd, 0x4f, 0x71, 0x51, 0xc7, 0xdc, 0x31, 0x15, 0x17, 0x8d, 0x60, 0x73,
+	0x17, 0x80, 0xcc, 0x06, 0xe7, 0xd6, 0xc7, 0xcb, 0x37, 0xec, 0xc6, 0x41, 0x0f, 0xbb, 0x85, 0x56,
+	0x02, 0x0a, 0x02, 0xf3, 0xe7, 0x35, 0x78, 0xbc, 0x62, 0x57, 0x96, 0x28, 0x53, 0x33, 0x73, 0x55,
+	0xcb, 0xcf, 0xd5, 0xfb, 0x0a, 0x77, 0xcf, 0x2e, 0xa7, 0xdf, 0x3c, 0x22, 0x41, 0x28, 0x65, 0xf7,
+	0xad, 0x02, 0x2e, 0xfc, 0x95, 0x81, 0x91, 0x17, 0xb2, 0xe5, 0x1f, 0xaf, 0xc0, 0xfe, 0x23, 0x03,
+	0x9e, 0xa8, 0x74, 0xa2, 0xf8, 0xd4, 0x51, 0x77, 0xf3, 0x2f, 0xc0, 0x53, 0x85, 0x55, 0xb2, 0x06,
+	0x82, 0x0e, 0xc9, 0x54, 0x2c, 0x37, 0xd3, 0x8c, 0x4a, 0x1f, 0x90, 0xbf, 0x65, 0xc0, 0x7c, 0x16,
+	0xff, 0xd0, 0xe9, 0xd7, 0x1b, 0x3a, 0xfd, 0x7a, 0x66, 0x90, 0x71, 0x10, 0xa4, 0xeb, 0x0f, 0xa6,
+	0xe0, 0x4c, 0x89, 0x6d, 0xd9, 0x07, 0x70, 0x6a, 0xdb, 0xc1, 0xba, 0x35, 0x6b, 0x95, 0xfb, 0x4c,
+	0xa5, 0xe9, 0xab, 0x95, 0xc7, 0x85, 0x76, 0x60, 0xde, 0xde, 0x8f, 0x73, 0x71, 0xe4, 0xf9, 0x74,
+	0x5e, 0x2e, 0x94, 0x82, 0x0e, 0x89, 0x3b, 0x6f, 0x15, 0x62, 0x44, 0x6d, 0x1e, 0x63, 0x86, 0x30,
+	0x5c, 0x15, 0x06, 0xce, 0x45, 0xa6, 0x7a, 0x96, 0x84, 0x44, 0xef, 0x40, 0x73, 0x5b, 0x18, 0x90,
+	0x16, 0xd0, 0xe9, 0x74, 0x20, 0xaa, 0xcd, 0x60, 0xad, 0x14, 0x0b, 0x7a, 0x15, 0xea, 0xc1, 0x56,
+	0x5c, 0x15, 0xdb, 0x35, 0x73, 0x89, 0x69, 0x91, 0xfa, 0xe8, 0x3a, 0xd4, 0xa3, 0x4d, 0x97, 0x4b,
+	0xc8, 0x85, 0xeb, 0xde, 0xba, 0xd1, 0x2e, 0xf9, 0x3b, 0x81, 0x44, 0x2b, 0x30, 0x4a, 0x8d, 0xc8,
+	0x38, 0x9d, 0x2d, 0xe4, 0x69, 0x2a, 0xec, 0x0e, 0x2d, 0x06, 0x8d, 0x6e, 0xc1, 0x98, 0x43, 0xa3,
+	0x95, 0x72, 0x17, 0xca, 0x97, 0x0a, 0x45, 0xe4, 0x8a, 0x18, 0xac, 0x16, 0x87, 0xa7, 0x98, 0x70,
+	0x6f, 0x67, 0x2b, 0xe6, 0x41, 0x9a, 0x8b, 0x31, 0x55, 0x04, 0xe4, 0xb5, 0x38, 0x3c, 0x7a, 0x05,
+	0x6a, 0x5b, 0x0e, 0x37, 0x30, 0x2b, 0x94, 0xa4, 0x75, 0xff, 0x07, 0xab, 0xb6, 0xe5, 0xa0, 0x25,
+	0x18, 0xdf, 0x62, 0x46, 0xe1, 0x5c, 0x7a, 0x7e, 0xae, 0xd8, 0x3a, 0x3d, 0x67, 0x37, 0x6e, 0x09,
+	0x38, 0x74, 0x0f, 0x60, 0x4b, 0x5a, 0xaf, 0x73, 0xcf, 0xc5, 0xc5, 0xa3, 0xf9, 0x07, 0x58, 0x0a,
+	0x06, 0xb2, 0xd8, 0x6c, 0x11, 0xe4, 0x9d, 0xfb, 0xef, 0x14, 0x2e, 0xb6, 0x43, 0x02, 0xd6, 0x5b,
+	0x29, 0x16, 0xf4, 0x15, 0x98, 0xda, 0x8b, 0x7b, 0x3b, 0x58, 0x6c, 0x19, 0xea, 0xcc, 0x53, 0x72,
+	0xc4, 0xbc, 0xc7, 0x2b, 0x7a, 0x51, 0xd2, 0xb7, 0xfd, 0xdc, 0x6e, 0xd6, 0x11, 0x91, 0xf1, 0xfb,
+	0xb0, 0x1f, 0x6e, 0x1e, 0x24, 0x98, 0xbb, 0x34, 0x16, 0x8e, 0xdf, 0x3b, 0xac, 0x8a, 0x3e, 0x7e,
+	0x1c, 0x0e, 0xdd, 0xe4, 0xfd, 0xa5, 0x54, 0x66, 0xb6, 0xdc, 0xd7, 0xbc, 0xf0, 0x69, 0x01, 0x2b,
+	0x85, 0x25, 0x54, 0xa5, 0xb7, 0x13, 0x26, 0x61, 0x90, 0xa1, 0x5c, 0xa7, 0xca, 0xa9, 0x4a, 0xa7,
+	0xa0, 0xbe, 0x4e, 0x55, 0x8a, 0x30, 0xa2, 0x0e, 0x4c, 0xf7, 0xc2, 0x28, 0xd9, 0x0f, 0x23, 0x31,
+	0xed, 0xa8, 0x42, 0xa0, 0xd2, 0x6a, 0x72, 0xbc, 0x19, 0x78, 0x74, 0x1b, 0xc6, 0x63, 0xc7, 0xf6,
+	0xf1, 0xda, 0xfd, 0xd6, 0x5c, 0x39, 0xa1, 0x5d, 0x67, 0x55, 0x4a, 0x26, 0x5c, 0x60, 0x40, 0x57,
+	0x61, 0x94, 0x46, 0x20, 0xa4, 0x2e, 0xac, 0x25, 0x2e, 0xf1, 0x39, 0x1b, 0x0b, 0x8b, 0xc1, 0x90,
+	0xe5, 0xc7, 0x39, 0xb8, 0x30, 0x6e, 0x9d, 0x2e, 0x5f, 0x7e, 0xeb, 0xac, 0xd2, 0xfd, 0xb2, 0x5d,
+	0x99, 0x62, 0x21, 0x44, 0x8b, 0x50, 0x9c, 0x33, 0x15, 0xd7, 0x5d, 0xa5, 0xf4, 0x86, 0x40, 0x9a,
+	0xbf, 0x3b, 0x9a, 0x3f, 0x4c, 0x29, 0x87, 0x6d, 0xe5, 0x34, 0xae, 0x57, 0x06, 0x95, 0x69, 0x4b,
+	0x99, 0xb1, 0x4d, 0x38, 0xd3, 0x2b, 0x6c, 0x0b, 0x3f, 0x9e, 0x06, 0x93, 0x7a, 0x59, 0xeb, 0x4b,
+	0x30, 0x65, 0xb9, 0xcd, 0x7a, 0x9e, 0xdb, 0xbc, 0x0e, 0x0d, 0xca, 0x68, 0x1c, 0x12, 0x51, 0x3a,
+	0xcb, 0x08, 0x4b, 0x20, 0xd4, 0x86, 0x27, 0xb2, 0x3f, 0xb7, 0x30, 0x2d, 0xe5, 0xce, 0xca, 0x8c,
+	0x5d, 0xaf, 0xae, 0x54, 0xc8, 0xe7, 0x8f, 0x95, 0xf0, 0xf9, 0x26, 0x4c, 0x76, 0xc3, 0x7e, 0x90,
+	0xf0, 0x5b, 0x2a, 0x7e, 0x21, 0xa0, 0xe5, 0x65, 0x64, 0x81, 0x46, 0x4e, 0x16, 0x78, 0x3b, 0xf3,
+	0x84, 0x4b, 0xb3, 0x3c, 0xb0, 0x07, 0x6b, 0x6e, 0xf9, 0x43, 0x2e, 0x1f, 0x2f, 0x07, 0xfc, 0x97,
+	0x0a, 0xb8, 0xa9, 0x2a, 0x79, 0xa3, 0x34, 0x98, 0x57, 0x99, 0x63, 0xae, 0x79, 0x0f, 0x2e, 0x1c,
+	0x46, 0xae, 0xe8, 0xc5, 0xa0, 0x2b, 0x15, 0x9b, 0xf4, 0xbb, 0xd4, 0x4e, 0xea, 0x9f, 0x18, 0x50,
+	0xef, 0x84, 0xee, 0x90, 0x39, 0xf3, 0x4b, 0x1a, 0x67, 0xfe, 0x78, 0xc9, 0x7b, 0x37, 0x8a, 0x96,
+	0xe5, 0xd5, 0x8c, 0x96, 0xe5, 0x89, 0x32, 0x10, 0x5d, 0xa7, 0xf2, 0x0f, 0x6a, 0x30, 0xa1, 0xbc,
+	0xbf, 0x83, 0x7e, 0xed, 0x38, 0x56, 0x1b, 0xf5, 0xaa, 0x27, 0x79, 0x38, 0x66, 0x7a, 0x7f, 0xf8,
+	0x09, 0x1b, 0x6e, 0x3c, 0xc0, 0xde, 0xf6, 0x4e, 0x82, 0xdd, 0x6c, 0xb3, 0x8e, 0x6c, 0xb8, 0xf1,
+	0xf7, 0x0d, 0x98, 0xc9, 0x20, 0x41, 0xef, 0xc3, 0x94, 0xaf, 0x6a, 0x13, 0xf8, 0x22, 0x38, 0x96,
+	0x22, 0x42, 0xc7, 0x44, 0x76, 0xbb, 0x54, 0xb6, 0x0a, 0x99, 0x5a, 0xc9, 0x21, 0x64, 0x30, 0x09,
+	0x7b, 0xa1, 0x1f, 0x6e, 0x1f, 0xdc, 0xc6, 0xc2, 0xb5, 0x4c, 0xcd, 0x32, 0x7f, 0x5c, 0x63, 0x0d,
+	0x56, 0x9e, 0x43, 0xfa, 0x6c, 0xaa, 0x07, 0x9a, 0xea, 0x6f, 0x1a, 0x30, 0x4b, 0x90, 0xd0, 0x6b,
+	0x22, 0x41, 0x7e, 0x65, 0xe8, 0x08, 0x43, 0x0d, 0x1d, 0x41, 0x15, 0x8d, 0x6e, 0xd8, 0x4f, 0xb8,
+	0x14, 0xcb, 0x53, 0x3c, 0x1f, 0x47, 0x11, 0x37, 0x84, 0xe4, 0x29, 0x11, 0x4c, 0x62, 0x44, 0x06,
+	0x93, 0x60, 0x7e, 0xcb, 0xfc, 0x82, 0x82, 0x1f, 0x2c, 0x69, 0x86, 0xf9, 0xbd, 0x1a, 0x4c, 0x76,
+	0x42, 0xf7, 0x33, 0x6d, 0x67, 0x91, 0xb6, 0xf3, 0x37, 0x0c, 0x3a, 0x38, 0xed, 0x7b, 0xeb, 0xfc,
+	0x21, 0x85, 0x0b, 0x30, 0x41, 0xb7, 0x08, 0x35, 0x51, 0x95, 0x5a, 0x43, 0x25, 0x0b, 0x2d, 0x40,
+	0x23, 0xc6, 0x76, 0xe4, 0xec, 0xc8, 0x4d, 0x25, 0xd3, 0xe8, 0xad, 0xd4, 0xdd, 0xb6, 0x5e, 0x6e,
+	0x11, 0xa8, 0xfe, 0x90, 0xad, 0x0d, 0xe9, 0x63, 0x6b, 0x5e, 0x03, 0x94, 0x2f, 0x3e, 0x82, 0xd3,
+	0xdf, 0xef, 0x1a, 0x30, 0xdd, 0x09, 0x5d, 0xb2, 0x12, 0x3f, 0xd1, 0x65, 0xa7, 0x3a, 0xc3, 0x8f,
+	0xe9, 0xce, 0xf0, 0x8f, 0xc1, 0x68, 0x27, 0x74, 0xd7, 0x3a, 0x59, 0x9b, 0x6a, 0xf3, 0xaf, 0x18,
+	0x30, 0xde, 0x09, 0xdd, 0xa1, 0x2b, 0x6a, 0x5e, 0xd4, 0x15, 0x35, 0x8f, 0x95, 0xcc, 0x89, 0xd0,
+	0xcd, 0xfc, 0xbc, 0x06, 0x53, 0xa4, 0x19, 0xe1, 0xb6, 0x18, 0x41, 0xad, 0xa7, 0x46, 0xb6, 0xa7,
+	0xe4, 0x88, 0x0f, 0x7d, 0x3f, 0xdc, 0x17, 0x23, 0xc9, 0x52, 0x2c, 0x38, 0x1f, 0xde, 0xf3, 0x42,
+	0x7e, 0xba, 0x36, 0x2c, 0x99, 0x26, 0xdc, 0x5a, 0xec, 0x05, 0x0e, 0x16, 0xaf, 0x75, 0x8c, 0xd0,
+	0x20, 0xbe, 0x5a, 0x1e, 0x0d, 0xad, 0x4a, 0xd2, 0x74, 0x83, 0x1c, 0x27, 0xb4, 0xaa, 0x00, 0xa6,
+	0xb1, 0x06, 0x44, 0xa4, 0x8d, 0x98, 0xfb, 0xa4, 0x29, 0x39, 0xa4, 0x7f, 0x89, 0xed, 0xf9, 0x77,
+	0xbc, 0x00, 0xc7, 0x54, 0x35, 0x51, 0xb7, 0xd2, 0x0c, 0x02, 0x4d, 0xad, 0xf6, 0x59, 0xb8, 0xe1,
+	0x06, 0x2d, 0x56, 0x72, 0xd0, 0x0d, 0x38, 0xe7, 0x05, 0x34, 0x4c, 0x0e, 0x5e, 0xdf, 0xf5, 0x7a,
+	0x1b, 0x77, 0xd6, 0xdf, 0xc3, 0x91, 0xb7, 0x75, 0x70, 0xc3, 0x76, 0x76, 0x71, 0x20, 0x82, 0x7c,
+	0x56, 0xd6, 0x31, 0x5f, 0x84, 0xd3, 0x9d, 0xd0, 0x25, 0xc2, 0xda, 0x6a, 0x18, 0xed, 0xdb, 0x91,
+	0xab, 0x2c, 0x5e, 0x66, 0x4b, 0x4f, 0x76, 0xe2, 0xa8, 0xb0, 0x95, 0xff, 0x1c, 0x3d, 0x97, 0x0e,
+	0xb5, 0xca, 0x7a, 0x8d, 0x12, 0x61, 0x4b, 0x44, 0x4a, 0xba, 0x69, 0x27, 0x98, 0xc7, 0x36, 0x66,
+	0xa4, 0x70, 0x23, 0x25, 0x83, 0x7a, 0xa6, 0xf9, 0x37, 0x47, 0xe8, 0x3e, 0xcc, 0x44, 0x03, 0x42,
+	0x6f, 0xc3, 0x74, 0x8c, 0xef, 0x78, 0x41, 0xff, 0xa1, 0x60, 0xb3, 0x2b, 0x8c, 0xdc, 0xd6, 0x57,
+	0xd4, 0x9a, 0x56, 0x06, 0x12, 0xbd, 0x0f, 0xd3, 0xfb, 0x5e, 0xe0, 0x86, 0xfb, 0xb1, 0xc0, 0xd5,
+	0x28, 0x97, 0x3d, 0x1f, 0xb0, 0x9a, 0x99, 0xf6, 0x48, 0xd4, 0x3a, 0x22, 0x32, 0x9f, 0x51, 0x3f,
+	0x58, 0x8a, 0xdf, 0x8d, 0x71, 0x24, 0xe2, 0x43, 0xcb, 0x0c, 0xea, 0x8c, 0x4e, 0x12, 0x37, 0xa3,
+	0xb0, 0xcf, 0x82, 0xc1, 0xd4, 0x2d, 0x25, 0x87, 0x46, 0x85, 0x25, 0xa9, 0x7b, 0x61, 0x60, 0x85,
+	0x61, 0xc2, 0xd7, 0xae, 0x96, 0x87, 0x16, 0x01, 0xc5, 0xfd, 0x5e, 0xcf, 0xa7, 0x77, 0x17, 0xb6,
+	0x4f, 0x01, 0x99, 0xee, 0xbc, 0x6e, 0x15, 0x94, 0x10, 0x6a, 0xb0, 0xc5, 0x7f, 0x38, 0x4a, 0x7f,
+	0x28, 0x92, 0xe8, 0x32, 0x8c, 0xc7, 0x07, 0xb1, 0x93, 0x70, 0x8f, 0xc8, 0x92, 0x18, 0x62, 0xeb,
+	0xb4, 0x8a, 0x25, 0xaa, 0xa2, 0x97, 0x60, 0x8e, 0x23, 0x58, 0xde, 0xb1, 0x03, 0x19, 0x35, 0x8a,
+	0x5d, 0x94, 0x17, 0x15, 0xb1, 0xa9, 0x73, 0x9c, 0xb0, 0xdb, 0xeb, 0x44, 0xe1, 0x96, 0xe7, 0xe3,
+	0x2a, 0x5d, 0xd5, 0xba, 0x56, 0xd3, 0xca, 0x40, 0x9a, 0x5f, 0xa3, 0x87, 0xc6, 0xba, 0xb7, 0x1d,
+	0xd8, 0x49, 0x3f, 0x22, 0x67, 0xda, 0x54, 0x8f, 0x9e, 0xb0, 0xfc, 0xe9, 0x32, 0xbe, 0x2a, 0x2e,
+	0x0f, 0xc8, 0xc9, 0xef, 0x07, 0x38, 0x4a, 0x85, 0x48, 0x1d, 0x95, 0xf9, 0x77, 0x67, 0x29, 0x51,
+	0xa4, 0x02, 0xf7, 0x65, 0x18, 0xe7, 0xf6, 0x27, 0x9c, 0xa7, 0x5a, 0x28, 0x17, 0xcd, 0x2c, 0x51,
+	0x15, 0xad, 0xc0, 0x34, 0xe1, 0x64, 0x94, 0x00, 0x50, 0xf3, 0x95, 0xef, 0x65, 0x70, 0x4b, 0x87,
+	0x0c, 0x10, 0x7a, 0x93, 0x5e, 0x93, 0xe8, 0x31, 0xa4, 0x0e, 0x41, 0xa1, 0x00, 0x94, 0xc5, 0xa2,
+	0x32, 0x1f, 0x39, 0x16, 0x15, 0xd9, 0xd1, 0x3c, 0x62, 0x31, 0x5f, 0x05, 0x8c, 0x93, 0xd5, 0x33,
+	0x89, 0x44, 0xae, 0x04, 0x13, 0xbb, 0x19, 0xd9, 0x54, 0x2f, 0xee, 0xd1, 0x3d, 0xae, 0x90, 0xe0,
+	0xea, 0x4a, 0xe8, 0x32, 0x9c, 0x66, 0x96, 0xb6, 0x6d, 0x6c, 0xbb, 0xbe, 0x17, 0x48, 0x02, 0xce,
+	0x56, 0x75, 0x71, 0x21, 0x0d, 0xe1, 0x10, 0xc4, 0xbc, 0x75, 0x63, 0x3c, 0x84, 0x83, 0xc8, 0x40,
+	0xef, 0x30, 0xa9, 0x5b, 0x4a, 0x00, 0xe3, 0xe5, 0x6f, 0xe4, 0xf0, 0x85, 0xa0, 0x59, 0x11, 0x32,
+	0x0d, 0x8a, 0x86, 0x82, 0x6e, 0x4f, 0x1c, 0xed, 0x79, 0x0e, 0x5e, 0x72, 0x68, 0x1c, 0x1d, 0xaa,
+	0x3a, 0x60, 0x02, 0x7f, 0x41, 0x09, 0x7a, 0x96, 0x6c, 0x0e, 0x35, 0x97, 0xef, 0xa4, 0x4c, 0x2e,
+	0x21, 0xf5, 0x76, 0x3f, 0x09, 0xa9, 0x52, 0x61, 0x5d, 0x2b, 0xda, 0x08, 0x77, 0x71, 0x40, 0x35,
+	0x56, 0x0d, 0xab, 0xb2, 0x8e, 0x16, 0x4a, 0x17, 0x32, 0xa1, 0x74, 0x2f, 0xc0, 0xc4, 0x4e, 0x18,
+	0x27, 0xf7, 0x70, 0xb2, 0x1f, 0x46, 0xbb, 0xdc, 0xa5, 0x59, 0xcd, 0x22, 0x84, 0x84, 0x5e, 0x0c,
+	0xac, 0xb5, 0xa9, 0xb2, 0xb7, 0x61, 0x89, 0xa4, 0x28, 0x59, 0xeb, 0x2c, 0x53, 0xbd, 0x2d, 0x2f,
+	0x59, 0xeb, 0x2c, 0x93, 0x49, 0xa3, 0xcf, 0x6d, 0x76, 0xa2, 0xd0, 0xc1, 0xb1, 0x12, 0xb4, 0xe2,
+	0x71, 0x5a, 0xaf, 0xb8, 0x10, 0x75, 0xf2, 0x71, 0xe3, 0xa6, 0xcb, 0xf5, 0x21, 0xf9, 0xc3, 0x22,
+	0x1f, 0x3a, 0x6e, 0x03, 0x66, 0x65, 0x70, 0x3a, 0xe6, 0x03, 0x1f, 0xb7, 0x66, 0xca, 0xdf, 0x7d,
+	0x2d, 0xbc, 0x6b, 0xcd, 0x61, 0xd0, 0x3c, 0xd1, 0x66, 0x33, 0x9e, 0x68, 0xe7, 0xa0, 0x19, 0xf7,
+	0x37, 0xdd, 0xb0, 0x6b, 0x7b, 0x01, 0xd5, 0xc4, 0x36, 0xad, 0x34, 0x03, 0xbd, 0x06, 0x0d, 0x5b,
+	0xa8, 0x7a, 0x50, 0xb9, 0x9f, 0x88, 0x54, 0xf0, 0xc8, 0xda, 0x64, 0xcb, 0x71, 0x33, 0x51, 0x1e,
+	0x2b, 0x73, 0x8e, 0x6d, 0x39, 0x2d, 0x13, 0xbd, 0x45, 0x04, 0x4c, 0x9f, 0xda, 0x2c, 0x91, 0xe3,
+	0xed, 0x4c, 0xb9, 0x37, 0xdc, 0x86, 0xac, 0x66, 0xa9, 0x20, 0xe8, 0x3a, 0x5b, 0x0f, 0x34, 0x04,
+	0x04, 0x8e, 0x5b, 0x8f, 0x95, 0x13, 0x1d, 0x19, 0x29, 0xc2, 0x52, 0x21, 0xd0, 0x0b, 0x70, 0xaa,
+	0x17, 0x79, 0x21, 0x9d, 0x05, 0xa9, 0x42, 0x6b, 0xb1, 0xe8, 0x58, 0xb9, 0x02, 0xc6, 0xb1, 0xb1,
+	0xcc, 0xd6, 0x59, 0x16, 0x32, 0x5f, 0xa4, 0xd1, 0x35, 0xba, 0x87, 0x19, 0x57, 0xde, 0x5a, 0x28,
+	0x77, 0x39, 0x51, 0xb9, 0x77, 0x2b, 0x05, 0x41, 0x77, 0x94, 0x18, 0x8f, 0x84, 0x11, 0x89, 0x5b,
+	0xe7, 0x2a, 0xae, 0x0d, 0x33, 0x5c, 0x8b, 0x95, 0x81, 0x45, 0xcf, 0xc3, 0x2c, 0x77, 0x62, 0x4c,
+	0xbb, 0xf5, 0x04, 0xd3, 0x0c, 0x66, 0xf3, 0x59, 0xc0, 0x16, 0x7b, 0xd3, 0xc7, 0x7c, 0x37, 0xde,
+	0xf1, 0x82, 0xdd, 0xb8, 0x75, 0x9e, 0xae, 0xfd, 0x82, 0x12, 0x82, 0xbb, 0x17, 0x61, 0xdc, 0xa5,
+	0xcc, 0x04, 0x27, 0x5a, 0x4f, 0x32, 0xdc, 0xd9, 0x7c, 0xb4, 0x02, 0x8d, 0x70, 0x0f, 0x47, 0x3b,
+	0xd8, 0x76, 0x5b, 0x17, 0x2a, 0xcc, 0x38, 0x38, 0xdd, 0xba, 0xcf, 0xeb, 0x72, 0xad, 0xaf, 0x00,
+	0x45, 0x5f, 0x83, 0xb3, 0x42, 0xef, 0xb0, 0xde, 0x23, 0x5d, 0x5d, 0x0e, 0x83, 0x38, 0x89, 0x98,
+	0xe9, 0xf1, 0x53, 0xe5, 0xc6, 0xbc, 0x1b, 0x25, 0x40, 0x56, 0x39, 0x3a, 0xb2, 0x24, 0x62, 0x9c,
+	0xdc, 0xe2, 0x5b, 0x64, 0x29, 0x5e, 0x7d, 0xa7, 0x7d, 0xaf, 0xf5, 0x34, 0x0b, 0xb4, 0x90, 0x2b,
+	0x58, 0xb8, 0x0e, 0xa7, 0x72, 0xc4, 0xf6, 0x48, 0xef, 0x8e, 0xed, 0xc2, 0x94, 0xd6, 0xeb, 0x13,
+	0xd5, 0x83, 0xfe, 0xf6, 0x28, 0x34, 0xa5, 0xb6, 0xae, 0x44, 0xf7, 0xf9, 0x56, 0x81, 0xe3, 0x5a,
+	0xd9, 0x4a, 0x2e, 0xb6, 0x39, 0x2e, 0x7f, 0x02, 0x30, 0x15, 0xc0, 0x47, 0x34, 0x01, 0xfc, 0x05,
+	0x38, 0x15, 0x84, 0xfc, 0x61, 0x8a, 0x7b, 0x82, 0xf8, 0x4f, 0xb0, 0x6d, 0x98, 0x2b, 0x28, 0x7b,
+	0x3c, 0x84, 0xc9, 0x02, 0xee, 0x5a, 0x47, 0x3c, 0x45, 0x40, 0x13, 0xe8, 0x65, 0x18, 0xa3, 0x1f,
+	0x71, 0x6b, 0xb2, 0xdc, 0x46, 0x9d, 0x0a, 0x9c, 0x16, 0xaf, 0x28, 0x1f, 0xad, 0xa0, 0x92, 0xd5,
+	0xf8, 0x31, 0x1f, 0xad, 0xa0, 0x92, 0xd5, 0xfb, 0x70, 0x5a, 0x63, 0x93, 0xd8, 0xc8, 0xe3, 0x98,
+	0x9b, 0x14, 0x3f, 0x7d, 0xe8, 0x2b, 0x0d, 0xfd, 0xd8, 0x2a, 0xc6, 0x80, 0xde, 0x81, 0x53, 0x4e,
+	0x0e, 0x6d, 0x63, 0x70, 0xb4, 0x79, 0x68, 0x42, 0xdf, 0x3e, 0x0c, 0x63, 0x4a, 0x19, 0xf8, 0x01,
+	0x2f, 0xd3, 0xc8, 0x81, 0x85, 0x3c, 0x73, 0x25, 0xff, 0x3b, 0x35, 0xf8, 0x7f, 0x2b, 0xd0, 0x98,
+	0xdf, 0x66, 0x1a, 0x50, 0x5e, 0x13, 0xc7, 0x7d, 0x3f, 0x19, 0xba, 0x23, 0xaf, 0xaa, 0xc8, 0x1a,
+	0x58, 0xa1, 0xfd, 0x7d, 0x83, 0x2a, 0xb4, 0x4f, 0xc8, 0x60, 0xe6, 0x3a, 0x34, 0x12, 0x11, 0x08,
+	0xb5, 0x56, 0xf9, 0x14, 0xbd, 0x68, 0x00, 0x55, 0xd1, 0x4b, 0x20, 0xf3, 0xb7, 0xd8, 0xb8, 0x89,
+	0xd2, 0xa1, 0x6b, 0x48, 0x5e, 0xd5, 0x35, 0x24, 0x4f, 0x1e, 0xd2, 0x3a, 0xa1, 0x29, 0xf9, 0x96,
+	0xde, 0x2c, 0x2a, 0xa3, 0x7c, 0xb2, 0x17, 0x1a, 0xa6, 0x05, 0x90, 0xba, 0xd6, 0xcb, 0x37, 0x13,
+	0x8c, 0x92, 0x37, 0x13, 0x6a, 0x99, 0x37, 0x13, 0xa4, 0xcb, 0x5b, 0x5d, 0x75, 0x79, 0xdb, 0x82,
+	0xf9, 0xa2, 0x6b, 0xe4, 0x61, 0x3f, 0x0f, 0x6b, 0x3e, 0x05, 0x53, 0x9d, 0x08, 0x2b, 0x84, 0x96,
+	0x5b, 0x43, 0x1b, 0xd2, 0x1a, 0xda, 0xfc, 0x99, 0x01, 0xf3, 0x1d, 0xfd, 0xe5, 0x7f, 0x76, 0xaa,
+	0xb4, 0x61, 0xb2, 0xa7, 0x88, 0xa4, 0x55, 0x4e, 0xb1, 0xaa, 0xe8, 0x6a, 0x69, 0x50, 0xe8, 0x1e,
+	0x4c, 0xe2, 0x3d, 0xcf, 0x91, 0x6a, 0xd9, 0xda, 0x91, 0x69, 0xa3, 0x06, 0x7f, 0xf4, 0x30, 0xb7,
+	0xe6, 0x3e, 0x3c, 0x56, 0xe2, 0x28, 0x4b, 0x90, 0xed, 0x53, 0xfd, 0x3c, 0x9f, 0x4e, 0x9e, 0x42,
+	0x6d, 0x00, 0xa6, 0x9e, 0xa7, 0xcf, 0x05, 0x1e, 0xe2, 0x35, 0xa9, 0x39, 0xa6, 0x29, 0x70, 0xe6,
+	0xb7, 0x6b, 0x30, 0xca, 0x62, 0x61, 0xbf, 0x0a, 0xe3, 0x3b, 0x2c, 0x22, 0xd0, 0x20, 0xd1, 0x86,
+	0x44, 0x5d, 0xf4, 0x12, 0xcc, 0xb1, 0x58, 0x48, 0x7e, 0x1b, 0xfb, 0xf6, 0x81, 0x10, 0x0c, 0x59,
+	0x00, 0xcf, 0xa2, 0xa2, 0x82, 0x47, 0x7b, 0xeb, 0x45, 0x8f, 0xf6, 0x12, 0x6e, 0xbb, 0x97, 0x13,
+	0x55, 0x47, 0x2d, 0x3d, 0x93, 0x5e, 0x16, 0xf7, 0xe9, 0x1d, 0xf6, 0xc6, 0x4e, 0x84, 0xe3, 0x9d,
+	0xd0, 0x77, 0xf9, 0x83, 0x3e, 0xb9, 0x7c, 0x52, 0x77, 0xcb, 0xf6, 0xfc, 0x7e, 0x84, 0xd3, 0xba,
+	0x63, 0xac, 0x6e, 0x36, 0xdf, 0x3c, 0x80, 0xd3, 0xfc, 0x8d, 0x1d, 0xe1, 0x05, 0xc3, 0x97, 0xff,
+	0x35, 0x18, 0x17, 0xb6, 0xae, 0x15, 0xde, 0x80, 0x0c, 0x24, 0x7d, 0xa5, 0xc7, 0x12, 0x40, 0x03,
+	0xbc, 0x19, 0xf3, 0x03, 0x03, 0xe6, 0x0a, 0xac, 0x57, 0xd8, 0x26, 0xda, 0xf6, 0xe2, 0x44, 0x06,
+	0x53, 0x94, 0x69, 0xea, 0x10, 0xc8, 0xac, 0x42, 0xf8, 0xc6, 0x63, 0xa9, 0xca, 0x90, 0x86, 0xe2,
+	0x29, 0xed, 0x11, 0xe5, 0x29, 0xed, 0x79, 0x18, 0xdd, 0x96, 0xfa, 0xaa, 0xa6, 0xc5, 0x12, 0x04,
+	0x7b, 0x82, 0x03, 0x3b, 0x48, 0x38, 0x0f, 0xc2, 0x53, 0xe6, 0x37, 0x6a, 0x70, 0xb6, 0xd4, 0xf6,
+	0xab, 0xf2, 0x69, 0xef, 0xe2, 0x97, 0x01, 0xca, 0x62, 0xbd, 0x52, 0x82, 0x26, 0x5f, 0x73, 0xa1,
+	0xdf, 0xb2, 0xf5, 0xa3, 0x4a, 0xeb, 0x5b, 0x30, 0xbe, 0x8b, 0x0f, 0x22, 0x2f, 0xd8, 0x16, 0x37,
+	0x1e, 0x3c, 0xa9, 0x07, 0x69, 0x1b, 0x7f, 0xe4, 0x60, 0xad, 0x8d, 0x0c, 0x0d, 0xfb, 0xcb, 0x35,
+	0x98, 0xb1, 0x6e, 0xb4, 0x3f, 0xb5, 0xdd, 0x5f, 0xcd, 0x77, 0xff, 0x91, 0x83, 0xae, 0x66, 0xc7,
+	0xe0, 0x57, 0x0d, 0x98, 0xa1, 0x21, 0x6f, 0xb8, 0xbb, 0x95, 0x17, 0x06, 0x43, 0x3e, 0x16, 0xe7,
+	0x61, 0x34, 0x22, 0x3f, 0x10, 0xa3, 0x46, 0x13, 0xf4, 0x41, 0x7d, 0xf6, 0xc8, 0xb2, 0x71, 0x71,
+	0x92, 0x3d, 0xbf, 0x4c, 0x3d, 0x3e, 0x2c, 0xdc, 0xf3, 0x3d, 0xd6, 0x8e, 0x54, 0xb1, 0xf8, 0xf1,
+	0xdb, 0x04, 0x17, 0x36, 0xe3, 0xa8, 0x1e, 0x1f, 0xc5, 0x48, 0x74, 0x66, 0xee, 0x3f, 0x1a, 0x70,
+	0xbe, 0xb0, 0xde, 0x30, 0x83, 0xac, 0xd4, 0x87, 0x7c, 0x63, 0x39, 0x52, 0x76, 0x40, 0x8e, 0xe6,
+	0xfd, 0x33, 0x0a, 0x3b, 0xf7, 0x89, 0xf8, 0x67, 0x14, 0xb6, 0x44, 0xb0, 0x87, 0x7f, 0x5c, 0x2b,
+	0x69, 0x2a, 0x65, 0x14, 0xe9, 0x0e, 0xa2, 0x85, 0xe2, 0xb1, 0x7a, 0x99, 0x46, 0x17, 0x61, 0xa6,
+	0xeb, 0x05, 0xf4, 0x15, 0x28, 0xfd, 0xcc, 0xcb, 0x66, 0xa3, 0x07, 0x8a, 0x0f, 0x47, 0xad, 0x3c,
+	0x3a, 0x74, 0x69, 0x33, 0x16, 0x75, 0x35, 0x6a, 0xea, 0xcb, 0xa1, 0xf2, 0xec, 0xf5, 0x63, 0xf0,
+	0xec, 0x0b, 0x57, 0x61, 0xea, 0xd8, 0x5a, 0x03, 0xf3, 0x5f, 0xd6, 0xe0, 0xf1, 0x8a, 0xa5, 0x5e,
+	0x39, 0x78, 0xaf, 0xc0, 0xfc, 0x56, 0xdf, 0xf7, 0x0f, 0xa8, 0x71, 0x08, 0x76, 0x2d, 0x51, 0x8f,
+	0x1d, 0xb0, 0x85, 0x65, 0x4c, 0x87, 0x6e, 0xbb, 0x07, 0xb2, 0x32, 0x67, 0x31, 0xb4, 0x4c, 0x22,
+	0xc6, 0xdb, 0x7b, 0xb6, 0x47, 0x7d, 0xc3, 0x65, 0x4d, 0xc6, 0x63, 0xe4, 0x0b, 0xd0, 0x22, 0xa0,
+	0x90, 0x47, 0x5b, 0xbf, 0x89, 0x03, 0xae, 0xd3, 0xa3, 0x63, 0x59, 0xb7, 0x0a, 0x4a, 0x32, 0x7e,
+	0x18, 0x63, 0xe5, 0x7e, 0x18, 0xd5, 0x7b, 0x5b, 0x8b, 0xae, 0xf3, 0xfb, 0x94, 0xfc, 0x15, 0x3c,
+	0x93, 0xa4, 0xbd, 0x71, 0xaa, 0x38, 0x18, 0xe8, 0x99, 0x6c, 0x9c, 0xe3, 0xd4, 0x00, 0x91, 0x72,
+	0x1a, 0xfc, 0x61, 0x85, 0x5b, 0x30, 0xee, 0x7a, 0x7b, 0x5e, 0xcc, 0xc5, 0x85, 0xa3, 0x2b, 0x6e,
+	0x04, 0xb8, 0xf9, 0x1f, 0x0c, 0x98, 0x12, 0xad, 0x7c, 0xa7, 0x1f, 0x26, 0xf6, 0x90, 0x89, 0xf3,
+	0xeb, 0x1a, 0x71, 0xfe, 0x5c, 0x95, 0x4b, 0x12, 0xfd, 0xbd, 0x42, 0x94, 0xaf, 0x67, 0x88, 0xf2,
+	0x73, 0x87, 0x03, 0xeb, 0xc4, 0xf8, 0xbb, 0x06, 0x9c, 0xd2, 0xca, 0x87, 0x4e, 0xa7, 0xbe, 0xa4,
+	0xd3, 0xa9, 0xa7, 0x0e, 0x6d, 0xa1, 0xa0, 0x4f, 0xbf, 0x57, 0xcb, 0x34, 0x8d, 0xd2, 0xa5, 0x65,
+	0x18, 0xd9, 0xb1, 0x23, 0xb7, 0x2a, 0x68, 0x47, 0x0e, 0x68, 0xf1, 0x96, 0x1d, 0x71, 0xa5, 0x26,
+	0x05, 0x66, 0xd1, 0xa0, 0xc3, 0x9e, 0x34, 0x11, 0xe1, 0x29, 0x74, 0x13, 0xa6, 0xe8, 0x97, 0xbc,
+	0xec, 0xa9, 0x97, 0x07, 0x1c, 0x5b, 0x57, 0x2b, 0x5a, 0x3a, 0xdc, 0xc2, 0x36, 0x34, 0xe5, 0x3f,
+	0x4f, 0x54, 0xa5, 0xf8, 0xbf, 0x6b, 0x30, 0x57, 0x30, 0xbf, 0x68, 0x45, 0x1b, 0xa6, 0x97, 0x07,
+	0x5c, 0x16, 0xb9, 0x81, 0x5a, 0xa1, 0xdc, 0x9b, 0xcb, 0xe7, 0x6e, 0x60, 0x34, 0xef, 0xc6, 0x58,
+	0xa0, 0x21, 0xe0, 0x1f, 0xdb, 0x70, 0x90, 0x1f, 0xc9, 0x7f, 0x9f, 0xe8, 0xb8, 0x7f, 0xab, 0x0e,
+	0xf3, 0x45, 0x7e, 0x82, 0xe8, 0x4e, 0x26, 0xec, 0xe2, 0xe5, 0x41, 0x3d, 0x0c, 0x59, 0x2c, 0x46,
+	0x1e, 0xd4, 0x9f, 0xe3, 0x40, 0x16, 0x21, 0x70, 0x34, 0xb8, 0xa5, 0xd8, 0x3f, 0x57, 0x06, 0xc6,
+	0xc7, 0xa3, 0x62, 0x72, 0x8c, 0x12, 0xcf, 0x82, 0x07, 0x13, 0xca, 0xaf, 0x4e, 0x74, 0x3a, 0x76,
+	0x09, 0xe1, 0x54, 0x5a, 0x71, 0xc2, 0x81, 0x71, 0xa6, 0x75, 0x9b, 0x0e, 0x29, 0x7b, 0x18, 0x8a,
+	0xec, 0x81, 0x60, 0x24, 0x0a, 0x7d, 0x19, 0x4f, 0x9c, 0x7c, 0x4b, 0x76, 0xb3, 0xae, 0xb0, 0x9b,
+	0xf3, 0x30, 0xea, 0xe3, 0x3d, 0x2c, 0x84, 0x19, 0x96, 0x30, 0xff, 0x4f, 0x0d, 0x9e, 0xa8, 0x74,
+	0x34, 0x20, 0xac, 0xe1, 0xb6, 0x9d, 0xe0, 0x7d, 0x5b, 0xf4, 0x52, 0x24, 0x29, 0xd1, 0x61, 0x01,
+	0x03, 0x04, 0x03, 0xcb, 0xe2, 0x04, 0x0c, 0xe1, 0x7d, 0x8e, 0xf3, 0x00, 0x71, 0xec, 0xaf, 0xd0,
+	0xcb, 0x22, 0x97, 0x1b, 0x81, 0x29, 0x39, 0xec, 0xce, 0x28, 0x4c, 0x98, 0x88, 0xdf, 0x66, 0xf7,
+	0x8d, 0xa3, 0xe2, 0xce, 0x48, 0xcf, 0x27, 0x72, 0x3f, 0xb7, 0x5e, 0xef, 0x10, 0x59, 0x8e, 0x09,
+	0x68, 0x6a, 0x96, 0x52, 0x83, 0x6a, 0x06, 0xc6, 0xb5, 0x1a, 0xd4, 0x52, 0x5d, 0xf7, 0x90, 0x6d,
+	0xe4, 0x3c, 0x64, 0x53, 0x01, 0xb2, 0x59, 0xaa, 0x7e, 0x83, 0x8c, 0xd8, 0xf6, 0x3f, 0x6b, 0x30,
+	0xc7, 0x87, 0xfe, 0x11, 0x07, 0x7c, 0x58, 0x2f, 0x7b, 0xfc, 0xff, 0x30, 0xea, 0x11, 0x4c, 0x69,
+	0x07, 0x1d, 0xb2, 0x4b, 0x83, 0x34, 0xbd, 0x5a, 0x7a, 0x4a, 0xba, 0x82, 0x3e, 0x0d, 0x14, 0xae,
+	0xc9, 0xec, 0xc3, 0x53, 0x87, 0x82, 0xd1, 0xbb, 0x73, 0x52, 0x49, 0xf5, 0x3e, 0x95, 0x19, 0xc7,
+	0x8a, 0x49, 0xd5, 0x81, 0x69, 0xdd, 0xb0, 0xa8, 0x50, 0x0c, 0x7d, 0x1e, 0x66, 0xa9, 0x2f, 0x10,
+	0xb5, 0x6b, 0xe0, 0xa6, 0x4a, 0xec, 0x0f, 0xb9, 0x7c, 0xf3, 0x1b, 0x75, 0x18, 0x63, 0xbb, 0x76,
+	0xc8, 0x1c, 0xe3, 0x39, 0x68, 0x7a, 0xdd, 0x6e, 0x9f, 0x05, 0x40, 0x1a, 0x65, 0xef, 0xd9, 0xc9,
+	0x0c, 0xf4, 0x1a, 0x57, 0x34, 0x54, 0x38, 0xbe, 0xb2, 0x56, 0x2d, 0xb6, 0xed, 0xc4, 0xe6, 0xe7,
+	0x34, 0xc5, 0xfb, 0x36, 0x40, 0x4c, 0x5f, 0xd2, 0x20, 0x05, 0xdc, 0xd7, 0xfa, 0xf9, 0x0a, 0xf8,
+	0x75, 0x59, 0x99, 0x61, 0x51, 0xa0, 0x8b, 0x88, 0xea, 0xc2, 0x97, 0xa0, 0x29, 0x2b, 0x1f, 0x26,
+	0x70, 0x4d, 0xaa, 0x07, 0xc9, 0x9b, 0x30, 0x93, 0xf9, 0xd7, 0x91, 0xe4, 0xb5, 0x5f, 0x33, 0x60,
+	0x26, 0xf3, 0x44, 0x2d, 0xfa, 0x2a, 0xcc, 0xfb, 0x05, 0x1b, 0x9c, 0xcf, 0xce, 0xe0, 0x04, 0xa1,
+	0x10, 0x0b, 0x5b, 0x80, 0x64, 0x7f, 0xf3, 0x47, 0xfc, 0x1b, 0x96, 0x4c, 0x9b, 0xbf, 0x63, 0xc0,
+	0xa9, 0xdc, 0xab, 0xab, 0x27, 0xdc, 0x1e, 0x3e, 0x5a, 0xb5, 0x4c, 0xd8, 0x36, 0xde, 0xc2, 0x7a,
+	0xa6, 0x85, 0x7f, 0xd5, 0x00, 0x60, 0x2d, 0x1c, 0xba, 0x38, 0xf0, 0x92, 0x2e, 0x0e, 0x2c, 0x54,
+	0x9c, 0x74, 0x5c, 0x0e, 0xf8, 0x67, 0x06, 0xcc, 0xb2, 0x1c, 0xe5, 0x31, 0xf9, 0x93, 0x1d, 0xad,
+	0x41, 0x82, 0xd9, 0xca, 0x87, 0x14, 0xc4, 0x23, 0xeb, 0xea, 0x80, 0x8e, 0x64, 0x06, 0x74, 0x59,
+	0xac, 0xbf, 0xca, 0xf8, 0xce, 0xd5, 0x11, 0x79, 0xcc, 0x1f, 0x18, 0x80, 0x18, 0x96, 0xec, 0xeb,
+	0x45, 0xec, 0x4c, 0x52, 0x48, 0xa1, 0x92, 0x73, 0xbc, 0xce, 0x64, 0xb4, 0xff, 0xf5, 0x9c, 0xf6,
+	0xbf, 0xb2, 0xbb, 0x3f, 0x1b, 0xa1, 0xfd, 0xd5, 0xcc, 0xab, 0xda, 0x30, 0xe9, 0xd8, 0x3d, 0x7b,
+	0xd3, 0xf3, 0xbd, 0xc4, 0xc3, 0x71, 0xd5, 0x15, 0xd8, 0xb2, 0x52, 0xcf, 0xd2, 0xa0, 0x58, 0xe0,
+	0x3c, 0x6f, 0xcf, 0xf3, 0xf1, 0x36, 0x15, 0x4b, 0xe8, 0x99, 0x9b, 0xe6, 0x14, 0x98, 0x00, 0xd7,
+	0x87, 0x68, 0x02, 0x0c, 0x27, 0x62, 0x02, 0x3c, 0x52, 0x6d, 0x02, 0xdc, 0x38, 0xd4, 0x04, 0x78,
+	0xb4, 0xc0, 0x04, 0xf8, 0x0a, 0x9c, 0x11, 0x87, 0x38, 0x49, 0xaf, 0x7a, 0x3e, 0xe6, 0xcc, 0x10,
+	0x33, 0x30, 0x2f, 0x29, 0x45, 0x6f, 0x40, 0xcb, 0xf6, 0xfd, 0x70, 0xbf, 0x23, 0xc6, 0x74, 0x25,
+	0x76, 0x6c, 0x9f, 0x29, 0x87, 0xc6, 0x29, 0x64, 0x69, 0x39, 0x7d, 0x98, 0x2b, 0x0a, 0x9d, 0xbb,
+	0x8a, 0x89, 0x62, 0x9a, 0x51, 0x60, 0xe2, 0x3b, 0x71, 0x6c, 0x13, 0xdf, 0xaf, 0xc0, 0xdc, 0x3a,
+	0x8e, 0x3c, 0x1a, 0x16, 0xda, 0x4d, 0xf7, 0xd4, 0x12, 0x34, 0xa3, 0x0c, 0x29, 0x18, 0xec, 0xad,
+	0xff, 0xf4, 0xa2, 0xf1, 0x4f, 0x0c, 0x18, 0xe7, 0xf6, 0x56, 0x43, 0x3e, 0xb4, 0xbf, 0xa8, 0xa9,
+	0x79, 0x9e, 0x2c, 0xee, 0x35, 0xfd, 0xb1, 0xa2, 0xe0, 0x79, 0x3d, 0xa3, 0xe0, 0x79, 0xaa, 0x0a,
+	0x4c, 0x57, 0xed, 0xfc, 0xb8, 0x46, 0x18, 0x1a, 0xcd, 0x40, 0x74, 0xb8, 0x1d, 0x7a, 0x13, 0xc6,
+	0x63, 0x6e, 0x27, 0x59, 0x2b, 0x37, 0x40, 0xc9, 0x3d, 0xa5, 0xc9, 0x61, 0x0a, 0xed, 0x2d, 0xeb,
+	0x8f, 0x6c, 0x6f, 0x79, 0x98, 0x0d, 0xec, 0xc8, 0xe1, 0x36, 0xb0, 0xe6, 0xf7, 0x28, 0xa1, 0x55,
+	0xf3, 0x87, 0x7e, 0x0c, 0xbe, 0xa6, 0x13, 0x65, 0xb3, 0x62, 0x5a, 0x79, 0x13, 0xc4, 0x71, 0xf8,
+	0x4b, 0xf0, 0x44, 0x41, 0x9b, 0x95, 0xa3, 0x71, 0x01, 0x1a, 0x76, 0xdf, 0xf5, 0xe4, 0x1e, 0x68,
+	0x5a, 0x32, 0x8d, 0x5e, 0x80, 0x53, 0xf8, 0x61, 0xcf, 0x63, 0x2a, 0x5d, 0xf5, 0x0e, 0xbc, 0x6e,
+	0xe5, 0x0b, 0xa4, 0xd3, 0x46, 0x5d, 0x71, 0xda, 0xf8, 0x75, 0x03, 0x26, 0xa4, 0x3d, 0xe2, 0x90,
+	0x07, 0xe5, 0x65, 0x7d, 0x50, 0x1e, 0xaf, 0x18, 0x14, 0x31, 0x1a, 0x7f, 0x9a, 0x36, 0xa7, 0xc3,
+	0xdf, 0x7e, 0xcb, 0x9d, 0xaa, 0x55, 0x26, 0x25, 0x17, 0x60, 0xc2, 0xee, 0x11, 0xb2, 0xc2, 0x8a,
+	0xb9, 0xdc, 0xa5, 0x64, 0x49, 0x23, 0x95, 0xba, 0x62, 0xa4, 0xd2, 0x11, 0xaf, 0x83, 0x92, 0x7f,
+	0x72, 0xef, 0xb8, 0xa3, 0xbf, 0x56, 0xa7, 0xe0, 0x10, 0x66, 0xd7, 0x14, 0x1f, 0x53, 0xd9, 0xcb,
+	0xb4, 0xf9, 0x79, 0x4a, 0xec, 0x68, 0x17, 0x0f, 0x73, 0xa9, 0xf9, 0x83, 0x71, 0x39, 0x1c, 0xeb,
+	0xcc, 0x81, 0x58, 0xf1, 0xcf, 0xa9, 0x26, 0x3a, 0xea, 0x93, 0xf3, 0x6b, 0xb9, 0x6b, 0x9b, 0x17,
+	0x0f, 0x21, 0x57, 0xa5, 0x17, 0x35, 0x34, 0x4a, 0x10, 0x0d, 0xec, 0xb2, 0xd6, 0x11, 0xef, 0x23,
+	0xca, 0x0c, 0x72, 0xd2, 0xc9, 0x44, 0xdc, 0x42, 0xcc, 0x09, 0x36, 0xcd, 0x91, 0x42, 0xc4, 0x88,
+	0x22, 0x81, 0x5d, 0x80, 0x09, 0x19, 0x66, 0xb6, 0x23, 0x9e, 0x4e, 0x55, 0xb3, 0xd0, 0x45, 0x98,
+	0x89, 0x99, 0x30, 0x29, 0x7d, 0xe5, 0x99, 0xb8, 0x9c, 0xcd, 0x46, 0xcf, 0xc2, 0xb4, 0xaf, 0x3e,
+	0xce, 0xd1, 0xe1, 0x62, 0x73, 0x26, 0x97, 0x9c, 0x8a, 0x6a, 0x0e, 0x8f, 0x60, 0x60, 0x07, 0xdb,
+	0x38, 0xe6, 0x51, 0x4c, 0x4b, 0xcb, 0xc9, 0x69, 0x2d, 0x1a, 0xa7, 0x58, 0xd5, 0x6b, 0x79, 0xe8,
+	0x32, 0x9c, 0x16, 0xe9, 0x8d, 0xc8, 0xde, 0xda, 0xf2, 0x1c, 0x6e, 0xd9, 0xcb, 0xac, 0x30, 0x8b,
+	0x0b, 0xd1, 0x4b, 0x30, 0xb7, 0x83, 0x6d, 0x3f, 0xd9, 0x59, 0xde, 0xc1, 0xce, 0xee, 0x3d, 0xb1,
+	0x7e, 0x26, 0x99, 0x4d, 0x4b, 0x41, 0x11, 0xe9, 0x47, 0xaf, 0xbf, 0xe9, 0x7b, 0xf1, 0xce, 0xbd,
+	0x30, 0xa1, 0x37, 0x75, 0x4b, 0x32, 0x3c, 0x2d, 0x33, 0xcb, 0x2f, 0x2d, 0x47, 0x1f, 0xc0, 0xe9,
+	0xcc, 0xf0, 0x71, 0x73, 0xeb, 0xe9, 0xf2, 0xb8, 0x24, 0xeb, 0x45, 0x00, 0x56, 0x31, 0x1e, 0xfa,
+	0x42, 0x5c, 0xea, 0xde, 0x1c, 0xb7, 0x66, 0x59, 0x8c, 0x04, 0x35, 0x8f, 0x2c, 0x18, 0xaf, 0xb7,
+	0x6a, 0x77, 0x3d, 0x9f, 0xf0, 0x90, 0x73, 0x6c, 0xc1, 0xa4, 0x39, 0xf4, 0x75, 0x38, 0x96, 0x3a,
+	0xe0, 0x23, 0x78, 0x8a, 0xbf, 0x0e, 0xa7, 0xe5, 0xa2, 0x36, 0x3c, 0xc1, 0x03, 0x00, 0x63, 0xf5,
+	0x75, 0x16, 0x31, 0x50, 0x31, 0x0d, 0x0f, 0xd2, 0xb0, 0xaa, 0x2b, 0x3d, 0xda, 0x25, 0xe2, 0x0f,
+	0x0d, 0x02, 0xad, 0x9c, 0xdc, 0xe8, 0x6d, 0x98, 0x54, 0x57, 0x11, 0xa7, 0xa7, 0xcf, 0x1e, 0xf6,
+	0xa4, 0x0c, 0x3f, 0xf7, 0x35, 0x58, 0x74, 0xbf, 0xc0, 0x8e, 0x78, 0xc0, 0x37, 0x99, 0x8b, 0xef,
+	0xea, 0x1e, 0xc0, 0xe9, 0xc2, 0xd9, 0x44, 0xd7, 0xa0, 0xe1, 0xf8, 0x1e, 0x0e, 0x92, 0xb5, 0x4e,
+	0x95, 0xbf, 0xdd, 0x32, 0xaf, 0xc3, 0xd7, 0x80, 0x84, 0x31, 0x3f, 0x32, 0xe0, 0xc9, 0x43, 0x02,
+	0xa6, 0x64, 0x54, 0x5b, 0x46, 0x4e, 0xb5, 0x75, 0x51, 0x44, 0x0d, 0xbe, 0x97, 0x11, 0x9f, 0xb2,
+	0xd9, 0xc7, 0x7a, 0xa6, 0x59, 0xd3, 0xd0, 0x8e, 0x1e, 0x81, 0xad, 0x94, 0x50, 0xe6, 0x7f, 0x31,
+	0xe0, 0xb4, 0xec, 0xe4, 0xa7, 0xa8, 0x6b, 0xab, 0xf9, 0xae, 0x1d, 0x47, 0x17, 0x6a, 0xbe, 0x02,
+	0x63, 0xcc, 0x09, 0xf0, 0x08, 0xce, 0xd0, 0xbb, 0x30, 0x93, 0x79, 0x5f, 0x54, 0x3e, 0x00, 0x6b,
+	0x0c, 0xe5, 0x01, 0x58, 0xf5, 0x2d, 0xf0, 0xdf, 0x34, 0x60, 0x94, 0x86, 0x42, 0x1f, 0x74, 0x8f,
+	0x92, 0xe1, 0xc4, 0x5b, 0x5b, 0xd8, 0x11, 0x0f, 0xc9, 0xf2, 0x14, 0xba, 0x05, 0xcd, 0xc4, 0xeb,
+	0xe2, 0x25, 0xd7, 0xe5, 0x5a, 0xdf, 0x23, 0x9a, 0xa7, 0x4b, 0x60, 0xf3, 0xdb, 0x06, 0x40, 0xea,
+	0x5b, 0x73, 0xc4, 0xd0, 0xfa, 0xb2, 0xd1, 0xf5, 0xe2, 0x46, 0x8f, 0x68, 0x8d, 0x7e, 0x01, 0x4e,
+	0xa5, 0x9e, 0x3b, 0xba, 0x57, 0x5c, 0xbe, 0xc0, 0xbc, 0x03, 0x17, 0xa4, 0xef, 0x06, 0xa7, 0x6f,
+	0xd4, 0x24, 0xa1, 0xfa, 0x21, 0x80, 0x54, 0xb1, 0x5a, 0xd3, 0x14, 0xab, 0xbf, 0x62, 0xc0, 0x7c,
+	0x16, 0x1d, 0x35, 0x19, 0xfd, 0x1a, 0x9c, 0xa6, 0xca, 0x5f, 0x8a, 0x3b, 0xaf, 0x50, 0xbe, 0x5c,
+	0xe9, 0x53, 0x52, 0xd2, 0x2e, 0xab, 0x18, 0xa5, 0xf9, 0x5f, 0x0d, 0x68, 0x95, 0xf9, 0xa3, 0x50,
+	0x7b, 0x1e, 0xfb, 0xe1, 0xfa, 0x2e, 0xde, 0xe7, 0xe6, 0x1a, 0x22, 0x99, 0x8d, 0xc2, 0x51, 0xcb,
+	0x45, 0xe1, 0x20, 0x23, 0xbb, 0xbf, 0x83, 0x83, 0x77, 0x83, 0xd8, 0x4e, 0xbc, 0x78, 0xcb, 0xa3,
+	0x3a, 0x59, 0x36, 0x27, 0xf9, 0x82, 0x7c, 0x40, 0x91, 0x91, 0x61, 0x05, 0x14, 0x31, 0x3f, 0x80,
+	0xb3, 0xa5, 0x41, 0x40, 0xa9, 0x50, 0xd0, 0xf3, 0x98, 0x42, 0x41, 0x08, 0x05, 0x3c, 0x2d, 0x63,
+	0x43, 0xd7, 0x94, 0xd8, 0xd0, 0x05, 0xd1, 0x9f, 0xcd, 0x4d, 0x18, 0xe3, 0x11, 0xb9, 0x8a, 0xf6,
+	0x78, 0x5b, 0x04, 0x77, 0xd7, 0x02, 0x42, 0x5d, 0x28, 0x37, 0x3a, 0x15, 0xaf, 0x0a, 0xa8, 0x50,
+	0xe6, 0x0d, 0x98, 0x64, 0xa5, 0x6d, 0x4c, 0x45, 0xf0, 0xa2, 0x3f, 0x9d, 0x07, 0x70, 0x69, 0xa9,
+	0x12, 0xfe, 0x5a, 0xc9, 0x31, 0xff, 0xb9, 0x01, 0x13, 0xef, 0xf1, 0xb0, 0x49, 0x44, 0xea, 0x2d,
+	0x91, 0x09, 0xca, 0xc2, 0x53, 0xd2, 0x30, 0xe8, 0x04, 0xb0, 0x93, 0xca, 0x3e, 0x69, 0x06, 0x59,
+	0x2b, 0x71, 0x7f, 0x93, 0x96, 0x71, 0xe3, 0x68, 0x9e, 0x44, 0xcf, 0xc3, 0x2c, 0xab, 0x16, 0x85,
+	0x3d, 0x7b, 0x9b, 0xa9, 0x4c, 0xf8, 0x7d, 0x4f, 0x36, 0x9f, 0xde, 0xe6, 0x30, 0x30, 0xb2, 0x48,
+	0xe5, 0x7d, 0x4f, 0x9a, 0x65, 0x5a, 0x80, 0xf2, 0x51, 0x9c, 0xd0, 0x97, 0xd9, 0x85, 0xb0, 0x17,
+	0xc9, 0x17, 0x6c, 0x0e, 0x7f, 0x59, 0x49, 0x42, 0x98, 0x3f, 0xad, 0xc1, 0x6c, 0xd6, 0xe2, 0x17,
+	0x7d, 0x19, 0xc6, 0x18, 0x1d, 0xaf, 0x7a, 0x12, 0x27, 0xab, 0x80, 0xb5, 0x38, 0x0c, 0xba, 0x0d,
+	0x13, 0x6e, 0xb8, 0x1f, 0xec, 0xdb, 0x91, 0xbb, 0xd4, 0x59, 0xe3, 0xb3, 0x5e, 0xc8, 0x0b, 0xb6,
+	0xd3, 0x6a, 0x0a, 0x1e, 0x15, 0x1a, 0xad, 0xa8, 0x2f, 0x00, 0x55, 0x58, 0xb4, 0xc8, 0x17, 0x80,
+	0x14, 0x44, 0x29, 0x24, 0x72, 0x60, 0x2e, 0x2e, 0x11, 0xfd, 0xcb, 0x82, 0xc7, 0x55, 0x49, 0xd4,
+	0x56, 0x11, 0x36, 0xf3, 0x67, 0xb3, 0x62, 0xa9, 0xf2, 0x83, 0x5c, 0x0d, 0xa7, 0x69, 0x1c, 0x3b,
+	0x9c, 0x66, 0x1b, 0x1a, 0xb8, 0xdb, 0x4b, 0x0e, 0xda, 0x5e, 0x54, 0x15, 0xa3, 0x78, 0x85, 0xd7,
+	0xd1, 0xb1, 0x08, 0xc8, 0xe2, 0x28, 0xa5, 0xf5, 0x8f, 0x21, 0x4a, 0xe9, 0xc8, 0xd0, 0xa3, 0x94,
+	0x2e, 0xc1, 0xf8, 0x36, 0x7b, 0xb3, 0x9f, 0xf3, 0x27, 0x85, 0x2b, 0xa2, 0xe0, 0x59, 0x7f, 0x4b,
+	0xc0, 0xa1, 0x6b, 0x72, 0x85, 0x8f, 0x95, 0x73, 0xd4, 0x79, 0xcd, 0xba, 0x5c, 0xe3, 0x3c, 0x1e,
+	0xe9, 0xf8, 0x11, 0xe3, 0x91, 0x5e, 0x15, 0xe1, 0x44, 0x1b, 0xe5, 0x86, 0x5d, 0xb9, 0x77, 0xb2,
+	0x45, 0x10, 0xd1, 0x9b, 0x6a, 0x58, 0xd5, 0x66, 0xf9, 0xae, 0x2a, 0x7c, 0xbc, 0x5f, 0x0d, 0xa6,
+	0xba, 0x0b, 0xa7, 0x7b, 0x45, 0xb1, 0x7c, 0xb9, 0x32, 0xfb, 0xd5, 0x81, 0xe3, 0x03, 0x6b, 0x3f,
+	0x28, 0xc6, 0x49, 0x46, 0x2a, 0xda, 0x74, 0xb9, 0x62, 0xf7, 0xe9, 0x92, 0x10, 0xac, 0xf9, 0xc0,
+	0xab, 0xed, 0x82, 0x30, 0xa1, 0xcf, 0x94, 0x85, 0x09, 0x2d, 0x0d, 0x0e, 0x7a, 0x4d, 0xc6, 0x5d,
+	0x9d, 0x2a, 0x9f, 0x66, 0x16, 0x77, 0xb5, 0x30, 0xda, 0xea, 0x35, 0x19, 0x6d, 0xb5, 0xc2, 0x93,
+	0x9c, 0x45, 0x5b, 0x2d, 0x8c, 0xb1, 0xaa, 0xc4, 0x4b, 0x9d, 0x39, 0x66, 0xbc, 0xd4, 0xbb, 0x3a,
+	0x35, 0x65, 0x11, 0x3f, 0xbf, 0x70, 0x08, 0x35, 0xd5, 0x50, 0x69, 0xf4, 0x94, 0x45, 0x7d, 0x3d,
+	0x75, 0xa4, 0xa8, 0xaf, 0x37, 0xd5, 0x10, 0xab, 0xe8, 0x90, 0x90, 0xa3, 0xa4, 0x52, 0x59, 0x60,
+	0xd5, 0x9b, 0x2a, 0x31, 0x9f, 0x2b, 0x47, 0x24, 0x89, 0xb9, 0x8e, 0x28, 0x25, 0xe7, 0xb9, 0x08,
+	0xad, 0xf3, 0x27, 0x10, 0xa1, 0xf5, 0xf4, 0x30, 0x22, 0xb4, 0x9e, 0x39, 0x81, 0x08, 0xad, 0x8f,
+	0x0d, 0x3d, 0x42, 0xeb, 0x4d, 0x7a, 0x4d, 0xc3, 0x5c, 0x86, 0xb8, 0xaf, 0x7c, 0xb1, 0x5b, 0x78,
+	0x91, 0x5f, 0x91, 0x95, 0xc2, 0x16, 0x84, 0x7a, 0x6d, 0x3d, 0x62, 0xa8, 0xd7, 0xa5, 0x34, 0xd4,
+	0xeb, 0xd9, 0xf2, 0x09, 0x29, 0x30, 0x03, 0x4a, 0x03, 0xbc, 0xde, 0x54, 0x63, 0xb4, 0x3e, 0x5e,
+	0xa1, 0x9a, 0x2a, 0x92, 0xc6, 0xd5, 0xc8, 0xac, 0xaf, 0xb2, 0xc8, 0xac, 0xe7, 0xca, 0x69, 0x59,
+	0x96, 0x74, 0xd7, 0x39, 0xe1, 0x96, 0x2e, 0xb6, 0xd4, 0xe9, 0xbf, 0xe4, 0xff, 0x32, 0x7e, 0x8a,
+	0xfe, 0x7f, 0x09, 0x6b, 0xfe, 0xc8, 0x80, 0xf3, 0xd5, 0xcb, 0x39, 0xd5, 0x1d, 0x74, 0x52, 0x45,
+	0xb0, 0x92, 0x53, 0xea, 0xe6, 0xf8, 0x02, 0x9c, 0x92, 0xa6, 0x45, 0xbe, 0xe7, 0x1c, 0x28, 0x0f,
+	0x19, 0xe4, 0x0b, 0xa8, 0x3a, 0x55, 0xcd, 0x5c, 0x6b, 0x73, 0xce, 0x37, 0x9b, 0x6d, 0xfe, 0xb2,
+	0x01, 0x8f, 0x95, 0x04, 0xe9, 0x2b, 0xf5, 0x0f, 0xbc, 0x0b, 0x33, 0x3d, 0xbd, 0xea, 0x21, 0x4e,
+	0xb8, 0x5a, 0xe8, 0xbf, 0x2c, 0xac, 0xf9, 0xf7, 0x0c, 0x78, 0xa2, 0xf2, 0x2e, 0x16, 0x5d, 0x81,
+	0x33, 0xdb, 0xdd, 0xd8, 0x5e, 0x8e, 0xb0, 0x8b, 0x83, 0xc4, 0xb3, 0xfd, 0xf5, 0x1e, 0x76, 0x14,
+	0xe5, 0x4b, 0x49, 0x29, 0x5a, 0x04, 0x94, 0x2f, 0xe1, 0x03, 0x5b, 0x50, 0x42, 0x8d, 0xf6, 0xc5,
+	0x95, 0xae, 0x32, 0xc0, 0x7a, 0xe6, 0x8d, 0xf9, 0x7f, 0xf5, 0xd1, 0x79, 0xe3, 0xdf, 0x7e, 0x74,
+	0xde, 0xf8, 0x6f, 0x1f, 0x9d, 0x37, 0xbe, 0xfb, 0xdf, 0xcf, 0xff, 0xb9, 0x5f, 0xa8, 0xed, 0xbd,
+	0xfc, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0x31, 0xbd, 0x08, 0x4a, 0x90, 0xbd, 0x00, 0x00,
 }
 
 func (m *AWSElasticBlockStoreVolumeSource) Marshal() (dAtA []byte, err error) {
@@ -17949,6 +19767,18 @@ func (m *CSIPersistentVolumeSource) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.ControllerExpandSecretRef != nil {
+		{
+			size, err := m.ControllerExpandSecretRef.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
 	if m.NodePublishSecretRef != nil {
 		{
 			size, err := m.NodePublishSecretRef.MarshalToSizedBuffer(dAtA[:i])
@@ -18027,6 +19857,88 @@ func (m *CSIPersistentVolumeSource) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.VolumeHandle)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if m.Driver != nil {
+		i -= len(*m.Driver)
+		copy(dAtA[i:], *m.Driver)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Driver)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CSIVolumeSource) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CSIVolumeSource) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CSIVolumeSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.NodePublishSecretRef != nil {
+		{
+			size, err := m.NodePublishSecretRef.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.VolumeAttributes) > 0 {
+		for k := range m.VolumeAttributes {
+			v := m.VolumeAttributes[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintGenerated(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintGenerated(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintGenerated(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if m.FsType != nil {
+		i -= len(*m.FsType)
+		copy(dAtA[i:], *m.FsType)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.FsType)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.ReadOnly != nil {
+		i--
+		if *m.ReadOnly {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
 	}
 	if m.Driver != nil {
 		i -= len(*m.Driver)
@@ -18584,6 +20496,16 @@ func (m *ConfigMap) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.Immutable != nil {
+		i--
+		if *m.Immutable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
 	if len(m.BinaryData) > 0 {
 		for k := range m.BinaryData {
 			v := m.BinaryData[k]
@@ -19013,6 +20935,20 @@ func (m *Container) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.StartupProbe != nil {
+		{
+			size, err := m.StartupProbe.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb2
 	}
 	if len(m.VolumeDevices) > 0 {
 		for iNdEx := len(m.VolumeDevices) - 1; iNdEx >= 0; iNdEx-- {
@@ -19597,6 +21533,16 @@ func (m *ContainerStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.Started != nil {
+		i--
+		if *m.Started {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
+	}
 	if m.ContainerID != nil {
 		i -= len(*m.ContainerID)
 		copy(dAtA[i:], *m.ContainerID)
@@ -19978,6 +21924,13 @@ func (m *EndpointPort) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.AppProtocol != nil {
+		i -= len(*m.AppProtocol)
+		copy(dAtA[i:], *m.AppProtocol)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.AppProtocol)))
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.Protocol != nil {
 		i -= len(*m.Protocol)
@@ -20362,6 +22315,427 @@ func (m *EnvVarSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *EphemeralContainer) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EphemeralContainer) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EphemeralContainer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.TargetContainerName != nil {
+		i -= len(*m.TargetContainerName)
+		copy(dAtA[i:], *m.TargetContainerName)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.TargetContainerName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.EphemeralContainerCommon != nil {
+		{
+			size, err := m.EphemeralContainerCommon.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EphemeralContainerCommon) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EphemeralContainerCommon) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EphemeralContainerCommon) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.StartupProbe != nil {
+		{
+			size, err := m.StartupProbe.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb2
+	}
+	if len(m.VolumeDevices) > 0 {
+		for iNdEx := len(m.VolumeDevices) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.VolumeDevices[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0xaa
+		}
+	}
+	if m.TerminationMessagePolicy != nil {
+		i -= len(*m.TerminationMessagePolicy)
+		copy(dAtA[i:], *m.TerminationMessagePolicy)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.TerminationMessagePolicy)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	}
+	if len(m.EnvFrom) > 0 {
+		for iNdEx := len(m.EnvFrom) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.EnvFrom[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x9a
+		}
+	}
+	if m.Tty != nil {
+		i--
+		if *m.Tty {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x90
+	}
+	if m.StdinOnce != nil {
+		i--
+		if *m.StdinOnce {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x88
+	}
+	if m.Stdin != nil {
+		i--
+		if *m.Stdin {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x80
+	}
+	if m.SecurityContext != nil {
+		{
+			size, err := m.SecurityContext.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x7a
+	}
+	if m.ImagePullPolicy != nil {
+		i -= len(*m.ImagePullPolicy)
+		copy(dAtA[i:], *m.ImagePullPolicy)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.ImagePullPolicy)))
+		i--
+		dAtA[i] = 0x72
+	}
+	if m.TerminationMessagePath != nil {
+		i -= len(*m.TerminationMessagePath)
+		copy(dAtA[i:], *m.TerminationMessagePath)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.TerminationMessagePath)))
+		i--
+		dAtA[i] = 0x6a
+	}
+	if m.Lifecycle != nil {
+		{
+			size, err := m.Lifecycle.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x62
+	}
+	if m.ReadinessProbe != nil {
+		{
+			size, err := m.ReadinessProbe.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x5a
+	}
+	if m.LivenessProbe != nil {
+		{
+			size, err := m.LivenessProbe.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if len(m.VolumeMounts) > 0 {
+		for iNdEx := len(m.VolumeMounts) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.VolumeMounts[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x4a
+		}
+	}
+	if m.Resources != nil {
+		{
+			size, err := m.Resources.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
+	if len(m.Env) > 0 {
+		for iNdEx := len(m.Env) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Env[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
+	if len(m.Ports) > 0 {
+		for iNdEx := len(m.Ports) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Ports[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x32
+		}
+	}
+	if m.WorkingDir != nil {
+		i -= len(*m.WorkingDir)
+		copy(dAtA[i:], *m.WorkingDir)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.WorkingDir)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Args) > 0 {
+		for iNdEx := len(m.Args) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Args[iNdEx])
+			copy(dAtA[i:], m.Args[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.Args[iNdEx])))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Command) > 0 {
+		for iNdEx := len(m.Command) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Command[iNdEx])
+			copy(dAtA[i:], m.Command[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.Command[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if m.Image != nil {
+		i -= len(*m.Image)
+		copy(dAtA[i:], *m.Image)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Image)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Name != nil {
+		i -= len(*m.Name)
+		copy(dAtA[i:], *m.Name)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EphemeralContainers) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EphemeralContainers) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EphemeralContainers) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.EphemeralContainers) > 0 {
+		for iNdEx := len(m.EphemeralContainers) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.EphemeralContainers[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.Metadata != nil {
+		{
+			size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EphemeralVolumeSource) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EphemeralVolumeSource) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EphemeralVolumeSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ReadOnly != nil {
+		i--
+		if *m.ReadOnly {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.VolumeClaimTemplate != nil {
+		{
+			size, err := m.VolumeClaimTemplate.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Event) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -20608,13 +22982,6 @@ func (m *EventSeries) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.State != nil {
-		i -= len(*m.State)
-		copy(dAtA[i:], *m.State)
-		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.State)))
-		i--
-		dAtA[i] = 0x1a
 	}
 	if m.LastObservedTime != nil {
 		{
@@ -22179,6 +24546,20 @@ func (m *LoadBalancerIngress) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.Ports) > 0 {
+		for iNdEx := len(m.Ports) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Ports[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
 	if m.Hostname != nil {
 		i -= len(*m.Hostname)
 		copy(dAtA[i:], *m.Hostname)
@@ -22426,6 +24807,73 @@ func (m *Namespace) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *NamespaceCondition) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NamespaceCondition) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NamespaceCondition) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Message != nil {
+		i -= len(*m.Message)
+		copy(dAtA[i:], *m.Message)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Message)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.Reason != nil {
+		i -= len(*m.Reason)
+		copy(dAtA[i:], *m.Reason)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Reason)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.LastTransitionTime != nil {
+		{
+			size, err := m.LastTransitionTime.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Status != nil {
+		i -= len(*m.Status)
+		copy(dAtA[i:], *m.Status)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Status)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Type != nil {
+		i -= len(*m.Type)
+		copy(dAtA[i:], *m.Type)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Type)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *NamespaceList) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -22538,6 +24986,20 @@ func (m *NamespaceStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Conditions) > 0 {
+		for iNdEx := len(m.Conditions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Conditions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
 	}
 	if m.Phase != nil {
 		i -= len(*m.Phase)
@@ -23242,6 +25704,15 @@ func (m *NodeSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.PodCIDRs) > 0 {
+		for iNdEx := len(m.PodCIDRs) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.PodCIDRs[iNdEx])
+			copy(dAtA[i:], m.PodCIDRs[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.PodCIDRs[iNdEx])))
+			i--
+			dAtA[i] = 0x3a
+		}
 	}
 	if m.ConfigSource != nil {
 		{
@@ -24132,6 +26603,57 @@ func (m *PersistentVolumeClaimStatus) MarshalToSizedBuffer(dAtA []byte) (int, er
 		i -= len(*m.Phase)
 		copy(dAtA[i:], *m.Phase)
 		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Phase)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PersistentVolumeClaimTemplate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PersistentVolumeClaimTemplate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PersistentVolumeClaimTemplate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Spec != nil {
+		{
+			size, err := m.Spec.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Metadata != nil {
+		{
+			size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -25321,6 +27843,40 @@ func (m *PodExecOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *PodIP) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PodIP) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PodIP) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Ip != nil {
+		i -= len(*m.Ip)
+		copy(dAtA[i:], *m.Ip)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Ip)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *PodList) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -25397,6 +27953,16 @@ func (m *PodLogOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.InsecureSkipTLSVerifyBackend != nil {
+		i--
+		if *m.InsecureSkipTLSVerifyBackend {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
 	}
 	if m.LimitBytes != nil {
 		i = encodeVarintGenerated(dAtA, i, uint64(*m.LimitBytes))
@@ -25591,6 +28157,37 @@ func (m *PodSecurityContext) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.SeccompProfile != nil {
+		{
+			size, err := m.SeccompProfile.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.FsGroupChangePolicy != nil {
+		i -= len(*m.FsGroupChangePolicy)
+		copy(dAtA[i:], *m.FsGroupChangePolicy)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.FsGroupChangePolicy)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if m.WindowsOptions != nil {
+		{
+			size, err := m.WindowsOptions.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
 	if len(m.Sysctls) > 0 {
 		for iNdEx := len(m.Sysctls) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -25714,6 +28311,87 @@ func (m *PodSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.SetHostnameAsFQDN != nil {
+		i--
+		if *m.SetHostnameAsFQDN {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0x98
+	}
+	if len(m.EphemeralContainers) > 0 {
+		for iNdEx := len(m.EphemeralContainers) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.EphemeralContainers[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x2
+			i--
+			dAtA[i] = 0x92
+		}
+	}
+	if len(m.TopologySpreadConstraints) > 0 {
+		for iNdEx := len(m.TopologySpreadConstraints) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TopologySpreadConstraints[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x2
+			i--
+			dAtA[i] = 0x8a
+		}
+	}
+	if len(m.Overhead) > 0 {
+		for k := range m.Overhead {
+			v := m.Overhead[k]
+			baseI := i
+			if v != nil {
+				{
+					size, err := v.MarshalToSizedBuffer(dAtA[:i])
+					if err != nil {
+						return 0, err
+					}
+					i -= size
+					i = encodeVarintGenerated(dAtA, i, uint64(size))
+				}
+				i--
+				dAtA[i] = 0x12
+			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintGenerated(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintGenerated(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x2
+			i--
+			dAtA[i] = 0x82
+		}
+	}
+	if m.PreemptionPolicy != nil {
+		i -= len(*m.PreemptionPolicy)
+		copy(dAtA[i:], *m.PreemptionPolicy)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.PreemptionPolicy)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xfa
 	}
 	if m.EnableServiceLinks != nil {
 		i--
@@ -26070,6 +28748,34 @@ func (m *PodStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.EphemeralContainerStatuses) > 0 {
+		for iNdEx := len(m.EphemeralContainerStatuses) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.EphemeralContainerStatuses[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x6a
+		}
+	}
+	if len(m.PodIPs) > 0 {
+		for iNdEx := len(m.PodIPs) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.PodIPs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x62
+		}
+	}
 	if m.NominatedNodeName != nil {
 		i -= len(*m.NominatedNodeName)
 		copy(dAtA[i:], *m.NominatedNodeName)
@@ -26378,6 +29084,52 @@ func (m *PodTemplateSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		}
 		i--
 		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PortStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PortStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PortStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Error != nil {
+		i -= len(*m.Error)
+		copy(dAtA[i:], *m.Error)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Error)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Protocol != nil {
+		i -= len(*m.Protocol)
+		copy(dAtA[i:], *m.Protocol)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Protocol)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Port != nil {
+		i = encodeVarintGenerated(dAtA, i, uint64(*m.Port))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -26709,6 +29461,13 @@ func (m *QuobyteVolumeSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Tenant != nil {
+		i -= len(*m.Tenant)
+		copy(dAtA[i:], *m.Tenant)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Tenant)))
+		i--
+		dAtA[i] = 0x32
 	}
 	if m.Group != nil {
 		i -= len(*m.Group)
@@ -28070,6 +30829,47 @@ func (m *ScopedResourceSelectorRequirement) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
+func (m *SeccompProfile) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SeccompProfile) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SeccompProfile) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.LocalhostProfile != nil {
+		i -= len(*m.LocalhostProfile)
+		copy(dAtA[i:], *m.LocalhostProfile)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.LocalhostProfile)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Type != nil {
+		i -= len(*m.Type)
+		copy(dAtA[i:], *m.Type)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Type)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Secret) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -28093,6 +30893,16 @@ func (m *Secret) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Immutable != nil {
+		i--
+		if *m.Immutable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
 	}
 	if len(m.StringData) > 0 {
 		for k := range m.StringData {
@@ -28504,6 +31314,30 @@ func (m *SecurityContext) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.SeccompProfile != nil {
+		{
+			size, err := m.SeccompProfile.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x5a
+	}
+	if m.WindowsOptions != nil {
+		{
+			size, err := m.WindowsOptions.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x52
 	}
 	if m.ProcMount != nil {
 		i -= len(*m.ProcMount)
@@ -28944,6 +31778,13 @@ func (m *ServicePort) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.AppProtocol != nil {
+		i -= len(*m.AppProtocol)
+		copy(dAtA[i:], *m.AppProtocol)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.AppProtocol)))
+		i--
+		dAtA[i] = 0x32
+	}
 	if m.NodePort != nil {
 		i = encodeVarintGenerated(dAtA, i, uint64(*m.NodePort))
 		i--
@@ -29040,6 +31881,60 @@ func (m *ServiceSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.AllocateLoadBalancerNodePorts != nil {
+		i--
+		if *m.AllocateLoadBalancerNodePorts {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa0
+	}
+	if len(m.IpFamilies) > 0 {
+		for iNdEx := len(m.IpFamilies) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.IpFamilies[iNdEx])
+			copy(dAtA[i:], m.IpFamilies[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.IpFamilies[iNdEx])))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x9a
+		}
+	}
+	if len(m.ClusterIPs) > 0 {
+		for iNdEx := len(m.ClusterIPs) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ClusterIPs[iNdEx])
+			copy(dAtA[i:], m.ClusterIPs[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.ClusterIPs[iNdEx])))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x92
+		}
+	}
+	if m.IpFamilyPolicy != nil {
+		i -= len(*m.IpFamilyPolicy)
+		copy(dAtA[i:], *m.IpFamilyPolicy)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.IpFamilyPolicy)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x8a
+	}
+	if len(m.TopologyKeys) > 0 {
+		for iNdEx := len(m.TopologyKeys) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.TopologyKeys[iNdEx])
+			copy(dAtA[i:], m.TopologyKeys[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.TopologyKeys[iNdEx])))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x82
+		}
 	}
 	if m.SessionAffinityConfig != nil {
 		{
@@ -29187,6 +32082,20 @@ func (m *ServiceStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Conditions) > 0 {
+		for iNdEx := len(m.Conditions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Conditions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
 	}
 	if m.LoadBalancer != nil {
 		{
@@ -29673,6 +32582,64 @@ func (m *TopologySelectorTerm) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *TopologySpreadConstraint) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TopologySpreadConstraint) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TopologySpreadConstraint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.LabelSelector != nil {
+		{
+			size, err := m.LabelSelector.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.WhenUnsatisfiable != nil {
+		i -= len(*m.WhenUnsatisfiable)
+		copy(dAtA[i:], *m.WhenUnsatisfiable)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.WhenUnsatisfiable)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.TopologyKey != nil {
+		i -= len(*m.TopologyKey)
+		copy(dAtA[i:], *m.TopologyKey)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.TopologyKey)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.MaxSkew != nil {
+		i = encodeVarintGenerated(dAtA, i, uint64(*m.MaxSkew))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *TypedLocalObjectReference) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -29831,6 +32798,13 @@ func (m *VolumeMount) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.SubPathExpr != nil {
+		i -= len(*m.SubPathExpr)
+		copy(dAtA[i:], *m.SubPathExpr)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.SubPathExpr)))
+		i--
+		dAtA[i] = 0x32
 	}
 	if m.MountPropagation != nil {
 		i -= len(*m.MountPropagation)
@@ -30010,6 +32984,34 @@ func (m *VolumeSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Ephemeral != nil {
+		{
+			size, err := m.Ephemeral.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xea
+	}
+	if m.Csi != nil {
+		{
+			size, err := m.Csi.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xe2
 	}
 	if m.Storageos != nil {
 		{
@@ -30461,6 +33463,54 @@ func (m *WeightedPodAffinityTerm) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
+func (m *WindowsSecurityContextOptions) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *WindowsSecurityContextOptions) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *WindowsSecurityContextOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.RunAsUserName != nil {
+		i -= len(*m.RunAsUserName)
+		copy(dAtA[i:], *m.RunAsUserName)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.RunAsUserName)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.GmsaCredentialSpec != nil {
+		i -= len(*m.GmsaCredentialSpec)
+		copy(dAtA[i:], *m.GmsaCredentialSpec)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.GmsaCredentialSpec)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.GmsaCredentialSpecName != nil {
+		i -= len(*m.GmsaCredentialSpecName)
+		copy(dAtA[i:], *m.GmsaCredentialSpecName)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.GmsaCredentialSpecName)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	offset -= sovGenerated(v)
 	base := offset
@@ -30701,6 +33751,45 @@ func (m *CSIPersistentVolumeSource) Size() (n int) {
 	if m.NodeStageSecretRef != nil {
 		l = m.NodeStageSecretRef.Size()
 		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.NodePublishSecretRef != nil {
+		l = m.NodePublishSecretRef.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ControllerExpandSecretRef != nil {
+		l = m.ControllerExpandSecretRef.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CSIVolumeSource) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Driver != nil {
+		l = len(*m.Driver)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ReadOnly != nil {
+		n += 2
+	}
+	if m.FsType != nil {
+		l = len(*m.FsType)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.VolumeAttributes) > 0 {
+		for k, v := range m.VolumeAttributes {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovGenerated(uint64(len(k))) + 1 + len(v) + sovGenerated(uint64(len(v)))
+			n += mapEntrySize + 1 + sovGenerated(uint64(mapEntrySize))
+		}
 	}
 	if m.NodePublishSecretRef != nil {
 		l = m.NodePublishSecretRef.Size()
@@ -30981,6 +34070,9 @@ func (m *ConfigMap) Size() (n int) {
 			n += mapEntrySize + 1 + sovGenerated(uint64(mapEntrySize))
 		}
 	}
+	if m.Immutable != nil {
+		n += 2
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -31237,6 +34329,10 @@ func (m *Container) Size() (n int) {
 			n += 2 + l + sovGenerated(uint64(l))
 		}
 	}
+	if m.StartupProbe != nil {
+		l = m.StartupProbe.Size()
+		n += 2 + l + sovGenerated(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -31428,6 +34524,9 @@ func (m *ContainerStatus) Size() (n int) {
 		l = len(*m.ContainerID)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
+	if m.Started != nil {
+		n += 2
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -31578,6 +34677,10 @@ func (m *EndpointPort) Size() (n int) {
 	}
 	if m.Protocol != nil {
 		l = len(*m.Protocol)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.AppProtocol != nil {
+		l = len(*m.AppProtocol)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -31736,6 +34839,178 @@ func (m *EnvVarSource) Size() (n int) {
 	return n
 }
 
+func (m *EphemeralContainer) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EphemeralContainerCommon != nil {
+		l = m.EphemeralContainerCommon.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.TargetContainerName != nil {
+		l = len(*m.TargetContainerName)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *EphemeralContainerCommon) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Name != nil {
+		l = len(*m.Name)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Image != nil {
+		l = len(*m.Image)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.Command) > 0 {
+		for _, s := range m.Command {
+			l = len(s)
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if len(m.Args) > 0 {
+		for _, s := range m.Args {
+			l = len(s)
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.WorkingDir != nil {
+		l = len(*m.WorkingDir)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.Ports) > 0 {
+		for _, e := range m.Ports {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if len(m.Env) > 0 {
+		for _, e := range m.Env {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.Resources != nil {
+		l = m.Resources.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.VolumeMounts) > 0 {
+		for _, e := range m.VolumeMounts {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.LivenessProbe != nil {
+		l = m.LivenessProbe.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ReadinessProbe != nil {
+		l = m.ReadinessProbe.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Lifecycle != nil {
+		l = m.Lifecycle.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.TerminationMessagePath != nil {
+		l = len(*m.TerminationMessagePath)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ImagePullPolicy != nil {
+		l = len(*m.ImagePullPolicy)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.SecurityContext != nil {
+		l = m.SecurityContext.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Stdin != nil {
+		n += 3
+	}
+	if m.StdinOnce != nil {
+		n += 3
+	}
+	if m.Tty != nil {
+		n += 3
+	}
+	if len(m.EnvFrom) > 0 {
+		for _, e := range m.EnvFrom {
+			l = e.Size()
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.TerminationMessagePolicy != nil {
+		l = len(*m.TerminationMessagePolicy)
+		n += 2 + l + sovGenerated(uint64(l))
+	}
+	if len(m.VolumeDevices) > 0 {
+		for _, e := range m.VolumeDevices {
+			l = e.Size()
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.StartupProbe != nil {
+		l = m.StartupProbe.Size()
+		n += 2 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *EphemeralContainers) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.EphemeralContainers) > 0 {
+		for _, e := range m.EphemeralContainers {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *EphemeralVolumeSource) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.VolumeClaimTemplate != nil {
+		l = m.VolumeClaimTemplate.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ReadOnly != nil {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *Event) Size() (n int) {
 	if m == nil {
 		return 0
@@ -31840,10 +35115,6 @@ func (m *EventSeries) Size() (n int) {
 	}
 	if m.LastObservedTime != nil {
 		l = m.LastObservedTime.Size()
-		n += 1 + l + sovGenerated(uint64(l))
-	}
-	if m.State != nil {
-		l = len(*m.State)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -32562,6 +35833,12 @@ func (m *LoadBalancerIngress) Size() (n int) {
 		l = len(*m.Hostname)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
+	if len(m.Ports) > 0 {
+		for _, e := range m.Ports {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -32669,6 +35946,38 @@ func (m *Namespace) Size() (n int) {
 	return n
 }
 
+func (m *NamespaceCondition) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Type != nil {
+		l = len(*m.Type)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Status != nil {
+		l = len(*m.Status)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.LastTransitionTime != nil {
+		l = m.LastTransitionTime.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Reason != nil {
+		l = len(*m.Reason)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Message != nil {
+		l = len(*m.Message)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *NamespaceList) Size() (n int) {
 	if m == nil {
 		return 0
@@ -32718,6 +36027,12 @@ func (m *NamespaceStatus) Size() (n int) {
 	if m.Phase != nil {
 		l = len(*m.Phase)
 		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.Conditions) > 0 {
+		for _, e := range m.Conditions {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -33048,6 +36363,12 @@ func (m *NodeSpec) Size() (n int) {
 	if m.ConfigSource != nil {
 		l = m.ConfigSource.Size()
 		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.PodCIDRs) > 0 {
+		for _, s := range m.PodCIDRs {
+			l = len(s)
+			n += 1 + l + sovGenerated(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -33433,6 +36754,26 @@ func (m *PersistentVolumeClaimStatus) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovGenerated(uint64(l))
 		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *PersistentVolumeClaimTemplate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Spec != nil {
+		l = m.Spec.Size()
+		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -33932,6 +37273,22 @@ func (m *PodExecOptions) Size() (n int) {
 	return n
 }
 
+func (m *PodIP) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Ip != nil {
+		l = len(*m.Ip)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *PodList) Size() (n int) {
 	if m == nil {
 		return 0
@@ -33985,6 +37342,9 @@ func (m *PodLogOptions) Size() (n int) {
 	}
 	if m.LimitBytes != nil {
 		n += 1 + sovGenerated(uint64(*m.LimitBytes))
+	}
+	if m.InsecureSkipTLSVerifyBackend != nil {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -34073,6 +37433,18 @@ func (m *PodSecurityContext) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovGenerated(uint64(l))
 		}
+	}
+	if m.WindowsOptions != nil {
+		l = m.WindowsOptions.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.FsGroupChangePolicy != nil {
+		l = len(*m.FsGroupChangePolicy)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.SeccompProfile != nil {
+		l = m.SeccompProfile.Size()
+		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -34231,6 +37603,38 @@ func (m *PodSpec) Size() (n int) {
 	if m.EnableServiceLinks != nil {
 		n += 3
 	}
+	if m.PreemptionPolicy != nil {
+		l = len(*m.PreemptionPolicy)
+		n += 2 + l + sovGenerated(uint64(l))
+	}
+	if len(m.Overhead) > 0 {
+		for k, v := range m.Overhead {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+				l += 1 + sovGenerated(uint64(l))
+			}
+			mapEntrySize := 1 + len(k) + sovGenerated(uint64(len(k))) + l
+			n += mapEntrySize + 2 + sovGenerated(uint64(mapEntrySize))
+		}
+	}
+	if len(m.TopologySpreadConstraints) > 0 {
+		for _, e := range m.TopologySpreadConstraints {
+			l = e.Size()
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
+	if len(m.EphemeralContainers) > 0 {
+		for _, e := range m.EphemeralContainers {
+			l = e.Size()
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.SetHostnameAsFQDN != nil {
+		n += 3
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -34292,6 +37696,18 @@ func (m *PodStatus) Size() (n int) {
 	if m.NominatedNodeName != nil {
 		l = len(*m.NominatedNodeName)
 		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.PodIPs) > 0 {
+		for _, e := range m.PodIPs {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if len(m.EphemeralContainerStatuses) > 0 {
+		for _, e := range m.EphemeralContainerStatuses {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -34373,6 +37789,29 @@ func (m *PodTemplateSpec) Size() (n int) {
 	}
 	if m.Spec != nil {
 		l = m.Spec.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *PortStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Port != nil {
+		n += 1 + sovGenerated(uint64(*m.Port))
+	}
+	if m.Protocol != nil {
+		l = len(*m.Protocol)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Error != nil {
+		l = len(*m.Error)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -34542,6 +37981,10 @@ func (m *QuobyteVolumeSource) Size() (n int) {
 	}
 	if m.Group != nil {
 		l = len(*m.Group)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Tenant != nil {
+		l = len(*m.Tenant)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -35158,6 +38601,26 @@ func (m *ScopedResourceSelectorRequirement) Size() (n int) {
 	return n
 }
 
+func (m *SeccompProfile) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Type != nil {
+		l = len(*m.Type)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.LocalhostProfile != nil {
+		l = len(*m.LocalhostProfile)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *Secret) Size() (n int) {
 	if m == nil {
 		return 0
@@ -35191,6 +38654,9 @@ func (m *Secret) Size() (n int) {
 			mapEntrySize := 1 + len(k) + sovGenerated(uint64(len(k))) + 1 + len(v) + sovGenerated(uint64(len(v)))
 			n += mapEntrySize + 1 + sovGenerated(uint64(mapEntrySize))
 		}
+	}
+	if m.Immutable != nil {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -35371,6 +38837,14 @@ func (m *SecurityContext) Size() (n int) {
 		l = len(*m.ProcMount)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
+	if m.WindowsOptions != nil {
+		l = m.WindowsOptions.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.SeccompProfile != nil {
+		l = m.SeccompProfile.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -35539,6 +39013,10 @@ func (m *ServicePort) Size() (n int) {
 	if m.NodePort != nil {
 		n += 1 + sovGenerated(uint64(*m.NodePort))
 	}
+	if m.AppProtocol != nil {
+		l = len(*m.AppProtocol)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -35627,6 +39105,31 @@ func (m *ServiceSpec) Size() (n int) {
 		l = m.SessionAffinityConfig.Size()
 		n += 1 + l + sovGenerated(uint64(l))
 	}
+	if len(m.TopologyKeys) > 0 {
+		for _, s := range m.TopologyKeys {
+			l = len(s)
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.IpFamilyPolicy != nil {
+		l = len(*m.IpFamilyPolicy)
+		n += 2 + l + sovGenerated(uint64(l))
+	}
+	if len(m.ClusterIPs) > 0 {
+		for _, s := range m.ClusterIPs {
+			l = len(s)
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
+	if len(m.IpFamilies) > 0 {
+		for _, s := range m.IpFamilies {
+			l = len(s)
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.AllocateLoadBalancerNodePorts != nil {
+		n += 3
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -35642,6 +39145,12 @@ func (m *ServiceStatus) Size() (n int) {
 	if m.LoadBalancer != nil {
 		l = m.LoadBalancer.Size()
 		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.Conditions) > 0 {
+		for _, e := range m.Conditions {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -35866,6 +39375,33 @@ func (m *TopologySelectorTerm) Size() (n int) {
 	return n
 }
 
+func (m *TopologySpreadConstraint) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MaxSkew != nil {
+		n += 1 + sovGenerated(uint64(*m.MaxSkew))
+	}
+	if m.TopologyKey != nil {
+		l = len(*m.TopologyKey)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.WhenUnsatisfiable != nil {
+		l = len(*m.WhenUnsatisfiable)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.LabelSelector != nil {
+		l = m.LabelSelector.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *TypedLocalObjectReference) Size() (n int) {
 	if m == nil {
 		return 0
@@ -35953,6 +39489,10 @@ func (m *VolumeMount) Size() (n int) {
 	}
 	if m.MountPropagation != nil {
 		l = len(*m.MountPropagation)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.SubPathExpr != nil {
+		l = len(*m.SubPathExpr)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -36119,6 +39659,14 @@ func (m *VolumeSource) Size() (n int) {
 		l = m.Storageos.Size()
 		n += 2 + l + sovGenerated(uint64(l))
 	}
+	if m.Csi != nil {
+		l = m.Csi.Size()
+		n += 2 + l + sovGenerated(uint64(l))
+	}
+	if m.Ephemeral != nil {
+		l = m.Ephemeral.Size()
+		n += 2 + l + sovGenerated(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -36164,6 +39712,30 @@ func (m *WeightedPodAffinityTerm) Size() (n int) {
 	}
 	if m.PodAffinityTerm != nil {
 		l = m.PodAffinityTerm.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *WindowsSecurityContextOptions) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.GmsaCredentialSpecName != nil {
+		l = len(*m.GmsaCredentialSpecName)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.GmsaCredentialSpec != nil {
+		l = len(*m.GmsaCredentialSpec)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.RunAsUserName != nil {
+		l = len(*m.RunAsUserName)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -37769,6 +41341,346 @@ func (m *CSIPersistentVolumeSource) Unmarshal(dAtA []byte) error {
 			}
 			if m.NodePublishSecretRef == nil {
 				m.NodePublishSecretRef = &SecretReference{}
+			}
+			if err := m.NodePublishSecretRef.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ControllerExpandSecretRef", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ControllerExpandSecretRef == nil {
+				m.ControllerExpandSecretRef = &SecretReference{}
+			}
+			if err := m.ControllerExpandSecretRef.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CSIVolumeSource) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CSIVolumeSource: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CSIVolumeSource: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Driver", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Driver = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReadOnly", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.ReadOnly = &b
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FsType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FsType = &s
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolumeAttributes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.VolumeAttributes == nil {
+				m.VolumeAttributes = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowGenerated
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowGenerated
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowGenerated
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipGenerated(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if skippy < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.VolumeAttributes[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodePublishSecretRef", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.NodePublishSecretRef == nil {
+				m.NodePublishSecretRef = &LocalObjectReference{}
 			}
 			if err := m.NodePublishSecretRef.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -39583,6 +43495,27 @@ func (m *ConfigMap) Unmarshal(dAtA []byte) error {
 			}
 			m.BinaryData[mapkey] = mapvalue
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Immutable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.Immutable = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -41220,6 +45153,42 @@ func (m *Container) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartupProbe", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.StartupProbe == nil {
+				m.StartupProbe = &Probe{}
+			}
+			if err := m.StartupProbe.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -42455,6 +46424,27 @@ func (m *ContainerStatus) Unmarshal(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.ContainerID = &s
 			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Started", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.Started = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -43355,6 +47345,39 @@ func (m *EndpointPort) Unmarshal(dAtA []byte) error {
 			}
 			s := string(dAtA[iNdEx:postIndex])
 			m.Protocol = &s
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppProtocol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.AppProtocol = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -44298,6 +48321,1129 @@ func (m *EnvVarSource) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *EphemeralContainer) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EphemeralContainer: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EphemeralContainer: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EphemeralContainerCommon", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.EphemeralContainerCommon == nil {
+				m.EphemeralContainerCommon = &EphemeralContainerCommon{}
+			}
+			if err := m.EphemeralContainerCommon.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TargetContainerName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.TargetContainerName = &s
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EphemeralContainerCommon) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EphemeralContainerCommon: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EphemeralContainerCommon: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Name = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Image", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Image = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Command", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Command = append(m.Command, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Args", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Args = append(m.Args, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WorkingDir", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.WorkingDir = &s
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ports", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ports = append(m.Ports, &ContainerPort{})
+			if err := m.Ports[len(m.Ports)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Env", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Env = append(m.Env, &EnvVar{})
+			if err := m.Env[len(m.Env)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Resources", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Resources == nil {
+				m.Resources = &ResourceRequirements{}
+			}
+			if err := m.Resources.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolumeMounts", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.VolumeMounts = append(m.VolumeMounts, &VolumeMount{})
+			if err := m.VolumeMounts[len(m.VolumeMounts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LivenessProbe", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LivenessProbe == nil {
+				m.LivenessProbe = &Probe{}
+			}
+			if err := m.LivenessProbe.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReadinessProbe", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ReadinessProbe == nil {
+				m.ReadinessProbe = &Probe{}
+			}
+			if err := m.ReadinessProbe.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Lifecycle", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Lifecycle == nil {
+				m.Lifecycle = &Lifecycle{}
+			}
+			if err := m.Lifecycle.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TerminationMessagePath", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.TerminationMessagePath = &s
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImagePullPolicy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ImagePullPolicy = &s
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SecurityContext", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SecurityContext == nil {
+				m.SecurityContext = &SecurityContext{}
+			}
+			if err := m.SecurityContext.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stdin", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.Stdin = &b
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StdinOnce", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.StdinOnce = &b
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tty", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.Tty = &b
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EnvFrom", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EnvFrom = append(m.EnvFrom, &EnvFromSource{})
+			if err := m.EnvFrom[len(m.EnvFrom)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TerminationMessagePolicy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.TerminationMessagePolicy = &s
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolumeDevices", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.VolumeDevices = append(m.VolumeDevices, &VolumeDevice{})
+			if err := m.VolumeDevices[len(m.VolumeDevices)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartupProbe", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.StartupProbe == nil {
+				m.StartupProbe = &Probe{}
+			}
+			if err := m.StartupProbe.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EphemeralContainers) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EphemeralContainers: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EphemeralContainers: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &v1.ObjectMeta{}
+			}
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EphemeralContainers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EphemeralContainers = append(m.EphemeralContainers, &EphemeralContainer{})
+			if err := m.EphemeralContainers[len(m.EphemeralContainers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EphemeralVolumeSource) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EphemeralVolumeSource: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EphemeralVolumeSource: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolumeClaimTemplate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.VolumeClaimTemplate == nil {
+				m.VolumeClaimTemplate = &PersistentVolumeClaimTemplate{}
+			}
+			if err := m.VolumeClaimTemplate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReadOnly", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.ReadOnly = &b
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Event) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -45066,39 +50212,6 @@ func (m *EventSeries) Unmarshal(dAtA []byte) error {
 			if err := m.LastObservedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			s := string(dAtA[iNdEx:postIndex])
-			m.State = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -49919,6 +55032,40 @@ func (m *LoadBalancerIngress) Unmarshal(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.Hostname = &s
 			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ports", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ports = append(m.Ports, &PortStatus{})
+			if err := m.Ports[len(m.Ports)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -50542,6 +55689,228 @@ func (m *Namespace) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *NamespaceCondition) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NamespaceCondition: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NamespaceCondition: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Type = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Status = &s
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastTransitionTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastTransitionTime == nil {
+				m.LastTransitionTime = &v1.Time{}
+			}
+			if err := m.LastTransitionTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Reason = &s
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Message = &s
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *NamespaceList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -50813,6 +56182,40 @@ func (m *NamespaceStatus) Unmarshal(dAtA []byte) error {
 			}
 			s := string(dAtA[iNdEx:postIndex])
 			m.Phase = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Conditions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Conditions = append(m.Conditions, &NamespaceCondition{})
+			if err := m.Conditions[len(m.Conditions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -52852,6 +58255,38 @@ func (m *NodeSpec) Unmarshal(dAtA []byte) error {
 			if err := m.ConfigSource.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PodCIDRs", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PodCIDRs = append(m.PodCIDRs, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -55541,6 +60976,132 @@ func (m *PersistentVolumeClaimStatus) Unmarshal(dAtA []byte) error {
 			}
 			m.Conditions = append(m.Conditions, &PersistentVolumeClaimCondition{})
 			if err := m.Conditions[len(m.Conditions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PersistentVolumeClaimTemplate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PersistentVolumeClaimTemplate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PersistentVolumeClaimTemplate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &v1.ObjectMeta{}
+			}
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Spec", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Spec == nil {
+				m.Spec = &PersistentVolumeClaimSpec{}
+			}
+			if err := m.Spec.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -58839,6 +64400,93 @@ func (m *PodExecOptions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *PodIP) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PodIP: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PodIP: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ip", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Ip = &s
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PodList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -59184,6 +64832,27 @@ func (m *PodLogOptions) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.LimitBytes = &v
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InsecureSkipTLSVerifyBackend", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.InsecureSkipTLSVerifyBackend = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -59766,6 +65435,111 @@ func (m *PodSecurityContext) Unmarshal(dAtA []byte) error {
 			}
 			m.Sysctls = append(m.Sysctls, &Sysctl{})
 			if err := m.Sysctls[len(m.Sysctls)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WindowsOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WindowsOptions == nil {
+				m.WindowsOptions = &WindowsSecurityContextOptions{}
+			}
+			if err := m.WindowsOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FsGroupChangePolicy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FsGroupChangePolicy = &s
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SeccompProfile", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SeccompProfile == nil {
+				m.SeccompProfile = &SeccompProfile{}
+			}
+			if err := m.SeccompProfile.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -60902,6 +66676,257 @@ func (m *PodSpec) Unmarshal(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.EnableServiceLinks = &b
+		case 31:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PreemptionPolicy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.PreemptionPolicy = &s
+			iNdEx = postIndex
+		case 32:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Overhead", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Overhead == nil {
+				m.Overhead = make(map[string]*resource.Quantity)
+			}
+			var mapkey string
+			var mapvalue *resource.Quantity
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowGenerated
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowGenerated
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowGenerated
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &resource.Quantity{}
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipGenerated(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if skippy < 0 {
+						return ErrInvalidLengthGenerated
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Overhead[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 33:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TopologySpreadConstraints", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TopologySpreadConstraints = append(m.TopologySpreadConstraints, &TopologySpreadConstraint{})
+			if err := m.TopologySpreadConstraints[len(m.TopologySpreadConstraints)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 34:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EphemeralContainers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EphemeralContainers = append(m.EphemeralContainers, &EphemeralContainer{})
+			if err := m.EphemeralContainers[len(m.EphemeralContainers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 35:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SetHostnameAsFQDN", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.SetHostnameAsFQDN = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -61324,6 +67349,74 @@ func (m *PodStatus) Unmarshal(dAtA []byte) error {
 			}
 			s := string(dAtA[iNdEx:postIndex])
 			m.NominatedNodeName = &s
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PodIPs", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PodIPs = append(m.PodIPs, &PodIP{})
+			if err := m.PodIPs[len(m.PodIPs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EphemeralContainerStatuses", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EphemeralContainerStatuses = append(m.EphemeralContainerStatuses, &ContainerStatus{})
+			if err := m.EphemeralContainerStatuses[len(m.EphemeralContainerStatuses)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -61826,6 +67919,146 @@ func (m *PodTemplateSpec) Unmarshal(dAtA []byte) error {
 			if err := m.Spec.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PortStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PortStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PortStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Port", wireType)
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Port = &v
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Protocol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Protocol = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Error = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -62861,6 +69094,39 @@ func (m *QuobyteVolumeSource) Unmarshal(dAtA []byte) error {
 			}
 			s := string(dAtA[iNdEx:postIndex])
 			m.Group = &s
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tenant", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Tenant = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -67082,6 +73348,126 @@ func (m *ScopedResourceSelectorRequirement) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *SeccompProfile) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SeccompProfile: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SeccompProfile: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Type = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LocalhostProfile", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.LocalhostProfile = &s
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Secret) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -67435,6 +73821,27 @@ func (m *Secret) Unmarshal(dAtA []byte) error {
 			}
 			m.StringData[mapkey] = mapvalue
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Immutable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.Immutable = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -68524,6 +74931,78 @@ func (m *SecurityContext) Unmarshal(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.ProcMount = &s
 			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WindowsOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WindowsOptions == nil {
+				m.WindowsOptions = &WindowsSecurityContextOptions{}
+			}
+			if err := m.WindowsOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SeccompProfile", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SeccompProfile == nil {
+				m.SeccompProfile = &SeccompProfile{}
+			}
+			if err := m.SeccompProfile.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -69539,6 +76018,39 @@ func (m *ServicePort) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.NodePort = &v
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppProtocol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.AppProtocol = &s
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -70180,6 +76692,156 @@ func (m *ServiceSpec) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TopologyKeys", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TopologyKeys = append(m.TopologyKeys, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IpFamilyPolicy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.IpFamilyPolicy = &s
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterIPs", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterIPs = append(m.ClusterIPs, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IpFamilies", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IpFamilies = append(m.IpFamilies, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 20:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllocateLoadBalancerNodePorts", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.AllocateLoadBalancerNodePorts = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -70267,6 +76929,40 @@ func (m *ServiceStatus) Unmarshal(dAtA []byte) error {
 				m.LoadBalancer = &LoadBalancerStatus{}
 			}
 			if err := m.LoadBalancer.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Conditions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Conditions = append(m.Conditions, &v1.Condition{})
+			if err := m.Conditions[len(m.Conditions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -71650,6 +78346,182 @@ func (m *TopologySelectorTerm) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *TopologySpreadConstraint) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TopologySpreadConstraint: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TopologySpreadConstraint: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxSkew", wireType)
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.MaxSkew = &v
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TopologyKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.TopologyKey = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WhenUnsatisfiable", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.WhenUnsatisfiable = &s
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LabelSelector", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LabelSelector == nil {
+				m.LabelSelector = &v1.LabelSelector{}
+			}
+			if err := m.LabelSelector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *TypedLocalObjectReference) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -72227,6 +79099,39 @@ func (m *VolumeMount) Unmarshal(dAtA []byte) error {
 			}
 			s := string(dAtA[iNdEx:postIndex])
 			m.MountPropagation = &s
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SubPathExpr", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.SubPathExpr = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -73542,6 +80447,78 @@ func (m *VolumeSource) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 28:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Csi", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Csi == nil {
+				m.Csi = &CSIVolumeSource{}
+			}
+			if err := m.Csi.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ephemeral", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Ephemeral == nil {
+				m.Ephemeral = &EphemeralVolumeSource{}
+			}
+			if err := m.Ephemeral.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -73837,6 +80814,159 @@ func (m *WeightedPodAffinityTerm) Unmarshal(dAtA []byte) error {
 			if err := m.PodAffinityTerm.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *WindowsSecurityContextOptions) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: WindowsSecurityContextOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: WindowsSecurityContextOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GmsaCredentialSpecName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.GmsaCredentialSpecName = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GmsaCredentialSpec", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.GmsaCredentialSpec = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunAsUserName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.RunAsUserName = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -1,4 +1,4 @@
-KUBE_VERSION=1.13.2
+KUBE_VERSION=1.20.14
 
 build:
 	go build -v ./...

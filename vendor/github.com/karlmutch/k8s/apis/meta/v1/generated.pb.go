@@ -184,7 +184,16 @@ type APIResource struct {
 	// shortNames is a list of suggested short names of the resource.
 	ShortNames []string `protobuf:"bytes,5,rep,name=shortNames" json:"shortNames,omitempty"`
 	// categories is a list of the grouped resources this resource belongs to (e.g. 'all')
-	Categories           []string `protobuf:"bytes,7,rep,name=categories" json:"categories,omitempty"`
+	Categories []string `protobuf:"bytes,7,rep,name=categories" json:"categories,omitempty"`
+	// The hash value of the storage version, the version this resource is
+	// converted to when written to the data store. Value must be treated
+	// as opaque by clients. Only equality comparison on the value is valid.
+	// This is an alpha feature and may change or be removed in the future.
+	// The field is populated by the apiserver only if the
+	// StorageVersionHash feature gate is enabled.
+	// This field will remain optional even if it graduates.
+	// +optional
+	StorageVersionHash   *string  `protobuf:"bytes,10,opt,name=storageVersionHash" json:"storageVersionHash,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -284,6 +293,13 @@ func (m *APIResource) GetCategories() []string {
 		return m.Categories
 	}
 	return nil
+}
+
+func (m *APIResource) GetStorageVersionHash() string {
+	if m != nil && m.StorageVersionHash != nil {
+		return *m.StorageVersionHash
+	}
+	return ""
 }
 
 // APIResourceList is a list of APIResource, it is used to expose the name of the
@@ -414,6 +430,146 @@ func (m *APIVersions) GetServerAddressByClientCIDRs() []*ServerAddressByClientCI
 	return nil
 }
 
+// Condition contains details for one aspect of the current state of this API Resource.
+// ---
+// This struct is intended for direct use as an array at the field path .status.conditions.  For example,
+// type FooStatus struct{
+//     // Represents the observations of a foo's current state.
+//     // Known .status.conditions.type are: "Available", "Progressing", and "Degraded"
+//     // +patchMergeKey=type
+//     // +patchStrategy=merge
+//     // +listType=map
+//     // +listMapKey=type
+//     Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+//
+//     // other fields
+// }
+type Condition struct {
+	// type of condition in CamelCase or in foo.example.com/CamelCase.
+	// ---
+	// Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+	// useful (see .node.status.conditions), the ability to deconflict is important.
+	// The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`
+	// +kubebuilder:validation:MaxLength=316
+	Type *string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
+	// status of the condition, one of True, False, Unknown.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=True;False;Unknown
+	Status *string `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
+	// observedGeneration represents the .metadata.generation that the condition was set based upon.
+	// For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+	// with respect to the current state of the instance.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	ObservedGeneration *int64 `protobuf:"varint,3,opt,name=observedGeneration" json:"observedGeneration,omitempty"`
+	// lastTransitionTime is the last time the condition transitioned from one status to another.
+	// This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Format=date-time
+	LastTransitionTime *Time `protobuf:"bytes,4,opt,name=lastTransitionTime" json:"lastTransitionTime,omitempty"`
+	// reason contains a programmatic identifier indicating the reason for the condition's last transition.
+	// Producers of specific condition types may define expected values and meanings for this field,
+	// and whether the values are considered a guaranteed API.
+	// The value should be a CamelCase string.
+	// This field may not be empty.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength=1024
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$`
+	Reason *string `protobuf:"bytes,5,opt,name=reason" json:"reason,omitempty"`
+	// message is a human readable message indicating details about the transition.
+	// This may be an empty string.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength=32768
+	Message              *string  `protobuf:"bytes,6,opt,name=message" json:"message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Condition) Reset()         { *m = Condition{} }
+func (m *Condition) String() string { return proto.CompactTextString(m) }
+func (*Condition) ProtoMessage()    {}
+func (*Condition) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8431b6e0aeeb761, []int{5}
+}
+func (m *Condition) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Condition) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Condition.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Condition) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Condition.Merge(m, src)
+}
+func (m *Condition) XXX_Size() int {
+	return m.Size()
+}
+func (m *Condition) XXX_DiscardUnknown() {
+	xxx_messageInfo_Condition.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Condition proto.InternalMessageInfo
+
+func (m *Condition) GetType() string {
+	if m != nil && m.Type != nil {
+		return *m.Type
+	}
+	return ""
+}
+
+func (m *Condition) GetStatus() string {
+	if m != nil && m.Status != nil {
+		return *m.Status
+	}
+	return ""
+}
+
+func (m *Condition) GetObservedGeneration() int64 {
+	if m != nil && m.ObservedGeneration != nil {
+		return *m.ObservedGeneration
+	}
+	return 0
+}
+
+func (m *Condition) GetLastTransitionTime() *Time {
+	if m != nil {
+		return m.LastTransitionTime
+	}
+	return nil
+}
+
+func (m *Condition) GetReason() string {
+	if m != nil && m.Reason != nil {
+		return *m.Reason
+	}
+	return ""
+}
+
+func (m *Condition) GetMessage() string {
+	if m != nil && m.Message != nil {
+		return *m.Message
+	}
+	return ""
+}
+
 // CreateOptions may be provided when creating an API object.
 type CreateOptions struct {
 	// When present, indicates that modifications should not be
@@ -423,9 +579,12 @@ type CreateOptions struct {
 	// - All: all dry run stages will be processed
 	// +optional
 	DryRun []string `protobuf:"bytes,1,rep,name=dryRun" json:"dryRun,omitempty"`
-	// If IncludeUninitialized is specified, the object may be
-	// returned without completing initialization.
-	IncludeUninitialized *bool    `protobuf:"varint,2,opt,name=includeUninitialized" json:"includeUninitialized,omitempty"`
+	// fieldManager is a name associated with the actor or entity
+	// that is making these changes. The value must be less than or
+	// 128 characters long, and only contain printable characters,
+	// as defined by https://golang.org/pkg/unicode/#IsPrint.
+	// +optional
+	FieldManager         *string  `protobuf:"bytes,3,opt,name=fieldManager" json:"fieldManager,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -435,7 +594,7 @@ func (m *CreateOptions) Reset()         { *m = CreateOptions{} }
 func (m *CreateOptions) String() string { return proto.CompactTextString(m) }
 func (*CreateOptions) ProtoMessage()    {}
 func (*CreateOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{5}
+	return fileDescriptor_a8431b6e0aeeb761, []int{6}
 }
 func (m *CreateOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -471,11 +630,11 @@ func (m *CreateOptions) GetDryRun() []string {
 	return nil
 }
 
-func (m *CreateOptions) GetIncludeUninitialized() bool {
-	if m != nil && m.IncludeUninitialized != nil {
-		return *m.IncludeUninitialized
+func (m *CreateOptions) GetFieldManager() string {
+	if m != nil && m.FieldManager != nil {
+		return *m.FieldManager
 	}
-	return false
+	return ""
 }
 
 // DeleteOptions may be provided when deleting an API object.
@@ -488,6 +647,7 @@ type DeleteOptions struct {
 	GracePeriodSeconds *int64 `protobuf:"varint,1,opt,name=gracePeriodSeconds" json:"gracePeriodSeconds,omitempty"`
 	// Must be fulfilled before a deletion is carried out. If not possible, a 409 Conflict status will be
 	// returned.
+	// +k8s:conversion-gen=false
 	// +optional
 	Preconditions *Preconditions `protobuf:"bytes,2,opt,name=preconditions" json:"preconditions,omitempty"`
 	// Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7.
@@ -522,7 +682,7 @@ func (m *DeleteOptions) Reset()         { *m = DeleteOptions{} }
 func (m *DeleteOptions) String() string { return proto.CompactTextString(m) }
 func (*DeleteOptions) ProtoMessage()    {}
 func (*DeleteOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{6}
+	return fileDescriptor_a8431b6e0aeeb761, []int{7}
 }
 func (m *DeleteOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -600,7 +760,7 @@ func (m *Duration) Reset()         { *m = Duration{} }
 func (m *Duration) String() string { return proto.CompactTextString(m) }
 func (*Duration) ProtoMessage()    {}
 func (*Duration) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{7}
+	return fileDescriptor_a8431b6e0aeeb761, []int{8}
 }
 func (m *Duration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -637,10 +797,13 @@ func (m *Duration) GetDuration() int64 {
 }
 
 // ExportOptions is the query options to the standard REST get call.
+// Deprecated. Planned for removal in 1.18.
 type ExportOptions struct {
 	// Should this value be exported.  Export strips fields that a user can not specify.
+	// Deprecated. Planned for removal in 1.18.
 	Export *bool `protobuf:"varint,1,opt,name=export" json:"export,omitempty"`
 	// Should the export be exact.  Exact export maintains cluster-specific fields like 'Namespace'.
+	// Deprecated. Planned for removal in 1.18.
 	Exact                *bool    `protobuf:"varint,2,opt,name=exact" json:"exact,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -651,7 +814,7 @@ func (m *ExportOptions) Reset()         { *m = ExportOptions{} }
 func (m *ExportOptions) String() string { return proto.CompactTextString(m) }
 func (*ExportOptions) ProtoMessage()    {}
 func (*ExportOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{8}
+	return fileDescriptor_a8431b6e0aeeb761, []int{9}
 }
 func (m *ExportOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -694,16 +857,75 @@ func (m *ExportOptions) GetExact() bool {
 	return false
 }
 
+// FieldsV1 stores a set of fields in a data structure like a Trie, in JSON format.
+//
+// Each key is either a '.' representing the field itself, and will always map to an empty set,
+// or a string representing a sub-field or item. The string will follow one of these four formats:
+// 'f:<name>', where <name> is the name of a field in a struct, or key in a map
+// 'v:<value>', where <value> is the exact json formatted value of a list item
+// 'i:<index>', where <index> is position of a item in a list
+// 'k:<keys>', where <keys> is a map of  a list item's key fields to their unique values
+// If a key maps to an empty Fields value, the field that key represents is part of the set.
+//
+// The exact format is defined in sigs.k8s.io/structured-merge-diff
+// +protobuf.options.(gogoproto.goproto_stringer)=false
+type FieldsV1 struct {
+	// Raw is the underlying serialization of this object.
+	Raw                  []byte   `protobuf:"bytes,1,opt,name=Raw" json:"Raw,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *FieldsV1) Reset()         { *m = FieldsV1{} }
+func (m *FieldsV1) String() string { return proto.CompactTextString(m) }
+func (*FieldsV1) ProtoMessage()    {}
+func (*FieldsV1) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8431b6e0aeeb761, []int{10}
+}
+func (m *FieldsV1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *FieldsV1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_FieldsV1.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *FieldsV1) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FieldsV1.Merge(m, src)
+}
+func (m *FieldsV1) XXX_Size() int {
+	return m.Size()
+}
+func (m *FieldsV1) XXX_DiscardUnknown() {
+	xxx_messageInfo_FieldsV1.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FieldsV1 proto.InternalMessageInfo
+
+func (m *FieldsV1) GetRaw() []byte {
+	if m != nil {
+		return m.Raw
+	}
+	return nil
+}
+
 // GetOptions is the standard query options to the standard REST get call.
 type GetOptions struct {
-	// When specified:
-	// - if unset, then the result is returned from remote storage based on quorum-read flag;
-	// - if it's 0, then we simply return what we currently have in cache, no guarantee;
-	// - if set to non zero, then the result is at least as fresh as given rv.
-	ResourceVersion *string `protobuf:"bytes,1,opt,name=resourceVersion" json:"resourceVersion,omitempty"`
-	// If true, partially initialized resources are included in the response.
+	// resourceVersion sets a constraint on what resource versions a request may be served from.
+	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
+	// details.
+	//
+	// Defaults to unset
 	// +optional
-	IncludeUninitialized *bool    `protobuf:"varint,2,opt,name=includeUninitialized" json:"includeUninitialized,omitempty"`
+	ResourceVersion      *string  `protobuf:"bytes,1,opt,name=resourceVersion" json:"resourceVersion,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -713,7 +935,7 @@ func (m *GetOptions) Reset()         { *m = GetOptions{} }
 func (m *GetOptions) String() string { return proto.CompactTextString(m) }
 func (*GetOptions) ProtoMessage()    {}
 func (*GetOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{9}
+	return fileDescriptor_a8431b6e0aeeb761, []int{11}
 }
 func (m *GetOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -749,13 +971,6 @@ func (m *GetOptions) GetResourceVersion() string {
 	return ""
 }
 
-func (m *GetOptions) GetIncludeUninitialized() bool {
-	if m != nil && m.IncludeUninitialized != nil {
-		return *m.IncludeUninitialized
-	}
-	return false
-}
-
 // GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
 // concepts during lookup stages without having partially valid types
 //
@@ -772,7 +987,7 @@ func (m *GroupKind) Reset()         { *m = GroupKind{} }
 func (m *GroupKind) String() string { return proto.CompactTextString(m) }
 func (*GroupKind) ProtoMessage()    {}
 func (*GroupKind) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{10}
+	return fileDescriptor_a8431b6e0aeeb761, []int{12}
 }
 func (m *GroupKind) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -831,7 +1046,7 @@ func (m *GroupResource) Reset()         { *m = GroupResource{} }
 func (m *GroupResource) String() string { return proto.CompactTextString(m) }
 func (*GroupResource) ProtoMessage()    {}
 func (*GroupResource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{11}
+	return fileDescriptor_a8431b6e0aeeb761, []int{13}
 }
 func (m *GroupResource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -889,7 +1104,7 @@ func (m *GroupVersion) Reset()         { *m = GroupVersion{} }
 func (m *GroupVersion) String() string { return proto.CompactTextString(m) }
 func (*GroupVersion) ProtoMessage()    {}
 func (*GroupVersion) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{12}
+	return fileDescriptor_a8431b6e0aeeb761, []int{14}
 }
 func (m *GroupVersion) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -949,7 +1164,7 @@ func (m *GroupVersionForDiscovery) Reset()         { *m = GroupVersionForDiscove
 func (m *GroupVersionForDiscovery) String() string { return proto.CompactTextString(m) }
 func (*GroupVersionForDiscovery) ProtoMessage()    {}
 func (*GroupVersionForDiscovery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{13}
+	return fileDescriptor_a8431b6e0aeeb761, []int{15}
 }
 func (m *GroupVersionForDiscovery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1009,7 +1224,7 @@ func (m *GroupVersionKind) Reset()         { *m = GroupVersionKind{} }
 func (m *GroupVersionKind) String() string { return proto.CompactTextString(m) }
 func (*GroupVersionKind) ProtoMessage()    {}
 func (*GroupVersionKind) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{14}
+	return fileDescriptor_a8431b6e0aeeb761, []int{16}
 }
 func (m *GroupVersionKind) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1076,7 +1291,7 @@ func (m *GroupVersionResource) Reset()         { *m = GroupVersionResource{} }
 func (m *GroupVersionResource) String() string { return proto.CompactTextString(m) }
 func (*GroupVersionResource) ProtoMessage()    {}
 func (*GroupVersionResource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{15}
+	return fileDescriptor_a8431b6e0aeeb761, []int{17}
 }
 func (m *GroupVersionResource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1126,122 +1341,10 @@ func (m *GroupVersionResource) GetResource() string {
 	return ""
 }
 
-// Initializer is information about an initializer that has not yet completed.
-type Initializer struct {
-	// name of the process that is responsible for initializing this object.
-	Name                 *string  `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Initializer) Reset()         { *m = Initializer{} }
-func (m *Initializer) String() string { return proto.CompactTextString(m) }
-func (*Initializer) ProtoMessage()    {}
-func (*Initializer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{16}
-}
-func (m *Initializer) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Initializer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Initializer.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Initializer) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Initializer.Merge(m, src)
-}
-func (m *Initializer) XXX_Size() int {
-	return m.Size()
-}
-func (m *Initializer) XXX_DiscardUnknown() {
-	xxx_messageInfo_Initializer.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Initializer proto.InternalMessageInfo
-
-func (m *Initializer) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
-}
-
-// Initializers tracks the progress of initialization.
-type Initializers struct {
-	// Pending is a list of initializers that must execute in order before this object is visible.
-	// When the last pending initializer is removed, and no failing result is set, the initializers
-	// struct will be set to nil and the object is considered as initialized and visible to all
-	// clients.
-	// +patchMergeKey=name
-	// +patchStrategy=merge
-	Pending []*Initializer `protobuf:"bytes,1,rep,name=pending" json:"pending,omitempty"`
-	// If result is set with the Failure field, the object will be persisted to storage and then deleted,
-	// ensuring that other clients can observe the deletion.
-	Result               *Status  `protobuf:"bytes,2,opt,name=result" json:"result,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Initializers) Reset()         { *m = Initializers{} }
-func (m *Initializers) String() string { return proto.CompactTextString(m) }
-func (*Initializers) ProtoMessage()    {}
-func (*Initializers) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{17}
-}
-func (m *Initializers) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Initializers) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Initializers.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Initializers) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Initializers.Merge(m, src)
-}
-func (m *Initializers) XXX_Size() int {
-	return m.Size()
-}
-func (m *Initializers) XXX_DiscardUnknown() {
-	xxx_messageInfo_Initializers.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Initializers proto.InternalMessageInfo
-
-func (m *Initializers) GetPending() []*Initializer {
-	if m != nil {
-		return m.Pending
-	}
-	return nil
-}
-
-func (m *Initializers) GetResult() *Status {
-	if m != nil {
-		return m.Result
-	}
-	return nil
-}
-
 // A label selector is a label query over a set of resources. The result of matchLabels and
 // matchExpressions are ANDed. An empty label selector matches all objects. A null
 // label selector matches no objects.
+// +structType=atomic
 type LabelSelector struct {
 	// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
 	// map is equivalent to an element of matchExpressions, whose key field is "key", the
@@ -1381,7 +1484,7 @@ func (m *LabelSelectorRequirement) GetValues() []string {
 // List holds a list of objects, which may not be known by the server.
 type List struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// List of objects
@@ -1444,6 +1547,10 @@ type ListMeta struct {
 	// selfLink is a URL representing this object.
 	// Populated by the system.
 	// Read-only.
+	//
+	// DEPRECATED
+	// Kubernetes will stop propagating this field in 1.20 release and the field is planned
+	// to be removed in 1.21 release.
 	// +optional
 	SelfLink *string `protobuf:"bytes,1,opt,name=selfLink" json:"selfLink,omitempty"`
 	// String that identifies the server's internal version of this object that
@@ -1451,7 +1558,7 @@ type ListMeta struct {
 	// Value must be treated as opaque by clients and passed unmodified back to the server.
 	// Populated by the system.
 	// Read-only.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
 	// +optional
 	ResourceVersion *string `protobuf:"bytes,2,opt,name=resourceVersion" json:"resourceVersion,omitempty"`
 	// continue may be set if the user set a limit on the number of items returned, and indicates that
@@ -1461,7 +1568,18 @@ type ListMeta struct {
 	// minutes have passed. The resourceVersion field returned when using this continue value will be
 	// identical to the value in the first response, unless you have received this token from an error
 	// message.
-	Continue             *string  `protobuf:"bytes,3,opt,name=continue" json:"continue,omitempty"`
+	Continue *string `protobuf:"bytes,3,opt,name=continue" json:"continue,omitempty"`
+	// remainingItemCount is the number of subsequent items in the list which are not included in this
+	// list response. If the list request contained label or field selectors, then the number of
+	// remaining items is unknown and the field will be left unset and omitted during serialization.
+	// If the list is complete (either because it is not chunking or because this is the last chunk),
+	// then there are no more remaining items and this field will be left unset and omitted during
+	// serialization.
+	// Servers older than v1.15 do not set this field.
+	// The intended use of the remainingItemCount is *estimating* the size of a collection. Clients
+	// should not rely on the remainingItemCount to be set or to be exact.
+	// +optional
+	RemainingItemCount   *int64   `protobuf:"varint,4,opt,name=remainingItemCount" json:"remainingItemCount,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1521,6 +1639,13 @@ func (m *ListMeta) GetContinue() string {
 	return ""
 }
 
+func (m *ListMeta) GetRemainingItemCount() int64 {
+	if m != nil && m.RemainingItemCount != nil {
+		return *m.RemainingItemCount
+	}
+	return 0
+}
+
 // ListOptions is the query options to a standard REST list call.
 type ListOptions struct {
 	// A selector to restrict the list of returned objects by their labels.
@@ -1531,21 +1656,36 @@ type ListOptions struct {
 	// Defaults to everything.
 	// +optional
 	FieldSelector *string `protobuf:"bytes,2,opt,name=fieldSelector" json:"fieldSelector,omitempty"`
-	// If true, partially initialized resources are included in the response.
-	// +optional
-	IncludeUninitialized *bool `protobuf:"varint,6,opt,name=includeUninitialized" json:"includeUninitialized,omitempty"`
 	// Watch for changes to the described resources and return them as a stream of
 	// add, update, and remove notifications. Specify resourceVersion.
 	// +optional
 	Watch *bool `protobuf:"varint,3,opt,name=watch" json:"watch,omitempty"`
-	// When specified with a watch call, shows changes that occur after that particular version of a resource.
-	// Defaults to changes from the beginning of history.
-	// When specified for list:
-	// - if unset, then the result is returned from remote storage based on quorum-read flag;
-	// - if it's 0, then we simply return what we currently have in cache, no guarantee;
-	// - if set to non zero, then the result is at least as fresh as given rv.
+	// allowWatchBookmarks requests watch events with type "BOOKMARK".
+	// Servers that do not implement bookmarks may ignore this flag and
+	// bookmarks are sent at the server's discretion. Clients should not
+	// assume bookmarks are returned at any specific interval, nor may they
+	// assume the server will send any BOOKMARK event during a session.
+	// If this is not a watch, this field is ignored.
+	// If the feature gate WatchBookmarks is not enabled in apiserver,
+	// this field is ignored.
+	// +optional
+	AllowWatchBookmarks *bool `protobuf:"varint,9,opt,name=allowWatchBookmarks" json:"allowWatchBookmarks,omitempty"`
+	// resourceVersion sets a constraint on what resource versions a request may be served from.
+	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
+	// details.
+	//
+	// Defaults to unset
 	// +optional
 	ResourceVersion *string `protobuf:"bytes,4,opt,name=resourceVersion" json:"resourceVersion,omitempty"`
+	// resourceVersionMatch determines how resourceVersion is applied to list calls.
+	// It is highly recommended that resourceVersionMatch be set for list calls where
+	// resourceVersion is set
+	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
+	// details.
+	//
+	// Defaults to unset
+	// +optional
+	ResourceVersionMatch *string `protobuf:"bytes,10,opt,name=resourceVersionMatch" json:"resourceVersionMatch,omitempty"`
 	// Timeout for the list/watch call.
 	// This limits the duration of the call, regardless of any activity or inactivity.
 	// +optional
@@ -1634,13 +1774,6 @@ func (m *ListOptions) GetFieldSelector() string {
 	return ""
 }
 
-func (m *ListOptions) GetIncludeUninitialized() bool {
-	if m != nil && m.IncludeUninitialized != nil {
-		return *m.IncludeUninitialized
-	}
-	return false
-}
-
 func (m *ListOptions) GetWatch() bool {
 	if m != nil && m.Watch != nil {
 		return *m.Watch
@@ -1648,9 +1781,23 @@ func (m *ListOptions) GetWatch() bool {
 	return false
 }
 
+func (m *ListOptions) GetAllowWatchBookmarks() bool {
+	if m != nil && m.AllowWatchBookmarks != nil {
+		return *m.AllowWatchBookmarks
+	}
+	return false
+}
+
 func (m *ListOptions) GetResourceVersion() string {
 	if m != nil && m.ResourceVersion != nil {
 		return *m.ResourceVersion
+	}
+	return ""
+}
+
+func (m *ListOptions) GetResourceVersionMatch() string {
+	if m != nil && m.ResourceVersionMatch != nil {
+		return *m.ResourceVersionMatch
 	}
 	return ""
 }
@@ -1674,6 +1821,108 @@ func (m *ListOptions) GetContinue() string {
 		return *m.Continue
 	}
 	return ""
+}
+
+// ManagedFieldsEntry is a workflow-id, a FieldSet and the group version of the resource
+// that the fieldset applies to.
+type ManagedFieldsEntry struct {
+	// Manager is an identifier of the workflow managing these fields.
+	Manager *string `protobuf:"bytes,1,opt,name=manager" json:"manager,omitempty"`
+	// Operation is the type of operation which lead to this ManagedFieldsEntry being created.
+	// The only valid values for this field are 'Apply' and 'Update'.
+	Operation *string `protobuf:"bytes,2,opt,name=operation" json:"operation,omitempty"`
+	// APIVersion defines the version of this resource that this field set
+	// applies to. The format is "group/version" just like the top-level
+	// APIVersion field. It is necessary to track the version of a field
+	// set because it cannot be automatically converted.
+	ApiVersion *string `protobuf:"bytes,3,opt,name=apiVersion" json:"apiVersion,omitempty"`
+	// Time is timestamp of when these fields were set. It should always be empty if Operation is 'Apply'
+	// +optional
+	Time *Time `protobuf:"bytes,4,opt,name=time" json:"time,omitempty"`
+	// FieldsType is the discriminator for the different fields format and version.
+	// There is currently only one possible value: "FieldsV1"
+	FieldsType *string `protobuf:"bytes,6,opt,name=fieldsType" json:"fieldsType,omitempty"`
+	// FieldsV1 holds the first JSON version format as described in the "FieldsV1" type.
+	// +optional
+	FieldsV1             *FieldsV1 `protobuf:"bytes,7,opt,name=fieldsV1" json:"fieldsV1,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *ManagedFieldsEntry) Reset()         { *m = ManagedFieldsEntry{} }
+func (m *ManagedFieldsEntry) String() string { return proto.CompactTextString(m) }
+func (*ManagedFieldsEntry) ProtoMessage()    {}
+func (*ManagedFieldsEntry) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8431b6e0aeeb761, []int{23}
+}
+func (m *ManagedFieldsEntry) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ManagedFieldsEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ManagedFieldsEntry.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ManagedFieldsEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManagedFieldsEntry.Merge(m, src)
+}
+func (m *ManagedFieldsEntry) XXX_Size() int {
+	return m.Size()
+}
+func (m *ManagedFieldsEntry) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManagedFieldsEntry.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManagedFieldsEntry proto.InternalMessageInfo
+
+func (m *ManagedFieldsEntry) GetManager() string {
+	if m != nil && m.Manager != nil {
+		return *m.Manager
+	}
+	return ""
+}
+
+func (m *ManagedFieldsEntry) GetOperation() string {
+	if m != nil && m.Operation != nil {
+		return *m.Operation
+	}
+	return ""
+}
+
+func (m *ManagedFieldsEntry) GetApiVersion() string {
+	if m != nil && m.ApiVersion != nil {
+		return *m.ApiVersion
+	}
+	return ""
+}
+
+func (m *ManagedFieldsEntry) GetTime() *Time {
+	if m != nil {
+		return m.Time
+	}
+	return nil
+}
+
+func (m *ManagedFieldsEntry) GetFieldsType() string {
+	if m != nil && m.FieldsType != nil {
+		return *m.FieldsType
+	}
+	return ""
+}
+
+func (m *ManagedFieldsEntry) GetFieldsV1() *FieldsV1 {
+	if m != nil {
+		return m.FieldsV1
+	}
+	return nil
 }
 
 // MicroTime is version of Time with microsecond level precision.
@@ -1700,7 +1949,7 @@ func (m *MicroTime) Reset()         { *m = MicroTime{} }
 func (m *MicroTime) String() string { return proto.CompactTextString(m) }
 func (*MicroTime) ProtoMessage()    {}
 func (*MicroTime) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{23}
+	return fileDescriptor_a8431b6e0aeeb761, []int{24}
 }
 func (m *MicroTime) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1768,10 +2017,10 @@ type ObjectMeta struct {
 	// should retry (optionally after the time indicated in the Retry-After header).
 	//
 	// Applied only if Name is not specified.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
 	// +optional
 	GenerateName *string `protobuf:"bytes,2,opt,name=generateName" json:"generateName,omitempty"`
-	// Namespace defines the space within each name must be unique. An empty namespace is
+	// Namespace defines the space within which each name must be unique. An empty namespace is
 	// equivalent to the "default" namespace, but "default" is the canonical representation.
 	// Not all objects are required to be scoped to a namespace - the value of this field for
 	// those objects will be empty.
@@ -1784,6 +2033,10 @@ type ObjectMeta struct {
 	// SelfLink is a URL representing this object.
 	// Populated by the system.
 	// Read-only.
+	//
+	// DEPRECATED
+	// Kubernetes will stop propagating this field in 1.20 release and the field is planned
+	// to be removed in 1.21 release.
 	// +optional
 	SelfLink *string `protobuf:"bytes,4,opt,name=selfLink" json:"selfLink,omitempty"`
 	// UID is the unique in time and space value for this object. It is typically generated by
@@ -1804,7 +2057,7 @@ type ObjectMeta struct {
 	// Populated by the system.
 	// Read-only.
 	// Value must be treated as opaque by clients and .
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
 	// +optional
 	ResourceVersion *string `protobuf:"bytes,6,opt,name=resourceVersion" json:"resourceVersion,omitempty"`
 	// A sequence number representing a specific generation of the desired state.
@@ -1818,7 +2071,7 @@ type ObjectMeta struct {
 	// Populated by the system.
 	// Read-only.
 	// Null for lists.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	CreationTimestamp *Time `protobuf:"bytes,8,opt,name=creationTimestamp" json:"creationTimestamp,omitempty"`
 	// DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
@@ -1838,7 +2091,7 @@ type ObjectMeta struct {
 	//
 	// Populated by the system when a graceful deletion is requested.
 	// Read-only.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
 	DeletionTimestamp *Time `protobuf:"bytes,9,opt,name=deletionTimestamp" json:"deletionTimestamp,omitempty"`
 	// Number of seconds allowed for this object to gracefully terminate before
@@ -1867,20 +2120,19 @@ type ObjectMeta struct {
 	// +patchMergeKey=uid
 	// +patchStrategy=merge
 	OwnerReferences []*OwnerReference `protobuf:"bytes,13,rep,name=ownerReferences" json:"ownerReferences,omitempty"`
-	// An initializer is a controller which enforces some system invariant at object creation time.
-	// This field is a list of initializers that have not yet acted on this object. If nil or empty,
-	// this object has been completely initialized. Otherwise, the object is considered uninitialized
-	// and is hidden (in list/watch and get calls) from clients that haven't explicitly asked to
-	// observe uninitialized objects.
-	//
-	// When an object is created, the system will populate this list with the current set of initializers.
-	// Only privileged users may set or modify this list. Once it is empty, it may not be modified further
-	// by any user.
-	Initializers *Initializers `protobuf:"bytes,16,opt,name=initializers" json:"initializers,omitempty"`
 	// Must be empty before the object is deleted from the registry. Each entry
 	// is an identifier for the responsible component that will remove the entry
 	// from the list. If the deletionTimestamp of the object is non-nil, entries
 	// in this list can only be removed.
+	// Finalizers may be processed and removed in any order.  Order is NOT enforced
+	// because it introduces significant risk of stuck finalizers.
+	// finalizers is a shared field, any actor with permission can reorder it.
+	// If the finalizer list is processed in order, then this can lead to a situation
+	// in which the component responsible for the first finalizer in the list is
+	// waiting for a signal (field value, external system, or other) produced by a
+	// component responsible for a finalizer later in the list, resulting in a deadlock.
+	// Without enforced ordering finalizers are free to order amongst themselves and
+	// are not vulnerable to ordering changes in the list.
 	// +optional
 	// +patchStrategy=merge
 	Finalizers []string `protobuf:"bytes,14,rep,name=finalizers" json:"finalizers,omitempty"`
@@ -1888,17 +2140,27 @@ type ObjectMeta struct {
 	// This is used to distinguish resources with same name and namespace in different clusters.
 	// This field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.
 	// +optional
-	ClusterName          *string  `protobuf:"bytes,15,opt,name=clusterName" json:"clusterName,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	ClusterName *string `protobuf:"bytes,15,opt,name=clusterName" json:"clusterName,omitempty"`
+	// ManagedFields maps workflow-id and version to the set of fields
+	// that are managed by that workflow. This is mostly for internal
+	// housekeeping, and users typically shouldn't need to set or
+	// understand this field. A workflow can be the user's name, a
+	// controller's name, or the name of a specific apply path like
+	// "ci-cd". The set of fields is always in the version that the
+	// workflow used when modifying the object.
+	//
+	// +optional
+	ManagedFields        []*ManagedFieldsEntry `protobuf:"bytes,17,rep,name=managedFields" json:"managedFields,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
 func (m *ObjectMeta) Reset()         { *m = ObjectMeta{} }
 func (m *ObjectMeta) String() string { return proto.CompactTextString(m) }
 func (*ObjectMeta) ProtoMessage()    {}
 func (*ObjectMeta) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{24}
+	return fileDescriptor_a8431b6e0aeeb761, []int{25}
 }
 func (m *ObjectMeta) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2018,13 +2280,6 @@ func (m *ObjectMeta) GetOwnerReferences() []*OwnerReference {
 	return nil
 }
 
-func (m *ObjectMeta) GetInitializers() *Initializers {
-	if m != nil {
-		return m.Initializers
-	}
-	return nil
-}
-
 func (m *ObjectMeta) GetFinalizers() []string {
 	if m != nil {
 		return m.Finalizers
@@ -2039,6 +2294,13 @@ func (m *ObjectMeta) GetClusterName() string {
 	return ""
 }
 
+func (m *ObjectMeta) GetManagedFields() []*ManagedFieldsEntry {
+	if m != nil {
+		return m.ManagedFields
+	}
+	return nil
+}
+
 // OwnerReference contains enough information to let you identify an owning
 // object. An owning object must be in the same namespace as the dependent, or
 // be cluster-scoped, so there is no namespace field.
@@ -2046,7 +2308,7 @@ type OwnerReference struct {
 	// API version of the referent.
 	ApiVersion *string `protobuf:"bytes,5,opt,name=apiVersion" json:"apiVersion,omitempty"`
 	// Kind of the referent.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	Kind *string `protobuf:"bytes,1,opt,name=kind" json:"kind,omitempty"`
 	// Name of the referent.
 	// More info: http://kubernetes.io/docs/user-guide/identifiers#names
@@ -2074,7 +2336,7 @@ func (m *OwnerReference) Reset()         { *m = OwnerReference{} }
 func (m *OwnerReference) String() string { return proto.CompactTextString(m) }
 func (*OwnerReference) ProtoMessage()    {}
 func (*OwnerReference) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{25}
+	return fileDescriptor_a8431b6e0aeeb761, []int{26}
 }
 func (m *OwnerReference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2145,6 +2407,120 @@ func (m *OwnerReference) GetBlockOwnerDeletion() bool {
 	return false
 }
 
+// PartialObjectMetadata is a generic representation of any object with ObjectMeta. It allows clients
+// to get access to a particular ObjectMeta schema without knowing the details of the version.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type PartialObjectMetadata struct {
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+	// +optional
+	Metadata             *ObjectMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *PartialObjectMetadata) Reset()         { *m = PartialObjectMetadata{} }
+func (m *PartialObjectMetadata) String() string { return proto.CompactTextString(m) }
+func (*PartialObjectMetadata) ProtoMessage()    {}
+func (*PartialObjectMetadata) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8431b6e0aeeb761, []int{27}
+}
+func (m *PartialObjectMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PartialObjectMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PartialObjectMetadata.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PartialObjectMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PartialObjectMetadata.Merge(m, src)
+}
+func (m *PartialObjectMetadata) XXX_Size() int {
+	return m.Size()
+}
+func (m *PartialObjectMetadata) XXX_DiscardUnknown() {
+	xxx_messageInfo_PartialObjectMetadata.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PartialObjectMetadata proto.InternalMessageInfo
+
+func (m *PartialObjectMetadata) GetMetadata() *ObjectMeta {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+// PartialObjectMetadataList contains a list of objects containing only their metadata
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type PartialObjectMetadataList struct {
+	// Standard list metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+	// +optional
+	Metadata *ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	// items contains each of the included items.
+	Items                []*PartialObjectMetadata `protobuf:"bytes,2,rep,name=items" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
+}
+
+func (m *PartialObjectMetadataList) Reset()         { *m = PartialObjectMetadataList{} }
+func (m *PartialObjectMetadataList) String() string { return proto.CompactTextString(m) }
+func (*PartialObjectMetadataList) ProtoMessage()    {}
+func (*PartialObjectMetadataList) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8431b6e0aeeb761, []int{28}
+}
+func (m *PartialObjectMetadataList) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PartialObjectMetadataList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PartialObjectMetadataList.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PartialObjectMetadataList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PartialObjectMetadataList.Merge(m, src)
+}
+func (m *PartialObjectMetadataList) XXX_Size() int {
+	return m.Size()
+}
+func (m *PartialObjectMetadataList) XXX_DiscardUnknown() {
+	xxx_messageInfo_PartialObjectMetadataList.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PartialObjectMetadataList proto.InternalMessageInfo
+
+func (m *PartialObjectMetadataList) GetMetadata() *ListMeta {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+func (m *PartialObjectMetadataList) GetItems() []*PartialObjectMetadata {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
 // Patch is provided to give a concrete name and type to the Kubernetes PATCH request body.
 type Patch struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -2156,7 +2532,7 @@ func (m *Patch) Reset()         { *m = Patch{} }
 func (m *Patch) String() string { return proto.CompactTextString(m) }
 func (*Patch) ProtoMessage()    {}
 func (*Patch) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{26}
+	return fileDescriptor_a8431b6e0aeeb761, []int{29}
 }
 func (m *Patch) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2185,11 +2561,97 @@ func (m *Patch) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Patch proto.InternalMessageInfo
 
+// PatchOptions may be provided when patching an API object.
+// PatchOptions is meant to be a superset of UpdateOptions.
+type PatchOptions struct {
+	// When present, indicates that modifications should not be
+	// persisted. An invalid or unrecognized dryRun directive will
+	// result in an error response and no further processing of the
+	// request. Valid values are:
+	// - All: all dry run stages will be processed
+	// +optional
+	DryRun []string `protobuf:"bytes,1,rep,name=dryRun" json:"dryRun,omitempty"`
+	// Force is going to "force" Apply requests. It means user will
+	// re-acquire conflicting fields owned by other people. Force
+	// flag must be unset for non-apply patch requests.
+	// +optional
+	Force *bool `protobuf:"varint,2,opt,name=force" json:"force,omitempty"`
+	// fieldManager is a name associated with the actor or entity
+	// that is making these changes. The value must be less than or
+	// 128 characters long, and only contain printable characters,
+	// as defined by https://golang.org/pkg/unicode/#IsPrint. This
+	// field is required for apply requests
+	// (application/apply-patch) but optional for non-apply patch
+	// types (JsonPatch, MergePatch, StrategicMergePatch).
+	// +optional
+	FieldManager         *string  `protobuf:"bytes,3,opt,name=fieldManager" json:"fieldManager,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PatchOptions) Reset()         { *m = PatchOptions{} }
+func (m *PatchOptions) String() string { return proto.CompactTextString(m) }
+func (*PatchOptions) ProtoMessage()    {}
+func (*PatchOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8431b6e0aeeb761, []int{30}
+}
+func (m *PatchOptions) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PatchOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PatchOptions.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PatchOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PatchOptions.Merge(m, src)
+}
+func (m *PatchOptions) XXX_Size() int {
+	return m.Size()
+}
+func (m *PatchOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_PatchOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PatchOptions proto.InternalMessageInfo
+
+func (m *PatchOptions) GetDryRun() []string {
+	if m != nil {
+		return m.DryRun
+	}
+	return nil
+}
+
+func (m *PatchOptions) GetForce() bool {
+	if m != nil && m.Force != nil {
+		return *m.Force
+	}
+	return false
+}
+
+func (m *PatchOptions) GetFieldManager() string {
+	if m != nil && m.FieldManager != nil {
+		return *m.FieldManager
+	}
+	return ""
+}
+
 // Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.
 type Preconditions struct {
 	// Specifies the target UID.
 	// +optional
-	Uid                  *string  `protobuf:"bytes,1,opt,name=uid" json:"uid,omitempty"`
+	Uid *string `protobuf:"bytes,1,opt,name=uid" json:"uid,omitempty"`
+	// Specifies the target ResourceVersion
+	// +optional
+	ResourceVersion      *string  `protobuf:"bytes,2,opt,name=resourceVersion" json:"resourceVersion,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2199,7 +2661,7 @@ func (m *Preconditions) Reset()         { *m = Preconditions{} }
 func (m *Preconditions) String() string { return proto.CompactTextString(m) }
 func (*Preconditions) ProtoMessage()    {}
 func (*Preconditions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{27}
+	return fileDescriptor_a8431b6e0aeeb761, []int{31}
 }
 func (m *Preconditions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2235,6 +2697,13 @@ func (m *Preconditions) GetUid() string {
 	return ""
 }
 
+func (m *Preconditions) GetResourceVersion() string {
+	if m != nil && m.ResourceVersion != nil {
+		return *m.ResourceVersion
+	}
+	return ""
+}
+
 // RootPaths lists the paths available at root.
 // For example: "/healthz", "/apis".
 type RootPaths struct {
@@ -2249,7 +2718,7 @@ func (m *RootPaths) Reset()         { *m = RootPaths{} }
 func (m *RootPaths) String() string { return proto.CompactTextString(m) }
 func (*RootPaths) ProtoMessage()    {}
 func (*RootPaths) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{28}
+	return fileDescriptor_a8431b6e0aeeb761, []int{32}
 }
 func (m *RootPaths) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2301,7 +2770,7 @@ func (m *ServerAddressByClientCIDR) Reset()         { *m = ServerAddressByClient
 func (m *ServerAddressByClientCIDR) String() string { return proto.CompactTextString(m) }
 func (*ServerAddressByClientCIDR) ProtoMessage()    {}
 func (*ServerAddressByClientCIDR) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{29}
+	return fileDescriptor_a8431b6e0aeeb761, []int{33}
 }
 func (m *ServerAddressByClientCIDR) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2347,12 +2816,12 @@ func (m *ServerAddressByClientCIDR) GetServerAddress() string {
 // Status is a return value for calls that don't return other objects.
 type Status struct {
 	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Metadata *ListMeta `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Status of the operation.
 	// One of: "Success" or "Failure".
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
 	Status *string `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
 	// A human-readable description of the status of this operation.
@@ -2382,7 +2851,7 @@ func (m *Status) Reset()         { *m = Status{} }
 func (m *Status) String() string { return proto.CompactTextString(m) }
 func (*Status) ProtoMessage()    {}
 func (*Status) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{30}
+	return fileDescriptor_a8431b6e0aeeb761, []int{34}
 }
 func (m *Status) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2484,7 +2953,7 @@ func (m *StatusCause) Reset()         { *m = StatusCause{} }
 func (m *StatusCause) String() string { return proto.CompactTextString(m) }
 func (*StatusCause) ProtoMessage()    {}
 func (*StatusCause) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{31}
+	return fileDescriptor_a8431b6e0aeeb761, []int{35}
 }
 func (m *StatusCause) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2550,7 +3019,7 @@ type StatusDetails struct {
 	Group *string `protobuf:"bytes,2,opt,name=group" json:"group,omitempty"`
 	// The kind attribute of the resource associated with the status StatusReason.
 	// On some operations may differ from the requested resource Kind.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Kind *string `protobuf:"bytes,3,opt,name=kind" json:"kind,omitempty"`
 	// UID of the resource.
@@ -2576,7 +3045,7 @@ func (m *StatusDetails) Reset()         { *m = StatusDetails{} }
 func (m *StatusDetails) String() string { return proto.CompactTextString(m) }
 func (*StatusDetails) ProtoMessage()    {}
 func (*StatusDetails) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{32}
+	return fileDescriptor_a8431b6e0aeeb761, []int{36}
 }
 func (m *StatusDetails) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2647,6 +3116,59 @@ func (m *StatusDetails) GetRetryAfterSeconds() int32 {
 	return 0
 }
 
+// TableOptions are used when a Table is requested by the caller.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type TableOptions struct {
+	// includeObject decides whether to include each object along with its columnar information.
+	// Specifying "None" will return no object, specifying "Object" will return the full object contents, and
+	// specifying "Metadata" (the default) will return the object's metadata in the PartialObjectMetadata kind
+	// in version v1beta1 of the meta.k8s.io API group.
+	IncludeObject        *string  `protobuf:"bytes,1,opt,name=includeObject" json:"includeObject,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TableOptions) Reset()         { *m = TableOptions{} }
+func (m *TableOptions) String() string { return proto.CompactTextString(m) }
+func (*TableOptions) ProtoMessage()    {}
+func (*TableOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8431b6e0aeeb761, []int{37}
+}
+func (m *TableOptions) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TableOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TableOptions.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TableOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TableOptions.Merge(m, src)
+}
+func (m *TableOptions) XXX_Size() int {
+	return m.Size()
+}
+func (m *TableOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_TableOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TableOptions proto.InternalMessageInfo
+
+func (m *TableOptions) GetIncludeObject() string {
+	if m != nil && m.IncludeObject != nil {
+		return *m.IncludeObject
+	}
+	return ""
+}
+
 // Time is a wrapper around time.Time which supports correct
 // marshaling to YAML and JSON.  Wrappers are provided for many
 // of the factory methods that the time package offers.
@@ -2673,7 +3195,7 @@ func (m *Time) Reset()         { *m = Time{} }
 func (m *Time) String() string { return proto.CompactTextString(m) }
 func (*Time) ProtoMessage()    {}
 func (*Time) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{33}
+	return fileDescriptor_a8431b6e0aeeb761, []int{38}
 }
 func (m *Time) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2738,7 +3260,7 @@ func (m *Timestamp) Reset()         { *m = Timestamp{} }
 func (m *Timestamp) String() string { return proto.CompactTextString(m) }
 func (*Timestamp) ProtoMessage()    {}
 func (*Timestamp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{34}
+	return fileDescriptor_a8431b6e0aeeb761, []int{39}
 }
 func (m *Timestamp) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2791,13 +3313,13 @@ type TypeMeta struct {
 	// Servers may infer this from the endpoint the client submits requests to.
 	// Cannot be updated.
 	// In CamelCase.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Kind *string `protobuf:"bytes,1,opt,name=kind" json:"kind,omitempty"`
 	// APIVersion defines the versioned schema of this representation of an object.
 	// Servers should convert recognized schemas to the latest internal value, and
 	// may reject unrecognized values.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
 	// +optional
 	ApiVersion           *string  `protobuf:"bytes,2,opt,name=apiVersion" json:"apiVersion,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -2809,7 +3331,7 @@ func (m *TypeMeta) Reset()         { *m = TypeMeta{} }
 func (m *TypeMeta) String() string { return proto.CompactTextString(m) }
 func (*TypeMeta) ProtoMessage()    {}
 func (*TypeMeta) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{35}
+	return fileDescriptor_a8431b6e0aeeb761, []int{40}
 }
 func (m *TypeMeta) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2853,6 +3375,7 @@ func (m *TypeMeta) GetApiVersion() string {
 }
 
 // UpdateOptions may be provided when updating an API object.
+// All fields in UpdateOptions should also be present in PatchOptions.
 type UpdateOptions struct {
 	// When present, indicates that modifications should not be
 	// persisted. An invalid or unrecognized dryRun directive will
@@ -2860,7 +3383,13 @@ type UpdateOptions struct {
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
 	// +optional
-	DryRun               []string `protobuf:"bytes,1,rep,name=dryRun" json:"dryRun,omitempty"`
+	DryRun []string `protobuf:"bytes,1,rep,name=dryRun" json:"dryRun,omitempty"`
+	// fieldManager is a name associated with the actor or entity
+	// that is making these changes. The value must be less than or
+	// 128 characters long, and only contain printable characters,
+	// as defined by https://golang.org/pkg/unicode/#IsPrint.
+	// +optional
+	FieldManager         *string  `protobuf:"bytes,2,opt,name=fieldManager" json:"fieldManager,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2870,7 +3399,7 @@ func (m *UpdateOptions) Reset()         { *m = UpdateOptions{} }
 func (m *UpdateOptions) String() string { return proto.CompactTextString(m) }
 func (*UpdateOptions) ProtoMessage()    {}
 func (*UpdateOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{36}
+	return fileDescriptor_a8431b6e0aeeb761, []int{41}
 }
 func (m *UpdateOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2906,6 +3435,13 @@ func (m *UpdateOptions) GetDryRun() []string {
 	return nil
 }
 
+func (m *UpdateOptions) GetFieldManager() string {
+	if m != nil && m.FieldManager != nil {
+		return *m.FieldManager
+	}
+	return ""
+}
+
 // Verbs masks the value so protobuf can generate
 //
 // +protobuf.nullable=true
@@ -2921,7 +3457,7 @@ func (m *Verbs) Reset()         { *m = Verbs{} }
 func (m *Verbs) String() string { return proto.CompactTextString(m) }
 func (*Verbs) ProtoMessage()    {}
 func (*Verbs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{37}
+	return fileDescriptor_a8431b6e0aeeb761, []int{42}
 }
 func (m *Verbs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2979,7 +3515,7 @@ func (m *WatchEvent) Reset()         { *m = WatchEvent{} }
 func (m *WatchEvent) String() string { return proto.CompactTextString(m) }
 func (*WatchEvent) ProtoMessage()    {}
 func (*WatchEvent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8431b6e0aeeb761, []int{38}
+	return fileDescriptor_a8431b6e0aeeb761, []int{43}
 }
 func (m *WatchEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -3028,10 +3564,12 @@ func init() {
 	proto.RegisterType((*APIResource)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.APIResource")
 	proto.RegisterType((*APIResourceList)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.APIResourceList")
 	proto.RegisterType((*APIVersions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.APIVersions")
+	proto.RegisterType((*Condition)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Condition")
 	proto.RegisterType((*CreateOptions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.CreateOptions")
 	proto.RegisterType((*DeleteOptions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.DeleteOptions")
 	proto.RegisterType((*Duration)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Duration")
 	proto.RegisterType((*ExportOptions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ExportOptions")
+	proto.RegisterType((*FieldsV1)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.FieldsV1")
 	proto.RegisterType((*GetOptions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.GetOptions")
 	proto.RegisterType((*GroupKind)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.GroupKind")
 	proto.RegisterType((*GroupResource)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.GroupResource")
@@ -3039,26 +3577,29 @@ func init() {
 	proto.RegisterType((*GroupVersionForDiscovery)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.GroupVersionForDiscovery")
 	proto.RegisterType((*GroupVersionKind)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.GroupVersionKind")
 	proto.RegisterType((*GroupVersionResource)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.GroupVersionResource")
-	proto.RegisterType((*Initializer)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Initializer")
-	proto.RegisterType((*Initializers)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Initializers")
 	proto.RegisterType((*LabelSelector)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.LabelSelector")
 	proto.RegisterMapType((map[string]string)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.LabelSelector.MatchLabelsEntry")
 	proto.RegisterType((*LabelSelectorRequirement)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.LabelSelectorRequirement")
 	proto.RegisterType((*List)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.List")
 	proto.RegisterType((*ListMeta)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ListMeta")
 	proto.RegisterType((*ListOptions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ListOptions")
+	proto.RegisterType((*ManagedFieldsEntry)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry")
 	proto.RegisterType((*MicroTime)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.MicroTime")
 	proto.RegisterType((*ObjectMeta)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta")
 	proto.RegisterMapType((map[string]string)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta.AnnotationsEntry")
 	proto.RegisterMapType((map[string]string)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta.LabelsEntry")
 	proto.RegisterType((*OwnerReference)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.OwnerReference")
+	proto.RegisterType((*PartialObjectMetadata)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.PartialObjectMetadata")
+	proto.RegisterType((*PartialObjectMetadataList)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.PartialObjectMetadataList")
 	proto.RegisterType((*Patch)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Patch")
+	proto.RegisterType((*PatchOptions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.PatchOptions")
 	proto.RegisterType((*Preconditions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Preconditions")
 	proto.RegisterType((*RootPaths)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.RootPaths")
 	proto.RegisterType((*ServerAddressByClientCIDR)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.ServerAddressByClientCIDR")
 	proto.RegisterType((*Status)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Status")
 	proto.RegisterType((*StatusCause)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.StatusCause")
 	proto.RegisterType((*StatusDetails)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.StatusDetails")
+	proto.RegisterType((*TableOptions)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.TableOptions")
 	proto.RegisterType((*Time)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Time")
 	proto.RegisterType((*Timestamp)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.Timestamp")
 	proto.RegisterType((*TypeMeta)(nil), "k8s.io.apimachinery.pkg.apis.meta.v1.TypeMeta")
@@ -3072,119 +3613,136 @@ func init() {
 }
 
 var fileDescriptor_a8431b6e0aeeb761 = []byte{
-	// 1792 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x58, 0x4f, 0x6f, 0x23, 0x49,
-	0x15, 0xa7, 0x3b, 0xb1, 0x63, 0x3f, 0xc7, 0x33, 0xd9, 0x56, 0xb4, 0x32, 0x16, 0x44, 0x99, 0xd6,
-	0x6a, 0x89, 0x96, 0xc5, 0x51, 0x86, 0x65, 0xb5, 0xb0, 0x10, 0x94, 0x8d, 0xb3, 0xa3, 0xb0, 0x33,
-	0x4c, 0x54, 0x33, 0x13, 0x96, 0x45, 0x42, 0x54, 0xba, 0x2b, 0x4e, 0x4d, 0xda, 0x5d, 0x4d, 0x55,
-	0xd9, 0x33, 0xe6, 0x82, 0xb8, 0x70, 0xe2, 0x0e, 0x57, 0xc4, 0x01, 0x09, 0xf1, 0x09, 0xf8, 0x04,
-	0x1c, 0x39, 0x72, 0x44, 0xc3, 0x81, 0x6f, 0x81, 0x50, 0xfd, 0x6b, 0x57, 0xfb, 0x4f, 0xc6, 0x19,
-	0x2d, 0xb7, 0x7e, 0xaf, 0xea, 0xfd, 0xea, 0xd5, 0xfb, 0x5f, 0x0d, 0x1f, 0x5c, 0x7f, 0x24, 0x7a,
-	0x94, 0xed, 0xe3, 0x82, 0x0e, 0x71, 0x72, 0x45, 0x73, 0xc2, 0x27, 0xfb, 0xc5, 0xf5, 0x40, 0x31,
-	0xc4, 0xfe, 0x90, 0x48, 0xbc, 0x3f, 0x3e, 0xd8, 0x1f, 0x90, 0x9c, 0x70, 0x2c, 0x49, 0xda, 0x2b,
-	0x38, 0x93, 0x2c, 0x7a, 0xc7, 0x48, 0xf5, 0x7c, 0xa9, 0x5e, 0x71, 0x3d, 0x50, 0x0c, 0xd1, 0x53,
-	0x52, 0xbd, 0xf1, 0x41, 0x77, 0x7f, 0x19, 0x36, 0x1f, 0xe5, 0x92, 0x0e, 0xc9, 0x2c, 0x6c, 0xf7,
-	0xc3, 0xd7, 0x09, 0x88, 0xe4, 0x8a, 0x0c, 0xf1, 0xac, 0x5c, 0xfc, 0x9f, 0x10, 0x1a, 0x47, 0x67,
-	0xa7, 0x0f, 0x38, 0x1b, 0x15, 0x51, 0x04, 0xeb, 0x39, 0x1e, 0x92, 0x4e, 0xb0, 0x1b, 0xec, 0x35,
-	0x91, 0xfe, 0x8e, 0xbe, 0x80, 0xc6, 0x98, 0x70, 0x41, 0x59, 0x2e, 0x3a, 0xe1, 0xee, 0xda, 0x5e,
-	0xeb, 0xfe, 0x61, 0x6f, 0x95, 0x2b, 0xf4, 0x34, 0xe4, 0xb9, 0x11, 0xfd, 0x94, 0xf1, 0x3e, 0x15,
-	0x09, 0x1b, 0x13, 0x3e, 0x41, 0x25, 0x5e, 0xf4, 0x1c, 0xb6, 0x0a, 0x4e, 0x2e, 0x09, 0xe7, 0x24,
-	0xb5, 0x3b, 0x3b, 0x6b, 0xbb, 0xc1, 0x97, 0x70, 0xc6, 0x1c, 0x6e, 0xf4, 0x6b, 0xe8, 0x0a, 0xc2,
-	0xc7, 0x84, 0x1f, 0xa5, 0x29, 0x27, 0x42, 0x7c, 0x32, 0x39, 0xce, 0x28, 0xc9, 0xe5, 0xf1, 0x69,
-	0x1f, 0x89, 0xce, 0xba, 0xbe, 0xd9, 0x0f, 0x57, 0x3b, 0xf5, 0xc9, 0x32, 0x1c, 0x74, 0xc3, 0x11,
-	0xf1, 0x39, 0x6c, 0x3a, 0x43, 0x3f, 0xa4, 0x42, 0x46, 0x9f, 0x42, 0x7d, 0xa0, 0x08, 0xd1, 0x09,
-	0xf4, 0xe1, 0xbd, 0xd5, 0x0e, 0x77, 0x18, 0xc8, 0x4a, 0xc7, 0x7f, 0x0d, 0xa1, 0x75, 0x74, 0x76,
-	0x8a, 0x88, 0x60, 0x23, 0x9e, 0x90, 0x85, 0x4e, 0x8c, 0x61, 0x53, 0xd0, 0x7c, 0x30, 0xca, 0x30,
-	0xff, 0xb1, 0x5a, 0xab, 0xeb, 0xb5, 0x0a, 0x2f, 0xda, 0x01, 0x50, 0x7b, 0x45, 0x81, 0x13, 0x92,
-	0x76, 0xc2, 0xdd, 0x60, 0xaf, 0x81, 0x3c, 0x4e, 0xb4, 0x0d, 0x35, 0x7d, 0x62, 0xa7, 0xa1, 0x85,
-	0x0d, 0x11, 0x75, 0x60, 0xc3, 0xba, 0xb3, 0xd3, 0xd4, 0x7c, 0x47, 0x2a, 0x3d, 0xae, 0x69, 0x9e,
-	0x6a, 0x87, 0x36, 0x91, 0xfe, 0x8e, 0x8e, 0xa0, 0x36, 0x26, 0xfc, 0x42, 0xd9, 0x5b, 0x79, 0xf9,
-	0x9b, 0xab, 0x5d, 0xf9, 0x5c, 0x89, 0x20, 0x23, 0xa9, 0xd4, 0x14, 0x57, 0x8c, 0x4b, 0xa5, 0xb3,
-	0xe8, 0xd4, 0x76, 0xd7, 0xf6, 0x9a, 0xc8, 0xe3, 0xa8, 0xf5, 0x04, 0x4b, 0x32, 0x60, 0x9c, 0x12,
-	0xd1, 0xd9, 0x30, 0xeb, 0x53, 0x4e, 0xfc, 0xdb, 0x00, 0xee, 0x7a, 0xe6, 0xd2, 0xae, 0x88, 0x61,
-	0x73, 0xe0, 0x45, 0x92, 0x35, 0x5d, 0x85, 0x17, 0x3d, 0x86, 0x26, 0xb7, 0x32, 0x2e, 0x11, 0x0e,
-	0x56, 0xf6, 0x98, 0x3b, 0x0d, 0x4d, 0x31, 0xe2, 0xbf, 0x04, 0xda, 0x6f, 0xe7, 0x2e, 0x19, 0xba,
-	0x5e, 0xa2, 0x05, 0x5a, 0xed, 0x69, 0xa2, 0xdc, 0x1c, 0xbc, 0xe1, 0xff, 0x3f, 0x78, 0x7f, 0x06,
-	0xed, 0x63, 0x4e, 0xb0, 0x24, 0x8f, 0x0b, 0xa9, 0x35, 0x7a, 0x1b, 0xea, 0x29, 0x9f, 0xa0, 0x51,
-	0x6e, 0x75, 0xb5, 0x54, 0x74, 0x1f, 0xb6, 0x69, 0x9e, 0x64, 0xa3, 0x94, 0x3c, 0xcb, 0x69, 0x4e,
-	0x25, 0xc5, 0x19, 0xfd, 0x55, 0x19, 0x4f, 0x0b, 0xd7, 0xe2, 0xdf, 0x85, 0xd0, 0xee, 0x93, 0x8c,
-	0x4c, 0xd1, 0x7b, 0x10, 0x0d, 0x38, 0x4e, 0xc8, 0x19, 0xe1, 0x94, 0xa5, 0x4f, 0x48, 0xc2, 0xf2,
-	0x54, 0x68, 0xb7, 0xac, 0xa1, 0x05, 0x2b, 0xd1, 0x4f, 0xa1, 0x5d, 0x70, 0xfd, 0x4d, 0xa5, 0xad,
-	0x54, 0x2a, 0xbe, 0xbe, 0xbd, 0x9a, 0x49, 0xce, 0x7c, 0x51, 0x54, 0x45, 0x8a, 0xde, 0x83, 0x2d,
-	0xc6, 0x8b, 0x2b, 0x9c, 0xf7, 0x49, 0x41, 0xf2, 0x94, 0xe4, 0x52, 0xe8, 0x90, 0x6e, 0xa0, 0x39,
-	0x7e, 0xf4, 0x3e, 0xbc, 0x55, 0x70, 0x56, 0xe0, 0x01, 0x56, 0xb2, 0x67, 0x2c, 0xa3, 0xc9, 0x44,
-	0x87, 0x7a, 0x13, 0xcd, 0x2f, 0x78, 0x26, 0xac, 0xf9, 0x26, 0x8c, 0xdf, 0x85, 0x46, 0x7f, 0xc4,
-	0xf5, 0x4e, 0x15, 0x14, 0xa9, 0xfd, 0xb6, 0xd7, 0x2f, 0xe9, 0xf8, 0x07, 0xd0, 0x3e, 0x79, 0x59,
-	0x30, 0x2e, 0x3d, 0x9f, 0x10, 0xcd, 0xd0, 0x5b, 0x1b, 0xc8, 0x52, 0x2a, 0x73, 0xc9, 0x4b, 0x9c,
-	0x48, 0xeb, 0x04, 0x43, 0xc4, 0xcf, 0x01, 0x1e, 0x90, 0x52, 0x76, 0x0f, 0xee, 0xba, 0xd0, 0xac,
-	0x66, 0xc1, 0x2c, 0xfb, 0x8d, 0x3c, 0xfc, 0x1d, 0x68, 0xea, 0xa2, 0xf5, 0x99, 0x2a, 0x02, 0x65,
-	0x21, 0x09, 0xfc, 0x42, 0xe2, 0xca, 0x45, 0x38, 0x2d, 0x17, 0xf1, 0x11, 0xb4, 0x4d, 0xad, 0x73,
-	0xb5, 0x6d, 0xb1, 0x68, 0x17, 0x1a, 0x4e, 0x49, 0x2b, 0x5e, 0xd2, 0xf1, 0x21, 0x6c, 0xfa, 0x4d,
-	0x62, 0x09, 0x82, 0x57, 0xc5, 0xc2, 0x4a, 0x15, 0x8b, 0x3f, 0x87, 0xce, 0xb2, 0x26, 0xb3, 0x52,
-	0xd9, 0x58, 0x8e, 0x7c, 0x0e, 0x5b, 0x3e, 0xf2, 0x0d, 0xa6, 0x59, 0x8a, 0xb1, 0xa8, 0xc6, 0xc6,
-	0x17, 0xb0, 0xed, 0xe3, 0xbe, 0xc6, 0x76, 0xcb, 0xb1, 0x7d, 0xab, 0xae, 0xcd, 0x58, 0xf5, 0x1e,
-	0xb4, 0x4e, 0x4b, 0xf7, 0xf2, 0x45, 0x2d, 0x27, 0xfe, 0x63, 0x00, 0x9b, 0xde, 0x1e, 0x11, 0x7d,
-	0x06, 0x1b, 0x2a, 0x51, 0x68, 0x3e, 0xb0, 0x0d, 0x6f, 0xc5, 0xf2, 0xe9, 0x81, 0x20, 0x87, 0x10,
-	0xf5, 0xa1, 0xce, 0x89, 0x18, 0x65, 0xd2, 0x66, 0xfa, 0xfb, 0x2b, 0x16, 0x3f, 0x89, 0xe5, 0x48,
-	0x20, 0x2b, 0x1b, 0xff, 0x29, 0x84, 0xf6, 0x43, 0x7c, 0x41, 0xb2, 0x27, 0x24, 0x23, 0x89, 0x64,
-	0x3c, 0xba, 0x84, 0xd6, 0x10, 0xcb, 0xe4, 0x4a, 0x73, 0x5d, 0x67, 0xee, 0xaf, 0x06, 0x5e, 0x41,
-	0xea, 0x3d, 0x9a, 0xc2, 0x9c, 0xe4, 0x92, 0x4f, 0x90, 0x0f, 0xac, 0x26, 0x1f, 0x4d, 0x9e, 0xbc,
-	0x2c, 0x54, 0xb1, 0xbd, 0xfd, 0x74, 0x55, 0x39, 0x0c, 0x91, 0x5f, 0x8e, 0x28, 0x27, 0x43, 0x92,
-	0x4b, 0x34, 0x87, 0xdb, 0x3d, 0x84, 0xad, 0x59, 0x65, 0xa2, 0x2d, 0x58, 0xbb, 0x26, 0x13, 0xeb,
-	0x30, 0xf5, 0xa9, 0xc2, 0x63, 0x8c, 0xb3, 0x91, 0xcb, 0x20, 0x43, 0x7c, 0x2f, 0xfc, 0x28, 0x88,
-	0x7f, 0x01, 0x9d, 0x65, 0xa7, 0x2d, 0xc0, 0xe9, 0x42, 0x83, 0x15, 0x6a, 0xc4, 0x64, 0xdc, 0x25,
-	0xa3, 0xa3, 0x55, 0x81, 0xd2, 0xb0, 0xaa, 0x82, 0xea, 0x8a, 0x67, 0xa8, 0xf8, 0xf7, 0x01, 0xac,
-	0xeb, 0x46, 0xfc, 0x23, 0x68, 0xa8, 0x0b, 0xa6, 0x58, 0x62, 0x8d, 0xb9, 0xf2, 0x54, 0xa4, 0xa4,
-	0x1f, 0x11, 0x89, 0x51, 0x29, 0x1f, 0x1d, 0x43, 0x8d, 0x4a, 0x32, 0x74, 0x76, 0xfd, 0xd6, 0x52,
-	0x20, 0x3b, 0x21, 0xf7, 0x10, 0x7e, 0x71, 0xf2, 0x52, 0x92, 0x5c, 0x67, 0x8d, 0x91, 0x8d, 0x33,
-	0x68, 0x38, 0x68, 0x75, 0x33, 0x41, 0xb2, 0xcb, 0x87, 0x34, 0xbf, 0xb6, 0x17, 0x2e, 0xe9, 0x45,
-	0xe5, 0x33, 0x5c, 0x5c, 0x3e, 0xbb, 0xd0, 0x48, 0x58, 0x2e, 0x69, 0x3e, 0x2a, 0xd3, 0xca, 0xd1,
-	0xf1, 0x9f, 0x43, 0x68, 0xa9, 0xe3, 0x5c, 0x51, 0x7e, 0x07, 0xda, 0x99, 0x6f, 0x79, 0x7b, 0x6c,
-	0x95, 0xa9, 0x76, 0x5d, 0x52, 0x92, 0xa5, 0xe5, 0x2e, 0x73, 0x72, 0x95, 0xb9, 0xb4, 0x6c, 0xd7,
-	0x97, 0x97, 0x6d, 0x15, 0x13, 0x2f, 0x54, 0xe4, 0xd8, 0x86, 0x67, 0x88, 0x45, 0x77, 0x5d, 0x5f,
-	0x7c, 0xd7, 0x77, 0xe1, 0x8e, 0xb2, 0x2c, 0x1b, 0x49, 0xd7, 0xc2, 0x6b, 0xba, 0x87, 0xcd, 0x70,
-	0xd5, 0x39, 0x19, 0x1d, 0x52, 0xd9, 0xd9, 0xd0, 0xcb, 0x86, 0xa8, 0x58, 0xaa, 0x31, 0x63, 0xa9,
-	0x8f, 0xa1, 0xf9, 0x88, 0x26, 0x9c, 0x3d, 0xa5, 0x43, 0xa2, 0x6a, 0x98, 0xa8, 0x8c, 0x08, 0x8e,
-	0x54, 0xc0, 0x39, 0xce, 0x99, 0x99, 0x07, 0x6a, 0xc8, 0x10, 0xf1, 0x7f, 0x37, 0x00, 0x1e, 0x5f,
-	0x3c, 0x27, 0x89, 0xf1, 0xeb, 0x92, 0x81, 0xd9, 0xbd, 0x94, 0xf4, 0xc0, 0x1c, 0xda, 0xd2, 0xee,
-	0xf1, 0xa2, 0xaf, 0x41, 0xb3, 0x1c, 0x8f, 0xad, 0x2b, 0xa7, 0x8c, 0x4a, 0xb4, 0xac, 0xcf, 0x44,
-	0xcb, 0x16, 0xac, 0x8d, 0x68, 0xaa, 0x8d, 0xd1, 0x44, 0xea, 0x73, 0x91, 0x4d, 0xeb, 0x8b, 0x6d,
-	0xba, 0x03, 0x60, 0xb5, 0x50, 0x9b, 0x8c, 0xc1, 0x3c, 0x4e, 0xf4, 0x39, 0xbc, 0x95, 0xa8, 0x49,
-	0x8d, 0xb2, 0x5c, 0x19, 0x47, 0x48, 0x3c, 0x34, 0x23, 0x7b, 0xeb, 0xfe, 0x7b, 0xab, 0xe5, 0x92,
-	0x12, 0x43, 0xf3, 0x20, 0x0a, 0x39, 0x55, 0x53, 0x5a, 0x05, 0xb9, 0x79, 0x7b, 0xe4, 0x39, 0x90,
-	0xe8, 0x10, 0xba, 0x8e, 0xf9, 0x60, 0x7e, 0xec, 0x03, 0x7d, 0xc7, 0x1b, 0x76, 0x44, 0x4f, 0xa1,
-	0x9e, 0x99, 0x82, 0xdd, 0xd2, 0xb9, 0xfe, 0xfd, 0xd5, 0xd4, 0x99, 0xc6, 0x40, 0xcf, 0x2f, 0xd4,
-	0x16, 0x2b, 0x4a, 0xa0, 0x85, 0xf3, 0x9c, 0x49, 0x6c, 0x46, 0xca, 0x4d, 0x0d, 0x7d, 0x74, 0x6b,
-	0xe8, 0xa3, 0x29, 0x86, 0x6d, 0x04, 0x1e, 0x6a, 0xf4, 0x73, 0xb8, 0xcb, 0x5e, 0xe4, 0x84, 0x23,
-	0xf5, 0x5c, 0x25, 0xb9, 0x7a, 0x5c, 0xb4, 0xf5, 0x41, 0x1f, 0xac, 0x78, 0x50, 0x45, 0x18, 0xcd,
-	0x82, 0x45, 0xe7, 0xb0, 0x49, 0xbd, 0x2e, 0xdc, 0xd9, 0xd2, 0xfe, 0xba, 0x7f, 0xeb, 0xd6, 0x2b,
-	0x50, 0x05, 0x47, 0x85, 0xe1, 0x25, 0xcd, 0x1d, 0xea, 0x1d, 0xf3, 0xcc, 0x9a, 0x72, 0xa2, 0x5d,
-	0x68, 0x25, 0xd9, 0x48, 0x48, 0x62, 0x1e, 0x9c, 0x77, 0x75, 0x30, 0xfb, 0xac, 0xee, 0x77, 0xa1,
-	0xf5, 0x86, 0x1d, 0x49, 0x75, 0xb4, 0x59, 0xab, 0xde, 0xaa, 0xa3, 0xfd, 0x2d, 0x80, 0x3b, 0x55,
-	0xc3, 0xa9, 0xfb, 0xe0, 0x82, 0xba, 0xdc, 0x33, 0x99, 0xe9, 0x71, 0xca, 0x49, 0x2b, 0xf0, 0x5e,
-	0xb3, 0xae, 0x70, 0xac, 0x79, 0x85, 0xc3, 0xa6, 0xf6, 0xfa, 0x34, 0xb5, 0xd5, 0x83, 0x94, 0xe5,
-	0x92, 0xb3, 0x2c, 0x23, 0xdc, 0x96, 0x5b, 0x8f, 0xa3, 0xde, 0x3a, 0x17, 0x19, 0x4b, 0xae, 0xb5,
-	0x42, 0x7d, 0x1b, 0xe4, 0x3a, 0xb1, 0x1b, 0x68, 0xc1, 0x4a, 0xbc, 0x01, 0xb5, 0x33, 0x55, 0x87,
-	0xe3, 0x7b, 0xd0, 0xae, 0xbc, 0x5c, 0xdc, 0xd9, 0x41, 0x79, 0x76, 0x7c, 0x0f, 0x9a, 0x88, 0x31,
-	0x79, 0x86, 0xe5, 0x95, 0x2e, 0x86, 0x85, 0xfa, 0xb0, 0x2f, 0x36, 0x43, 0xc4, 0x18, 0xbe, 0xba,
-	0xf4, 0x49, 0xa8, 0x75, 0x2f, 0x29, 0x0b, 0xec, 0x71, 0x54, 0xeb, 0xa9, 0x3c, 0x1a, 0x5d, 0xeb,
-	0xa9, 0x30, 0xe3, 0xdf, 0x84, 0x50, 0x37, 0x93, 0xd7, 0x97, 0xda, 0xe0, 0xdf, 0x86, 0xba, 0xd0,
-	0xa8, 0xf6, 0x54, 0x4b, 0xa9, 0x76, 0x30, 0x24, 0x42, 0xe0, 0x81, 0xf3, 0x8c, 0x23, 0x95, 0x04,
-	0x27, 0x58, 0x94, 0x0d, 0xcb, 0x52, 0xd1, 0x23, 0xd8, 0x48, 0x89, 0xc4, 0x34, 0x33, 0x0d, 0x6a,
-	0xe5, 0x87, 0xa3, 0xb9, 0x54, 0xdf, 0x88, 0x22, 0x87, 0xa1, 0xe2, 0x22, 0x61, 0xa9, 0xf9, 0xcb,
-	0x52, 0x43, 0xfa, 0x3b, 0x7e, 0x06, 0x2d, 0xb3, 0xfb, 0x18, 0x8f, 0x84, 0xaf, 0x49, 0x50, 0xd1,
-	0xc4, 0xd3, 0x3d, 0xac, 0xea, 0xbe, 0x0d, 0x35, 0xdd, 0xd0, 0xed, 0x9d, 0x0c, 0x11, 0xff, 0x33,
-	0x80, 0x76, 0x45, 0x8b, 0x85, 0xdd, 0xac, 0x1c, 0xfd, 0xc3, 0x45, 0x2f, 0x2e, 0xff, 0x07, 0x8d,
-	0x0d, 0xa1, 0xfa, 0x34, 0x7c, 0x4f, 0xa1, 0x9e, 0x28, 0x95, 0xdd, 0x3f, 0xb2, 0x83, 0xdb, 0x98,
-	0x46, 0x5f, 0x16, 0x59, 0x00, 0xf5, 0x3c, 0xe6, 0x44, 0xf2, 0xc9, 0xd1, 0xa5, 0x24, 0xdc, 0x9f,
-	0x08, 0x6a, 0x68, 0x7e, 0x21, 0xfe, 0x10, 0xd6, 0xdf, 0xa8, 0xbb, 0x7f, 0x0c, 0xcd, 0x69, 0x67,
-	0xb9, 0xad, 0xf0, 0x21, 0x34, 0x9e, 0x4e, 0x0a, 0xe2, 0xe6, 0x82, 0xb9, 0x94, 0xaf, 0x96, 0x89,
-	0x70, 0xb6, 0x4c, 0xc4, 0xdf, 0x80, 0xf6, 0xb3, 0x22, 0x7d, 0xfd, 0x7f, 0x92, 0xf8, 0xeb, 0x50,
-	0xd3, 0xbf, 0xb5, 0x94, 0x1e, 0x66, 0x4c, 0xb5, 0x59, 0x69, 0xe6, 0xce, 0x01, 0xc0, 0x4f, 0xf4,
-	0x1c, 0x3f, 0x56, 0x53, 0x76, 0x04, 0xeb, 0x72, 0x52, 0x94, 0x3e, 0x55, 0xdf, 0xd1, 0x09, 0xd4,
-	0x99, 0x6e, 0x32, 0xf6, 0x05, 0x74, 0xcb, 0xf9, 0xd6, 0x0a, 0x7f, 0xb2, 0xfd, 0xf7, 0x57, 0x3b,
-	0xc1, 0x3f, 0x5e, 0xed, 0x04, 0xff, 0x7a, 0xb5, 0x13, 0xfc, 0xe1, 0xdf, 0x3b, 0x5f, 0xf9, 0x22,
-	0x1c, 0x1f, 0xfc, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x2b, 0xf2, 0xd3, 0x59, 0xdb, 0x16, 0x00, 0x00,
+	// 2054 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x58, 0x4f, 0x73, 0x1b, 0x49,
+	0x15, 0x67, 0x46, 0x96, 0x3c, 0x7a, 0xb2, 0x12, 0xa7, 0x09, 0x5b, 0x5a, 0xd5, 0xe2, 0x32, 0x53,
+	0x5b, 0x5b, 0xae, 0x65, 0x91, 0xd7, 0x21, 0xa4, 0x02, 0x01, 0x53, 0x8e, 0xed, 0x04, 0x93, 0x98,
+	0x98, 0x8e, 0xd7, 0x2c, 0x39, 0x6c, 0x6d, 0x7b, 0xa6, 0x2d, 0xcf, 0x7a, 0x34, 0x3d, 0x74, 0xb7,
+	0xec, 0x98, 0x0b, 0xc5, 0x65, 0x4f, 0xdc, 0xd9, 0x03, 0x37, 0x6e, 0x7c, 0x04, 0x3e, 0x01, 0x47,
+	0x8e, 0x50, 0xc5, 0x81, 0x0a, 0x07, 0x3e, 0x01, 0x77, 0xaa, 0xff, 0x8c, 0xd4, 0x23, 0x8d, 0x1c,
+	0x39, 0x95, 0xbd, 0xcd, 0x7b, 0x3d, 0xef, 0xd7, 0xaf, 0xdf, 0xff, 0x6e, 0xb8, 0x7b, 0x76, 0x5f,
+	0xf4, 0x12, 0xb6, 0x4e, 0xf2, 0x64, 0x40, 0xa2, 0xd3, 0x24, 0xa3, 0xfc, 0x72, 0x3d, 0x3f, 0xeb,
+	0x2b, 0x86, 0x58, 0x1f, 0x50, 0x49, 0xd6, 0xcf, 0x37, 0xd6, 0xfb, 0x34, 0xa3, 0x9c, 0x48, 0x1a,
+	0xf7, 0x72, 0xce, 0x24, 0x43, 0xef, 0x1b, 0xa9, 0x9e, 0x2b, 0xd5, 0xcb, 0xcf, 0xfa, 0x8a, 0x21,
+	0x7a, 0x4a, 0xaa, 0x77, 0xbe, 0xd1, 0x5d, 0x9f, 0x85, 0xcd, 0x87, 0x99, 0x4c, 0x06, 0x74, 0x12,
+	0xb6, 0x7b, 0xef, 0x75, 0x02, 0x22, 0x3a, 0xa5, 0x03, 0x32, 0x29, 0x17, 0xfe, 0xd7, 0x87, 0x60,
+	0xeb, 0x60, 0xef, 0x31, 0x67, 0xc3, 0x1c, 0x21, 0x58, 0xc8, 0xc8, 0x80, 0x76, 0xbc, 0x55, 0x6f,
+	0xad, 0x89, 0xf5, 0x37, 0x7a, 0x01, 0xc1, 0x39, 0xe5, 0x22, 0x61, 0x99, 0xe8, 0xf8, 0xab, 0xb5,
+	0xb5, 0xd6, 0x9d, 0xcd, 0xde, 0x3c, 0x47, 0xe8, 0x69, 0xc8, 0x23, 0x23, 0xfa, 0x88, 0xf1, 0x9d,
+	0x44, 0x44, 0xec, 0x9c, 0xf2, 0x4b, 0x3c, 0xc2, 0x43, 0x5f, 0xc0, 0x72, 0xce, 0xe9, 0x09, 0xe5,
+	0x9c, 0xc6, 0xf6, 0xcf, 0x4e, 0x6d, 0xd5, 0x7b, 0x0b, 0x7b, 0x4c, 0xe1, 0xa2, 0xdf, 0x41, 0x57,
+	0x50, 0x7e, 0x4e, 0xf9, 0x56, 0x1c, 0x73, 0x2a, 0xc4, 0xc3, 0xcb, 0xed, 0x34, 0xa1, 0x99, 0xdc,
+	0xde, 0xdb, 0xc1, 0xa2, 0xb3, 0xa0, 0x4f, 0xf6, 0xd3, 0xf9, 0x76, 0x7d, 0x3e, 0x0b, 0x07, 0x5f,
+	0xb1, 0x45, 0x78, 0x04, 0x4b, 0x85, 0xa1, 0x9f, 0x26, 0x42, 0xa2, 0x47, 0xd0, 0xe8, 0x2b, 0x42,
+	0x74, 0x3c, 0xbd, 0x79, 0x6f, 0xbe, 0xcd, 0x0b, 0x0c, 0x6c, 0xa5, 0xc3, 0x7f, 0xf9, 0xd0, 0xda,
+	0x3a, 0xd8, 0xc3, 0x54, 0xb0, 0x21, 0x8f, 0x68, 0xa5, 0x13, 0x43, 0x58, 0x12, 0x49, 0xd6, 0x1f,
+	0xa6, 0x84, 0xff, 0x42, 0xad, 0x35, 0xf4, 0x5a, 0x89, 0x87, 0x56, 0x00, 0xd4, 0xbf, 0x22, 0x27,
+	0x11, 0x8d, 0x3b, 0xfe, 0xaa, 0xb7, 0x16, 0x60, 0x87, 0x83, 0x6e, 0x43, 0x5d, 0xef, 0xd8, 0x09,
+	0xb4, 0xb0, 0x21, 0x50, 0x07, 0x16, 0xad, 0x3b, 0x3b, 0x4d, 0xcd, 0x2f, 0x48, 0xa5, 0xc7, 0x59,
+	0x92, 0xc5, 0xda, 0xa1, 0x4d, 0xac, 0xbf, 0xd1, 0x16, 0xd4, 0xcf, 0x29, 0x3f, 0x56, 0xf6, 0x56,
+	0x5e, 0xfe, 0xee, 0x7c, 0x47, 0x3e, 0x52, 0x22, 0xd8, 0x48, 0x2a, 0x35, 0xc5, 0x29, 0xe3, 0x52,
+	0xe9, 0x2c, 0x3a, 0xf5, 0xd5, 0xda, 0x5a, 0x13, 0x3b, 0x1c, 0xb5, 0x1e, 0x11, 0x49, 0xfb, 0x8c,
+	0x27, 0x54, 0x74, 0x16, 0xcd, 0xfa, 0x98, 0x83, 0x7a, 0x80, 0x84, 0x64, 0x9c, 0xf4, 0xa9, 0x8d,
+	0x8c, 0x9f, 0x11, 0x71, 0xda, 0x01, 0xad, 0x64, 0xc5, 0x4a, 0xf8, 0xa5, 0x07, 0x37, 0x1d, 0xf3,
+	0x6a, 0xd7, 0x85, 0xb0, 0xd4, 0x77, 0x22, 0xcf, 0x9a, 0xba, 0xc4, 0x43, 0xcf, 0xa0, 0xc9, 0xad,
+	0x4c, 0x91, 0x38, 0x1b, 0x73, 0x7b, 0xb8, 0xd8, 0x0d, 0x8f, 0x31, 0xc2, 0xbf, 0x78, 0xda, 0xcf,
+	0x47, 0x45, 0xf2, 0x74, 0x9d, 0xc4, 0xf4, 0xf4, 0x31, 0xc7, 0x89, 0x75, 0x75, 0xb0, 0xfb, 0x5f,
+	0x7f, 0xb0, 0xff, 0xcf, 0x83, 0xe6, 0x36, 0xcb, 0xe2, 0x44, 0xda, 0x50, 0x90, 0x97, 0xf9, 0x28,
+	0x24, 0xd5, 0x37, 0x7a, 0x07, 0x1a, 0x42, 0x12, 0x39, 0x14, 0x3a, 0xd4, 0x9a, 0xd8, 0x52, 0xca,
+	0x3f, 0xec, 0x58, 0x23, 0xc7, 0x8f, 0x4d, 0xad, 0x2a, 0xaa, 0x42, 0x0d, 0x57, 0xac, 0xa0, 0x17,
+	0x80, 0x52, 0x22, 0xe4, 0x21, 0x27, 0x99, 0xd0, 0xbb, 0x1d, 0x26, 0x03, 0x6a, 0xe3, 0xeb, 0xc3,
+	0xf9, 0x8e, 0xa8, 0x24, 0x70, 0x05, 0x8a, 0xd2, 0x91, 0x53, 0x22, 0x58, 0xd6, 0xa9, 0x1b, 0x1d,
+	0x0d, 0xa5, 0x82, 0x7e, 0x40, 0x85, 0x20, 0xfd, 0x22, 0x93, 0x0a, 0x32, 0x7c, 0x02, 0xed, 0x6d,
+	0x4e, 0x89, 0xa4, 0xcf, 0x72, 0xa9, 0x3d, 0xf1, 0x0e, 0x34, 0x62, 0x7e, 0x89, 0x87, 0x99, 0xf5,
+	0x91, 0xa5, 0x54, 0x08, 0x9d, 0x24, 0x34, 0x8d, 0xf7, 0x49, 0x46, 0xfa, 0x94, 0xdb, 0x2c, 0x29,
+	0xf1, 0xc2, 0x3f, 0xf8, 0xd0, 0xde, 0xa1, 0x29, 0x1d, 0xa3, 0xf5, 0x00, 0xf5, 0x39, 0x89, 0xe8,
+	0x01, 0xe5, 0x09, 0x8b, 0x9f, 0xd3, 0x88, 0x65, 0xb1, 0xd0, 0x66, 0xad, 0xe1, 0x8a, 0x15, 0xf4,
+	0x6b, 0x68, 0xe7, 0x5c, 0x7f, 0xeb, 0x43, 0x19, 0x5b, 0xb7, 0xee, 0x7c, 0x7f, 0x3e, 0xbb, 0x1c,
+	0xb8, 0xa2, 0xb8, 0x8c, 0x84, 0x3e, 0x84, 0x65, 0xc6, 0xf3, 0x53, 0x92, 0xed, 0xd0, 0x9c, 0x66,
+	0x31, 0xcd, 0xa4, 0xd0, 0x87, 0x08, 0xf0, 0x14, 0x1f, 0x7d, 0x04, 0xb7, 0x72, 0xce, 0x72, 0xd2,
+	0xd7, 0x2e, 0x3b, 0x60, 0x69, 0x12, 0x5d, 0x6a, 0x17, 0x35, 0xf1, 0xf4, 0x82, 0x63, 0xb2, 0xba,
+	0x6b, 0xb2, 0xf0, 0x03, 0x08, 0x76, 0x86, 0xd6, 0xeb, 0x5d, 0x08, 0x62, 0xfb, 0x6d, 0x8f, 0x3f,
+	0xa2, 0xc3, 0x9f, 0x40, 0x7b, 0xf7, 0x65, 0xce, 0xb8, 0x74, 0x7c, 0x40, 0x35, 0x43, 0xff, 0x1a,
+	0x60, 0x4b, 0xa9, 0x8a, 0x46, 0x5f, 0x92, 0x48, 0xda, 0x62, 0x67, 0x88, 0xf0, 0x3d, 0x08, 0x1e,
+	0x29, 0x2f, 0x88, 0xa3, 0x0d, 0xb4, 0x0c, 0x35, 0x4c, 0x2e, 0xb4, 0xd8, 0x12, 0x56, 0x9f, 0xe1,
+	0x3d, 0x80, 0xc7, 0x74, 0x84, 0xbc, 0x06, 0x37, 0x8b, 0x04, 0x2d, 0xd7, 0x82, 0x49, 0x76, 0xf8,
+	0x03, 0x68, 0xea, 0xb2, 0xfd, 0x44, 0x95, 0xc1, 0x51, 0x29, 0xf5, 0xdc, 0x52, 0x5a, 0x14, 0x4c,
+	0x7f, 0x5c, 0x30, 0xc3, 0x2d, 0x68, 0x9b, 0x6a, 0x5f, 0x54, 0xf7, 0x6a, 0xd1, 0x2e, 0x04, 0xc5,
+	0x86, 0x56, 0x7c, 0x44, 0x87, 0x9b, 0xb0, 0xe4, 0xb6, 0xc9, 0x19, 0x08, 0x4e, 0x1d, 0xf7, 0x4b,
+	0x75, 0x3c, 0xfc, 0x14, 0x3a, 0xb3, 0xda, 0xec, 0x5c, 0x85, 0x70, 0x36, 0xf2, 0x11, 0x2c, 0xbb,
+	0xc8, 0x57, 0x98, 0x66, 0x26, 0x46, 0x55, 0x97, 0x09, 0x8f, 0xe1, 0xb6, 0x8b, 0xfb, 0x1a, 0xdb,
+	0xcd, 0xc6, 0x76, 0xad, 0x5a, 0x9b, 0xb0, 0xea, 0x9f, 0x7d, 0x68, 0x3f, 0x25, 0xc7, 0x34, 0x7d,
+	0x4e, 0x53, 0x1a, 0x49, 0xc6, 0xd1, 0x09, 0xb4, 0x06, 0x44, 0x46, 0xa7, 0x9a, 0x5b, 0x34, 0xf5,
+	0x9d, 0xf9, 0x32, 0xad, 0x84, 0xd4, 0xdb, 0x1f, 0xc3, 0xec, 0x66, 0x92, 0x5f, 0x62, 0x17, 0x58,
+	0x0d, 0x4d, 0x9a, 0xdc, 0x7d, 0x99, 0xab, 0xba, 0x7b, 0xfd, 0xc1, 0xac, 0xb4, 0x19, 0xa6, 0xbf,
+	0x19, 0x26, 0x9c, 0x0e, 0x68, 0x26, 0xf1, 0x14, 0x6e, 0x77, 0x13, 0x96, 0x27, 0x95, 0x51, 0x39,
+	0x71, 0x46, 0x2f, 0xad, 0x0d, 0xd5, 0xa7, 0xb2, 0xeb, 0x39, 0x49, 0x87, 0x45, 0xe8, 0x19, 0xe2,
+	0x47, 0xfe, 0x7d, 0x2f, 0xfc, 0x1c, 0x3a, 0xb3, 0x76, 0xab, 0xc0, 0xe9, 0x42, 0xc0, 0x72, 0x55,
+	0xd7, 0x19, 0x2f, 0xa2, 0xb8, 0xa0, 0x55, 0x0e, 0x6b, 0x58, 0x55, 0x64, 0x74, 0x51, 0x30, 0x54,
+	0xf8, 0x47, 0x0f, 0x16, 0x74, 0x4f, 0xfe, 0x39, 0x04, 0xea, 0x80, 0x31, 0x91, 0x44, 0x63, 0xce,
+	0x3d, 0x50, 0x29, 0xe9, 0x7d, 0x2a, 0x09, 0x1e, 0xc9, 0xa3, 0x6d, 0xa8, 0x27, 0x92, 0x0e, 0x0a,
+	0xbb, 0x7e, 0x6f, 0x26, 0x90, 0x1d, 0xae, 0x7b, 0x98, 0x5c, 0xec, 0xbe, 0x94, 0x34, 0xd3, 0xe1,
+	0x66, 0x64, 0xc3, 0x3f, 0x79, 0x10, 0x14, 0xd8, 0xea, 0x68, 0x82, 0xa6, 0x27, 0x4f, 0x93, 0xec,
+	0xcc, 0x9e, 0x78, 0x44, 0x57, 0x15, 0x11, 0xbf, 0xb2, 0x88, 0x28, 0x94, 0x88, 0x65, 0x32, 0xc9,
+	0x86, 0xa3, 0x80, 0x2c, 0x68, 0xd5, 0x1a, 0x38, 0x1d, 0x90, 0x24, 0x4b, 0xb2, 0xfe, 0x9e, 0xa4,
+	0x83, 0x6d, 0x36, 0xcc, 0xa4, 0x2e, 0xb2, 0x35, 0x5c, 0xb1, 0x12, 0xfe, 0xd3, 0x87, 0x96, 0x52,
+	0xaf, 0x28, 0x65, 0xef, 0x43, 0x3b, 0x75, 0x5d, 0x65, 0xd5, 0x2c, 0x33, 0xd5, 0x5f, 0xba, 0x45,
+	0x8d, 0xfe, 0x32, 0x9a, 0x96, 0x99, 0x2a, 0x20, 0x2e, 0x54, 0xd8, 0xd8, 0x86, 0x60, 0x08, 0xf4,
+	0x31, 0x7c, 0x93, 0xa4, 0x29, 0xbb, 0xf8, 0x95, 0xa2, 0x1e, 0x32, 0x76, 0x36, 0x20, 0xfc, 0x4c,
+	0xe8, 0xb1, 0x31, 0xc0, 0x55, 0x4b, 0x55, 0x96, 0x59, 0xa8, 0xb6, 0xcc, 0x1d, 0xb8, 0x3d, 0xc1,
+	0xd2, 0x71, 0x6b, 0xe7, 0xba, 0xca, 0x35, 0xf4, 0x01, 0xdc, 0x50, 0xce, 0x63, 0x43, 0x59, 0x34,
+	0xd2, 0xba, 0xb6, 0xd6, 0x04, 0x57, 0x9d, 0x26, 0x4d, 0x06, 0x89, 0xec, 0x2c, 0xea, 0x65, 0x43,
+	0x94, 0x7c, 0x11, 0x94, 0x7d, 0x11, 0x7e, 0xe5, 0x03, 0x32, 0x4d, 0x3c, 0x36, 0xad, 0xc4, 0x64,
+	0x8e, 0x1a, 0x1b, 0x6c, 0xbb, 0xf7, 0xec, 0xd8, 0x60, 0x48, 0xf4, 0x1e, 0x34, 0x4d, 0xa4, 0x8f,
+	0x9d, 0x3f, 0x66, 0xa8, 0x91, 0x96, 0xe4, 0x89, 0x7b, 0x41, 0x6a, 0x62, 0x87, 0x83, 0x36, 0x61,
+	0x41, 0xbe, 0xd9, 0xd0, 0xa3, 0xe5, 0x14, 0xbe, 0xf6, 0x9f, 0x38, 0x54, 0x43, 0x9a, 0x99, 0x68,
+	0x1c, 0x8e, 0x4a, 0xad, 0x13, 0xdb, 0x11, 0xb5, 0x0d, 0xe6, 0x4e, 0xad, 0xa2, 0x8f, 0xe2, 0x91,
+	0x7c, 0xf8, 0x00, 0x9a, 0xfb, 0x49, 0xc4, 0x99, 0x9e, 0xaf, 0x3a, 0xb0, 0x28, 0x4a, 0x33, 0x4c,
+	0x41, 0x2a, 0x9b, 0x67, 0x24, 0x63, 0x66, 0x60, 0xa9, 0x63, 0x43, 0x84, 0x5f, 0x06, 0x00, 0xcf,
+	0x8e, 0xbf, 0xa0, 0x91, 0x49, 0xaa, 0x19, 0x37, 0x9d, 0xe2, 0x8a, 0xab, 0x6f, 0x3a, 0xbe, 0xed,
+	0x48, 0x0e, 0x4f, 0x59, 0x7b, 0x74, 0xaf, 0xb1, 0xe6, 0x1c, 0x33, 0x4a, 0xa9, 0xba, 0x30, 0x91,
+	0xaa, 0xcb, 0x50, 0x1b, 0x26, 0xb1, 0x9d, 0x06, 0xd5, 0x67, 0x55, 0x88, 0x36, 0xaa, 0x43, 0x74,
+	0x05, 0xa0, 0x3f, 0x1e, 0x68, 0x4d, 0x2c, 0x39, 0x1c, 0xf4, 0x29, 0xdc, 0x8a, 0xd4, 0xe8, 0x68,
+	0x87, 0x4f, 0x21, 0xc9, 0xc0, 0xdc, 0xb5, 0xae, 0xe7, 0xd2, 0x69, 0x10, 0x85, 0x1c, 0xab, 0x31,
+	0xb2, 0x84, 0xdc, 0xbc, 0x3e, 0xf2, 0x14, 0x08, 0xda, 0x84, 0x6e, 0xc1, 0x7c, 0x3c, 0x3d, 0x97,
+	0x82, 0x3e, 0xe3, 0x15, 0x7f, 0xa0, 0x43, 0x68, 0xa4, 0xa6, 0x5d, 0xb6, 0x74, 0xa5, 0xfd, 0xf1,
+	0x7c, 0xea, 0x8c, 0x63, 0xa0, 0xe7, 0xb6, 0x49, 0x8b, 0x85, 0x22, 0x68, 0x91, 0x2c, 0x63, 0x92,
+	0x98, 0x99, 0x77, 0x49, 0x43, 0x6f, 0x5d, 0x1b, 0x7a, 0x6b, 0x8c, 0x61, 0xdb, 0xb0, 0x83, 0x8a,
+	0x3e, 0x83, 0x9b, 0xec, 0x22, 0xa3, 0x1c, 0xd3, 0x13, 0xca, 0x69, 0xa6, 0x6e, 0x79, 0x6d, 0xbd,
+	0xd1, 0xdd, 0x39, 0x37, 0x2a, 0x09, 0xe3, 0x49, 0x30, 0x93, 0x94, 0x19, 0x49, 0x93, 0xdf, 0x52,
+	0x2e, 0x3a, 0x37, 0xcc, 0x3d, 0x76, 0xcc, 0x41, 0xab, 0xd0, 0x8a, 0xd2, 0xa1, 0x90, 0xd4, 0xdc,
+	0xe8, 0x6f, 0xea, 0xa0, 0x73, 0x59, 0xe8, 0x33, 0x68, 0x0f, 0xdc, 0x22, 0xd4, 0xb9, 0xa5, 0xf5,
+	0xbb, 0x3f, 0x9f, 0x7e, 0xd3, 0xf5, 0x0b, 0x97, 0xe1, 0xba, 0x3f, 0x84, 0xd6, 0x1b, 0xce, 0x05,
+	0x6a, 0xae, 0x98, 0xb4, 0xee, 0xb5, 0xe6, 0x8a, 0xbf, 0x7a, 0x70, 0xa3, 0x6c, 0xc0, 0x89, 0x22,
+	0x59, 0x9f, 0x2a, 0x92, 0xc5, 0xa0, 0xe8, 0x39, 0xcf, 0x11, 0x45, 0x01, 0xa9, 0x39, 0x05, 0xc4,
+	0xa6, 0xf8, 0xc2, 0x38, 0xc5, 0x57, 0x00, 0x54, 0x65, 0xe7, 0x2c, 0x4d, 0x29, 0xd7, 0xd9, 0x1d,
+	0x60, 0x87, 0xa3, 0x3a, 0xef, 0x71, 0xca, 0xa2, 0x33, 0xad, 0xd0, 0x8e, 0x0d, 0x76, 0x9d, 0xe0,
+	0x01, 0xae, 0x58, 0x09, 0x29, 0x7c, 0xeb, 0x80, 0x70, 0x99, 0x90, 0x74, 0x1c, 0x6c, 0x7a, 0xec,
+	0x78, 0x3a, 0x35, 0xc2, 0x7c, 0x7c, 0xdd, 0xa0, 0x1d, 0x0f, 0x31, 0xca, 0x46, 0xef, 0x56, 0xee,
+	0xf3, 0xd6, 0xc7, 0xa5, 0x5f, 0x96, 0xc7, 0xa5, 0x07, 0x73, 0xde, 0x2e, 0xab, 0x74, 0x2b, 0x86,
+	0xa7, 0x45, 0xa8, 0x1f, 0xa8, 0x26, 0x1d, 0x7e, 0x0e, 0x4b, 0xfa, 0xe3, 0x75, 0xf7, 0xe9, 0xdb,
+	0x50, 0x3f, 0x61, 0xc5, 0xf5, 0x27, 0xc0, 0x86, 0x98, 0xeb, 0x96, 0xfd, 0x04, 0xda, 0xa5, 0x8b,
+	0x6e, 0x11, 0x01, 0xde, 0x95, 0x45, 0xbe, 0x7a, 0x42, 0x0b, 0xbf, 0x03, 0x4d, 0xcc, 0x98, 0x3c,
+	0x20, 0xf2, 0x54, 0x37, 0xb1, 0x5c, 0x7d, 0x58, 0x55, 0x0d, 0x11, 0x12, 0x78, 0x77, 0xe6, 0x9b,
+	0x8a, 0x8e, 0xb5, 0x11, 0x65, 0x55, 0x70, 0x38, 0x6a, 0xfe, 0x2a, 0xbd, 0xba, 0x14, 0xf3, 0x57,
+	0x89, 0x19, 0xfe, 0xde, 0x87, 0xc6, 0x73, 0xf3, 0x9c, 0xf2, 0x36, 0xfd, 0x3c, 0xeb, 0xc9, 0xc6,
+	0x79, 0x0e, 0xa9, 0x95, 0x9e, 0x43, 0x9c, 0x07, 0x94, 0x85, 0xd2, 0x03, 0xca, 0x3e, 0x2c, 0xc6,
+	0x54, 0x92, 0x24, 0x35, 0x33, 0xd7, 0xdc, 0x2f, 0x12, 0xe6, 0x50, 0x3b, 0x46, 0x14, 0x17, 0x18,
+	0x2a, 0x8f, 0x23, 0x16, 0x9b, 0xd1, 0xa5, 0x8e, 0xf5, 0x77, 0xf8, 0x09, 0xb4, 0xcc, 0xdf, 0xdb,
+	0x64, 0x28, 0x5c, 0x4d, 0xbc, 0x59, 0x4f, 0x39, 0x7e, 0x59, 0x77, 0x15, 0x51, 0x2a, 0x4e, 0xec,
+	0x99, 0x0c, 0x11, 0xfe, 0xc3, 0x83, 0x76, 0x49, 0x8b, 0xca, 0x29, 0x64, 0x74, 0xd3, 0xf4, 0xab,
+	0x2e, 0xf8, 0xee, 0x8b, 0xa8, 0x0d, 0xb6, 0xc6, 0x38, 0xd8, 0xf6, 0xa0, 0x11, 0x29, 0x95, 0x8b,
+	0x47, 0xe9, 0x8d, 0xeb, 0x98, 0x46, 0x1f, 0x16, 0x5b, 0x00, 0xf4, 0x11, 0xdc, 0xe2, 0x54, 0xf2,
+	0xcb, 0xad, 0x13, 0x49, 0xb9, 0x3b, 0xe4, 0xd6, 0xf1, 0xf4, 0x42, 0x78, 0x17, 0x96, 0x0e, 0xc9,
+	0x71, 0x4a, 0x9d, 0x1b, 0x41, 0x92, 0x45, 0xe9, 0x30, 0xa6, 0x26, 0x47, 0x8b, 0x1b, 0x41, 0x89,
+	0x19, 0xde, 0x83, 0x85, 0x37, 0x9a, 0xe5, 0x1e, 0x40, 0x73, 0x3c, 0x47, 0x5c, 0x57, 0x78, 0x13,
+	0x02, 0x35, 0x99, 0x16, 0x53, 0xe0, 0x54, 0x61, 0x2f, 0x37, 0x03, 0x7f, 0xb2, 0x19, 0xa8, 0x9c,
+	0xff, 0x24, 0x8f, 0xdf, 0xe0, 0x99, 0xce, 0xaf, 0x28, 0x20, 0xdf, 0x86, 0xba, 0x7e, 0xa1, 0x56,
+	0xba, 0x9a, 0x3a, 0x68, 0xf3, 0xdd, 0x94, 0xb2, 0x3e, 0x80, 0xbe, 0xd6, 0xec, 0x9e, 0xab, 0x5b,
+	0x6f, 0xd5, 0x53, 0xe8, 0x2e, 0x34, 0x98, 0xb1, 0xb0, 0x79, 0x9e, 0xbb, 0xe6, 0x7d, 0xd3, 0x0a,
+	0x3f, 0xbc, 0xfd, 0xb7, 0x57, 0x2b, 0xde, 0xdf, 0x5f, 0xad, 0x78, 0xff, 0x7e, 0xb5, 0xe2, 0x7d,
+	0xf5, 0x9f, 0x95, 0x6f, 0xbc, 0xf0, 0xcf, 0x37, 0xfe, 0x1f, 0x00, 0x00, 0xff, 0xff, 0xfc, 0xa0,
+	0x16, 0xe3, 0xa6, 0x1a, 0x00, 0x00,
 }
 
 func (m *APIGroup) Marshal() (dAtA []byte, err error) {
@@ -3325,6 +3883,13 @@ func (m *APIResource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.StorageVersionHash != nil {
+		i -= len(*m.StorageVersionHash)
+		copy(dAtA[i:], *m.StorageVersionHash)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.StorageVersionHash)))
+		i--
+		dAtA[i] = 0x52
 	}
 	if m.Version != nil {
 		i -= len(*m.Version)
@@ -3502,6 +4067,78 @@ func (m *APIVersions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Condition) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Condition) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Condition) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Message != nil {
+		i -= len(*m.Message)
+		copy(dAtA[i:], *m.Message)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Message)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.Reason != nil {
+		i -= len(*m.Reason)
+		copy(dAtA[i:], *m.Reason)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Reason)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.LastTransitionTime != nil {
+		{
+			size, err := m.LastTransitionTime.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.ObservedGeneration != nil {
+		i = encodeVarintGenerated(dAtA, i, uint64(*m.ObservedGeneration))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Status != nil {
+		i -= len(*m.Status)
+		copy(dAtA[i:], *m.Status)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Status)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Type != nil {
+		i -= len(*m.Type)
+		copy(dAtA[i:], *m.Type)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Type)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *CreateOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3526,15 +4163,12 @@ func (m *CreateOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.IncludeUninitialized != nil {
+	if m.FieldManager != nil {
+		i -= len(*m.FieldManager)
+		copy(dAtA[i:], *m.FieldManager)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.FieldManager)))
 		i--
-		if *m.IncludeUninitialized {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x10
+		dAtA[i] = 0x1a
 	}
 	if len(m.DryRun) > 0 {
 		for iNdEx := len(m.DryRun) - 1; iNdEx >= 0; iNdEx-- {
@@ -3697,6 +4331,40 @@ func (m *ExportOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *FieldsV1) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *FieldsV1) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *FieldsV1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Raw != nil {
+		i -= len(m.Raw)
+		copy(dAtA[i:], m.Raw)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(m.Raw)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *GetOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3720,16 +4388,6 @@ func (m *GetOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.IncludeUninitialized != nil {
-		i--
-		if *m.IncludeUninitialized {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x10
 	}
 	if m.ResourceVersion != nil {
 		i -= len(*m.ResourceVersion)
@@ -4001,93 +4659,6 @@ func (m *GroupVersionResource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Initializer) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Initializer) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Initializer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Name != nil {
-		i -= len(*m.Name)
-		copy(dAtA[i:], *m.Name)
-		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Name)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Initializers) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Initializers) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Initializers) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Result != nil {
-		{
-			size, err := m.Result.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintGenerated(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Pending) > 0 {
-		for iNdEx := len(m.Pending) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Pending[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *LabelSelector) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -4275,6 +4846,11 @@ func (m *ListMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.RemainingItemCount != nil {
+		i = encodeVarintGenerated(dAtA, i, uint64(*m.RemainingItemCount))
+		i--
+		dAtA[i] = 0x20
+	}
 	if m.Continue != nil {
 		i -= len(*m.Continue)
 		copy(dAtA[i:], *m.Continue)
@@ -4323,6 +4899,23 @@ func (m *ListOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.ResourceVersionMatch != nil {
+		i -= len(*m.ResourceVersionMatch)
+		copy(dAtA[i:], *m.ResourceVersionMatch)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.ResourceVersionMatch)))
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.AllowWatchBookmarks != nil {
+		i--
+		if *m.AllowWatchBookmarks {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
+	}
 	if m.Continue != nil {
 		i -= len(*m.Continue)
 		copy(dAtA[i:], *m.Continue)
@@ -4334,16 +4927,6 @@ func (m *ListOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintGenerated(dAtA, i, uint64(*m.Limit))
 		i--
 		dAtA[i] = 0x38
-	}
-	if m.IncludeUninitialized != nil {
-		i--
-		if *m.IncludeUninitialized {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x30
 	}
 	if m.TimeoutSeconds != nil {
 		i = encodeVarintGenerated(dAtA, i, uint64(*m.TimeoutSeconds))
@@ -4378,6 +4961,85 @@ func (m *ListOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(*m.LabelSelector)
 		copy(dAtA[i:], *m.LabelSelector)
 		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.LabelSelector)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ManagedFieldsEntry) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ManagedFieldsEntry) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ManagedFieldsEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.FieldsV1 != nil {
+		{
+			size, err := m.FieldsV1.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.FieldsType != nil {
+		i -= len(*m.FieldsType)
+		copy(dAtA[i:], *m.FieldsType)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.FieldsType)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.Time != nil {
+		{
+			size, err := m.Time.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.ApiVersion != nil {
+		i -= len(*m.ApiVersion)
+		copy(dAtA[i:], *m.ApiVersion)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.ApiVersion)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Operation != nil {
+		i -= len(*m.Operation)
+		copy(dAtA[i:], *m.Operation)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Operation)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Manager != nil {
+		i -= len(*m.Manager)
+		copy(dAtA[i:], *m.Manager)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.Manager)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -4445,19 +5107,21 @@ func (m *ObjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.Initializers != nil {
-		{
-			size, err := m.Initializers.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
+	if len(m.ManagedFields) > 0 {
+		for iNdEx := len(m.ManagedFields) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ManagedFields[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
 			}
-			i -= size
-			i = encodeVarintGenerated(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x8a
 		}
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x82
 	}
 	if m.ClusterName != nil {
 		i -= len(*m.ClusterName)
@@ -4681,6 +5345,98 @@ func (m *OwnerReference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *PartialObjectMetadata) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PartialObjectMetadata) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PartialObjectMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Metadata != nil {
+		{
+			size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PartialObjectMetadataList) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PartialObjectMetadataList) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PartialObjectMetadataList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.Metadata != nil {
+		{
+			size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Patch) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -4708,6 +5464,59 @@ func (m *Patch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *PatchOptions) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PatchOptions) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PatchOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.FieldManager != nil {
+		i -= len(*m.FieldManager)
+		copy(dAtA[i:], *m.FieldManager)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.FieldManager)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Force != nil {
+		i--
+		if *m.Force {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.DryRun) > 0 {
+		for iNdEx := len(m.DryRun) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.DryRun[iNdEx])
+			copy(dAtA[i:], m.DryRun[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.DryRun[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Preconditions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -4731,6 +5540,13 @@ func (m *Preconditions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ResourceVersion != nil {
+		i -= len(*m.ResourceVersion)
+		copy(dAtA[i:], *m.ResourceVersion)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.ResourceVersion)))
+		i--
+		dAtA[i] = 0x12
 	}
 	if m.Uid != nil {
 		i -= len(*m.Uid)
@@ -5018,6 +5834,40 @@ func (m *StatusDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *TableOptions) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TableOptions) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TableOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.IncludeObject != nil {
+		i -= len(*m.IncludeObject)
+		copy(dAtA[i:], *m.IncludeObject)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.IncludeObject)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Time) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -5156,6 +6006,13 @@ func (m *UpdateOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.FieldManager != nil {
+		i -= len(*m.FieldManager)
+		copy(dAtA[i:], *m.FieldManager)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.FieldManager)))
+		i--
+		dAtA[i] = 0x12
 	}
 	if len(m.DryRun) > 0 {
 		for iNdEx := len(m.DryRun) - 1; iNdEx >= 0; iNdEx-- {
@@ -5357,6 +6214,10 @@ func (m *APIResource) Size() (n int) {
 		l = len(*m.Version)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
+	if m.StorageVersionHash != nil {
+		l = len(*m.StorageVersionHash)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -5409,6 +6270,41 @@ func (m *APIVersions) Size() (n int) {
 	return n
 }
 
+func (m *Condition) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Type != nil {
+		l = len(*m.Type)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Status != nil {
+		l = len(*m.Status)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ObservedGeneration != nil {
+		n += 1 + sovGenerated(uint64(*m.ObservedGeneration))
+	}
+	if m.LastTransitionTime != nil {
+		l = m.LastTransitionTime.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Reason != nil {
+		l = len(*m.Reason)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Message != nil {
+		l = len(*m.Message)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *CreateOptions) Size() (n int) {
 	if m == nil {
 		return 0
@@ -5421,8 +6317,9 @@ func (m *CreateOptions) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
-	if m.IncludeUninitialized != nil {
-		n += 2
+	if m.FieldManager != nil {
+		l = len(*m.FieldManager)
+		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -5495,6 +6392,22 @@ func (m *ExportOptions) Size() (n int) {
 	return n
 }
 
+func (m *FieldsV1) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Raw != nil {
+		l = len(m.Raw)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *GetOptions) Size() (n int) {
 	if m == nil {
 		return 0
@@ -5504,9 +6417,6 @@ func (m *GetOptions) Size() (n int) {
 	if m.ResourceVersion != nil {
 		l = len(*m.ResourceVersion)
 		n += 1 + l + sovGenerated(uint64(l))
-	}
-	if m.IncludeUninitialized != nil {
-		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -5642,44 +6552,6 @@ func (m *GroupVersionResource) Size() (n int) {
 	return n
 }
 
-func (m *Initializer) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Name != nil {
-		l = len(*m.Name)
-		n += 1 + l + sovGenerated(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *Initializers) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Pending) > 0 {
-		for _, e := range m.Pending {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	if m.Result != nil {
-		l = m.Result.Size()
-		n += 1 + l + sovGenerated(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *LabelSelector) Size() (n int) {
 	if m == nil {
 		return 0
@@ -5772,6 +6644,9 @@ func (m *ListMeta) Size() (n int) {
 		l = len(*m.Continue)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
+	if m.RemainingItemCount != nil {
+		n += 1 + sovGenerated(uint64(*m.RemainingItemCount))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -5802,14 +6677,54 @@ func (m *ListOptions) Size() (n int) {
 	if m.TimeoutSeconds != nil {
 		n += 1 + sovGenerated(uint64(*m.TimeoutSeconds))
 	}
-	if m.IncludeUninitialized != nil {
-		n += 2
-	}
 	if m.Limit != nil {
 		n += 1 + sovGenerated(uint64(*m.Limit))
 	}
 	if m.Continue != nil {
 		l = len(*m.Continue)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.AllowWatchBookmarks != nil {
+		n += 2
+	}
+	if m.ResourceVersionMatch != nil {
+		l = len(*m.ResourceVersionMatch)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ManagedFieldsEntry) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Manager != nil {
+		l = len(*m.Manager)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Operation != nil {
+		l = len(*m.Operation)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ApiVersion != nil {
+		l = len(*m.ApiVersion)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Time != nil {
+		l = m.Time.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.FieldsType != nil {
+		l = len(*m.FieldsType)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.FieldsV1 != nil {
+		l = m.FieldsV1.Size()
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -5912,9 +6827,11 @@ func (m *ObjectMeta) Size() (n int) {
 		l = len(*m.ClusterName)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
-	if m.Initializers != nil {
-		l = m.Initializers.Size()
-		n += 2 + l + sovGenerated(uint64(l))
+	if len(m.ManagedFields) > 0 {
+		for _, e := range m.ManagedFields {
+			l = e.Size()
+			n += 2 + l + sovGenerated(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -5956,12 +6873,75 @@ func (m *OwnerReference) Size() (n int) {
 	return n
 }
 
+func (m *PartialObjectMetadata) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *PartialObjectMetadataList) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *Patch) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *PatchOptions) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.DryRun) > 0 {
+		for _, s := range m.DryRun {
+			l = len(s)
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	if m.Force != nil {
+		n += 2
+	}
+	if m.FieldManager != nil {
+		l = len(*m.FieldManager)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -5976,6 +6956,10 @@ func (m *Preconditions) Size() (n int) {
 	_ = l
 	if m.Uid != nil {
 		l = len(*m.Uid)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.ResourceVersion != nil {
+		l = len(*m.ResourceVersion)
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -6118,6 +7102,22 @@ func (m *StatusDetails) Size() (n int) {
 	return n
 }
 
+func (m *TableOptions) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.IncludeObject != nil {
+		l = len(*m.IncludeObject)
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *Time) Size() (n int) {
 	if m == nil {
 		return 0
@@ -6185,6 +7185,10 @@ func (m *UpdateOptions) Size() (n int) {
 			l = len(s)
 			n += 1 + l + sovGenerated(uint64(l))
 		}
+	}
+	if m.FieldManager != nil {
+		l = len(*m.FieldManager)
+		n += 1 + l + sovGenerated(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -6830,6 +7834,39 @@ func (m *APIResource) Unmarshal(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.Version = &s
 			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageVersionHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.StorageVersionHash = &s
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -7096,6 +8133,248 @@ func (m *APIVersions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *Condition) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Condition: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Condition: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Type = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Status = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ObservedGeneration", wireType)
+			}
+			var v int64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ObservedGeneration = &v
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastTransitionTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastTransitionTime == nil {
+				m.LastTransitionTime = &Time{}
+			}
+			if err := m.LastTransitionTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Reason = &s
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Message = &s
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *CreateOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -7157,11 +8436,11 @@ func (m *CreateOptions) Unmarshal(dAtA []byte) error {
 			}
 			m.DryRun = append(m.DryRun, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeUninitialized", wireType)
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FieldManager", wireType)
 			}
-			var v int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -7171,13 +8450,25 @@ func (m *CreateOptions) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			b := bool(v != 0)
-			m.IncludeUninitialized = &b
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FieldManager = &s
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -7569,6 +8860,94 @@ func (m *ExportOptions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *FieldsV1) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FieldsV1: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FieldsV1: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Raw", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Raw = append(m.Raw[:0], dAtA[iNdEx:postIndex]...)
+			if m.Raw == nil {
+				m.Raw = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *GetOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -7631,27 +9010,6 @@ func (m *GetOptions) Unmarshal(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.ResourceVersion = &s
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeUninitialized", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			b := bool(v != 0)
-			m.IncludeUninitialized = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -8463,217 +9821,6 @@ func (m *GroupVersionResource) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Initializer) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Initializer: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Initializer: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			s := string(dAtA[iNdEx:postIndex])
-			m.Name = &s
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Initializers) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Initializers: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Initializers: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pending", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Pending = append(m.Pending, &Initializer{})
-			if err := m.Pending[len(m.Pending)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Result == nil {
-				m.Result = &Status{}
-			}
-			if err := m.Result.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *LabelSelector) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -9293,6 +10440,26 @@ func (m *ListMeta) Unmarshal(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.Continue = &s
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RemainingItemCount", wireType)
+			}
+			var v int64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RemainingItemCount = &v
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -9487,27 +10654,6 @@ func (m *ListOptions) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.TimeoutSeconds = &v
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeUninitialized", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			b := bool(v != 0)
-			m.IncludeUninitialized = &b
 		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Limit", wireType)
@@ -9560,6 +10706,318 @@ func (m *ListOptions) Unmarshal(dAtA []byte) error {
 			}
 			s := string(dAtA[iNdEx:postIndex])
 			m.Continue = &s
+			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllowWatchBookmarks", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.AllowWatchBookmarks = &b
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceVersionMatch", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ResourceVersionMatch = &s
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ManagedFieldsEntry) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ManagedFieldsEntry: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ManagedFieldsEntry: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Manager", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Manager = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Operation", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.Operation = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApiVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ApiVersion = &s
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Time", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Time == nil {
+				m.Time = &Time{}
+			}
+			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FieldsType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FieldsType = &s
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FieldsV1", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FieldsV1 == nil {
+				m.FieldsV1 = &FieldsV1{}
+			}
+			if err := m.FieldsV1.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -10372,9 +11830,9 @@ func (m *ObjectMeta) Unmarshal(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.ClusterName = &s
 			iNdEx = postIndex
-		case 16:
+		case 17:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Initializers", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ManagedFields", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -10401,10 +11859,8 @@ func (m *ObjectMeta) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Initializers == nil {
-				m.Initializers = &Initializers{}
-			}
-			if err := m.Initializers.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.ManagedFields = append(m.ManagedFields, &ManagedFieldsEntry{})
+			if err := m.ManagedFields[len(m.ManagedFields)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10661,6 +12117,220 @@ func (m *OwnerReference) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *PartialObjectMetadata) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PartialObjectMetadata: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PartialObjectMetadata: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &ObjectMeta{}
+			}
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PartialObjectMetadataList) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PartialObjectMetadataList: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PartialObjectMetadataList: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &ListMeta{}
+			}
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &PartialObjectMetadata{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Patch) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -10690,6 +12360,146 @@ func (m *Patch) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: Patch: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PatchOptions) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PatchOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PatchOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DryRun", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DryRun = append(m.DryRun, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Force", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.Force = &b
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FieldManager", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FieldManager = &s
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -10776,6 +12586,39 @@ func (m *Preconditions) Unmarshal(dAtA []byte) error {
 			}
 			s := string(dAtA[iNdEx:postIndex])
 			m.Uid = &s
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ResourceVersion = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -11646,6 +13489,93 @@ func (m *StatusDetails) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *TableOptions) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TableOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TableOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeObject", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.IncludeObject = &s
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Time) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -12014,6 +13944,39 @@ func (m *UpdateOptions) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DryRun = append(m.DryRun, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FieldManager", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FieldManager = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
