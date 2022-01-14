@@ -27,7 +27,6 @@ func init() {
 type Logger struct {
 	log        logxi.Logger      // The base implementation that is being encapsulated
 	debugStack bool              // Should a debug stack be produced with the message
-	hostName   string            // An optional host name to be used with the message
 	labels     []string          // Values appended to the logging output
 	included   map[string]string // The named values already in the labels
 	sync.Mutex
@@ -39,12 +38,18 @@ type Logger struct {
 func NewLogger(component string) (log *Logger) {
 	logxi.DisableCallstack()
 
-	return &Logger{
+	log = &Logger{
 		log:        logxi.New(component),
-		hostName:   hostName,
-		debugStack: true,
+		labels:     []string{},
 		included:   map[string]string{},
+		debugStack: true,
 	}
+	if len(hostName) != 0 {
+		log.labels = append(log.labels, "hostName")
+		log.labels = append(log.labels, hostName)
+		log.included["hostName"] = hostName
+	}
+	return log
 }
 
 // NewErrLogger can be used to instantiate a wrapper logger with a module label with
@@ -53,12 +58,18 @@ func NewLogger(component string) (log *Logger) {
 func NewErrLogger(component string) (log *Logger) {
 	logxi.DisableCallstack()
 
-	return &Logger{
+	log = &Logger{
 		log:        logxi.NewLogger(logxi.NewConcurrentWriter(os.Stderr), component),
-		hostName:   hostName,
-		debugStack: true,
+		labels:     []string{},
 		included:   map[string]string{},
+		debugStack: true,
 	}
+	if len(hostName) != 0 {
+		log.labels = append(log.labels, "hostName")
+		log.labels = append(log.labels, hostName)
+		log.included["hostName"] = hostName
+	}
+	return log
 }
 
 func (l *Logger) Label(key string, value string) {
@@ -85,9 +96,9 @@ func (l *Logger) Label(key string, value string) {
 			l.labels = append(l.labels, v)
 		}
 	} else {
-		// Item was not already in the labels so just append
-		if l.included == nil {
-			l.included = map[string]string{}
+		// Item was not already in the labels so just append, but only if there is a value
+		if len(value) == 0 {
+			return
 		}
 		l.included[key] = value
 		l.labels = append(l.labels, key)
@@ -108,10 +119,7 @@ func (l *Logger) IncludeStack(included bool) (log *Logger) {
 // HostName is used to add an optional host name to messages, if empty then the host name will not be output
 //
 func (l *Logger) HostName(hostName string) (log *Logger) {
-	l.Lock()
-	defer l.Unlock()
-
-	l.hostName = hostName
+	l.Label("hostName", hostName)
 	return l
 }
 
@@ -134,10 +142,7 @@ func (l *Logger) Trace(msg string, args ...interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	if len(l.hostName) != 0 {
-		allArgs = append(allArgs, "host")
-		allArgs = append(allArgs, hostName)
-	}
+	allArgs = append(allArgs, l.labels)
 
 	l.log.Trace(msg, allArgs)
 }
@@ -161,10 +166,7 @@ func (l *Logger) Debug(msg string, args ...interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	if len(l.hostName) != 0 {
-		allArgs = append(allArgs, "host")
-		allArgs = append(allArgs, hostName)
-	}
+	allArgs = append(allArgs, l.labels)
 
 	l.log.Debug(msg, allArgs)
 }
@@ -188,10 +190,7 @@ func (l *Logger) Info(msg string, args ...interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	if len(l.hostName) != 0 {
-		allArgs = append(allArgs, "host")
-		allArgs = append(allArgs, hostName)
-	}
+	allArgs = append(allArgs, l.labels)
 
 	l.log.Info(msg, allArgs)
 }
@@ -215,10 +214,7 @@ func (l *Logger) Warn(msg string, args ...interface{}) error {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	if len(l.hostName) != 0 {
-		allArgs = append(allArgs, "host")
-		allArgs = append(allArgs, hostName)
-	}
+	allArgs = append(allArgs, l.labels)
 
 	return l.log.Warn(msg, allArgs)
 }
@@ -237,10 +233,7 @@ func (l *Logger) Error(msg string, args ...interface{}) error {
 	allArgs = append(allArgs, "stack")
 	allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 
-	if len(l.hostName) != 0 {
-		allArgs = append(allArgs, "host")
-		allArgs = append(allArgs, hostName)
-	}
+	allArgs = append(allArgs, l.labels)
 
 	return l.log.Error(msg, allArgs)
 }
@@ -258,10 +251,7 @@ func (l *Logger) Fatal(msg string, args ...interface{}) {
 	allArgs = append(allArgs, "stack")
 	allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 
-	if len(l.hostName) != 0 {
-		allArgs = append(allArgs, "host")
-		allArgs = append(allArgs, hostName)
-	}
+	allArgs = append(allArgs, l.labels)
 
 	l.log.Fatal(msg, allArgs)
 }
@@ -281,10 +271,7 @@ func (l *Logger) Log(level int, msg string, args []interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	if len(l.hostName) != 0 {
-		allArgs = append(allArgs, "host")
-		allArgs = append(allArgs, hostName)
-	}
+	allArgs = append(allArgs, l.labels)
 
 	l.log.Log(level, msg, allArgs)
 }
