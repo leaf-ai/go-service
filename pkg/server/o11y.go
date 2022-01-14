@@ -7,7 +7,6 @@ package server // import "github.com/karlmutch/go-service/pkg/server"
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -25,14 +25,20 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/kv"
 )
 
+const (
+	hostKey = "service/host"
+	nodeKey = "service/node"
+
+	defaultOTelEndpoint    = "api.honeycomb.io:443"
+	defaultCooldown        = time.Duration(2 * time.Second)
+	defaultShutdownTimeout = time.Duration(5 * time.Second)
+)
+
 var (
-	hostKey  = "service/host"
-	nodeKey  = "service/node"
 	hostName = network.GetHostName()
 )
 
@@ -44,14 +50,33 @@ func init() {
 	}
 }
 
-func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, serviceName string, apiKey string, dataset string) (newCtx context.Context, err kv.Error) {
+// StartTelemetryOpts is used to specify parameters for starting the OpenTelemetry module
+type StartTelemetryOpts struct {
+	NodeName    string           // Logical host name for OTel entries
+	ServiceName string           //
+	ProjectID   string           // A project identification string, typically the Go module name
+	ApiKey      string           // The OTel server API key
+	Dataset     string           // The OTel dataset identifier for all OTel information
+	ApiEndpoint string           // The TCP/IP endpoint for the OTel server, or collector
+	Cooldown    time.Duration    // The duration of time to wait after a termination signal is received to allow other modules to send events etc and end their own spans
+	Bag         *baggage.Baggage // KV Pairs to propagate to all spans
+}
 
+// StartTelemetry is used to initialize OpenTelemetry tracing, the ctx (context) is used to
+// close the root span when the sever closes the channel.  The options structure contains
+// parameters for the OTel code.
+func StartTelemetry(ctx context.Context, logger *log.Logger, options StartTelemetryOpts) (newCtx context.Context, err kv.Error) {
+
+	endpoint := options.ApiEndpoint
+	if len(endpoint) == 0 {
+		endpoint = defaultOTelEndpoint
+	}
 	// Create an OTLP exporter, passing in Honeycomb credentials as environment variables.
 	opts := []otlptracegrpc.Option{
-		otlptracegrpc.WithEndpoint("api.honeycomb.io:443"),
+		otlptracegrpc.WithEndpoint(endpoint),
 		otlptracegrpc.WithHeaders(map[string]string{
-			"x-honeycomb-team":    os.Getenv("HONEYCOMB_API_KEY"),
-			"x-honeycomb-dataset": os.Getenv("HONEYCOMB_DATASET"),
+			"x-honeycomb-team":    options.ApiKey,
+			"x-honeycomb-dataset": options.Dataset,
 		}),
 		otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, "")),
 	}
@@ -66,7 +91,7 @@ func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, se
 	// Add a resource attribute service.name that identifies the service in the Honeycomb UI.
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exp),
-		sdktrace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(serviceName))),
+		sdktrace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(options.ServiceName))),
 	)
 
 	// Set the Tracer Provider and the W3C Trace Context propagator as globals
@@ -75,27 +100,65 @@ func StartTelemetry(ctx context.Context, logger *log.Logger, nodeName string, se
 		propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}),
 	)
 
-	labels := []attribute.KeyValue{
-		attribute.String(hostKey, hostName),
+	members := []baggage.Member{}
+
+	labels := []attribute.KeyValue{}
+
+	if len(hostName) != 0 {
+		labels = append(labels, attribute.String(hostKey, hostName))
+		if member, errGo := baggage.NewMember(hostKey, hostName); errGo == nil {
+			members = append(members, member)
+		} else {
+			logger.Warn(errGo.Error())
+		}
 	}
-	if len(nodeName) != 0 {
-		labels = append(labels, attribute.String(nodeKey, nodeName))
+	if len(options.NodeName) != 0 {
+		labels = append(labels, attribute.String(nodeKey, options.NodeName))
+		if member, errGo := baggage.NewMember(nodeKey, options.NodeName); errGo == nil {
+			members = append(members, member)
+		} else {
+			logger.Warn(errGo.Error())
+		}
 	}
 
-	ctx, span := otel.Tracer(serviceName).Start(ctx, "test-run")
+	bag := baggage.Baggage{}
+	if nil == options.Bag {
+		if bag, errGo = baggage.New(); errGo != nil {
+			logger.Warn(errGo.Error())
+		}
+	} else {
+		bag = *options.Bag
+	}
+
+	for _, member := range members {
+		if bag, errGo = bag.SetMember(member); errGo != nil {
+		} else {
+			logger.Warn(errGo.Error())
+		}
+	}
+	ctx = baggage.ContextWithBaggage(ctx, bag)
+
+	ctx, span := otel.Tracer(options.ServiceName).Start(ctx, options.ProjectID)
 	span.SetAttributes(labels...)
 
 	go func() {
 		<-ctx.Done()
 
+		// Allow other modules to clean up their spans
+		cooldown := options.Cooldown
+		if cooldown == time.Duration(0) {
+			cooldown = defaultCooldown
+		}
+		time.Sleep(cooldown)
+
 		span.End()
 
 		// Allow other processing to terminate before forcably stopping OpenTelemetry collection
-		shutCtx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
+		shutCtx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
 		defer cancel()
 
 		if errGo := tp.Shutdown(shutCtx); errGo != nil {
-			fmt.Println(spew.Sdump(errGo), "stack", stack.Trace().TrimRuntime())
+			logger.Error(errGo.Error())
 		}
 	}()
 

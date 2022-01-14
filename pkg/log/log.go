@@ -25,9 +25,11 @@ func init() {
 // as a receiver that has the logging methods
 //
 type Logger struct {
-	log        logxi.Logger // The base implementation that is being encapsulated
-	debugStack bool         // Should a debug stack be produced with the message
-	hostName   string       // An optional host name to be used with the message
+	log        logxi.Logger      // The base implementation that is being encapsulated
+	debugStack bool              // Should a debug stack be produced with the message
+	hostName   string            // An optional host name to be used with the message
+	labels     []string          // Values appended to the logging output
+	included   map[string]string // The named values already in the labels
 	sync.Mutex
 }
 
@@ -54,6 +56,37 @@ func NewErrLogger(component string) (log *Logger) {
 		log:        logxi.NewLogger(logxi.NewConcurrentWriter(os.Stderr), component),
 		hostName:   hostName,
 		debugStack: true,
+	}
+}
+
+func (l *Logger) Label(key string, value string) {
+	l.Lock()
+	defer l.Unlock()
+
+	// Recompute the array of items to add to logging lines during
+	// label maintenance to reduce overhead
+	if v, isPresent := l.included[key]; isPresent {
+		// Nothing changes if the value is the same
+		if v == value {
+			return
+		}
+
+		// Do the change and then recompute the labels array
+		if len(value) == 0 {
+			delete(l.included, key)
+		} else {
+			l.included[key] = value
+		}
+		l.labels = make([]string, len(l.labels)*2)
+		for k, v := range l.included {
+			l.labels = append(l.labels, k)
+			l.labels = append(l.labels, v)
+		}
+	} else {
+		// Item was not already in the labels so just append
+		l.included[key] = value
+		l.labels = append(l.labels, key)
+		l.labels = append(l.labels, value)
 	}
 }
 
