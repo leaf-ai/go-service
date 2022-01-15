@@ -11,22 +11,33 @@ import (
 )
 
 type BuildMetadata struct {
-	Revision      string
-	ShortRevision string
-	Time          string
-	Dirty         string
+	Revision      string // Full commit ID or tag for this build for this present module
+	ShortRevision string // Abberviated commit ID with a plus character if the build had uncommitted files
+	Time          string // The time of the build, typically expressed as UTC
+	Dirty         string // Dirty build, uncommitted files, character.  Contains a plus character if build was dirty or empty string if not.
 
-	Arch string
-	OS   string
+	Arch string // The hardware architecture for this binary
+	OS   string // The targetted operating system
+
+	GoVersion   string // The Go compiler version being used
+	ProjectPath string // The path for the project
+	ModulePath  string // The git location for the modules root
 }
 
 var (
+	// BuildInfo is a globally accessible build information block from the Go compiler about
+	// the build environment
 	BuildInfo = BuildMetadata{}
 )
 
 func init() {
 
 	if info, isOK := debug.ReadBuildInfo(); isOK && info != nil {
+
+		BuildInfo.GoVersion = info.GoVersion
+		BuildInfo.ProjectPath = info.Path
+		BuildInfo.ModulePath = info.Main.Path
+
 		for _, setting := range info.Settings {
 			switch setting.Key {
 			case "vcs.revision":
