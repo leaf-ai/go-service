@@ -65,7 +65,7 @@ type StartTelemetryOpts struct {
 // StartTelemetry is used to initialize OpenTelemetry tracing, the ctx (context) is used to
 // close the root span when the sever closes the channel.  The options structure contains
 // parameters for the OTel code.
-func StartTelemetry(ctx context.Context, logger *log.Logger, options StartTelemetryOpts) (newCtx context.Context, err kv.Error) {
+func StartTelemetry(ctx context.Context, options StartTelemetryOpts, logger log.Logger) (newCtx context.Context, err kv.Error) {
 
 	endpoint := options.ApiEndpoint
 	if len(endpoint) == 0 {
