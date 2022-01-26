@@ -23,7 +23,7 @@ func K8sStateUpdates() (l *Listeners) {
 }
 
 // initiateK8s runs until either ctx is Done or the listener is running successfully
-func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC chan struct{}, staleMsg time.Duration, logger log.Logger, errorC chan kv.Error) {
+func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC chan struct{}, staleMsg time.Duration, logger *log.Logger, errorC chan kv.Error) {
 
 	// If the user did specify the k8s parameters then we need to process the k8s configs
 	if len(namespace) == 0 || len(cfgMap) == 0 {
@@ -65,7 +65,7 @@ func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC ch
 	}
 }
 
-func k8sStateLogger(ctx context.Context, refreshMsg time.Duration, logger log.Logger) {
+func k8sStateLogger(ctx context.Context, refreshMsg time.Duration, logger *log.Logger) {
 	logger.Info("k8sStateLogger starting")
 
 	listener := make(chan K8sStateUpdate, 1)

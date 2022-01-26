@@ -53,4 +53,15 @@ chmod +x $GOPATH/bin/stencil
 go get github.com/alvaroloes/enumer@455e9a94796c0e108c38e253b67307736fc4b200
 ----
 
+== Developer tooling
+
+rancher desktop
+go-mod-upgrade
+gopls
+vim-go
+k9s vladimir
+trvy
+Fairwindows Pluto
+
+
 Copyright © 2021-2022 The Go Service Components Authors. All rights reserved. Issued under the Apache 2.0 License.

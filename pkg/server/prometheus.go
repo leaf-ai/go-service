@@ -39,7 +39,7 @@ func GetPrometheusPort() (port int) {
 
 // StartPrometheusExporter loops doing prometheus exports for resource consumption statistics etc
 // on a regular basis
-func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc ResourceAvailable, update time.Duration, logger log.Logger) {
+func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc ResourceAvailable, update time.Duration, logger *log.Logger) {
 
 	go monitoringExporter(ctx, getRsc, update, logger)
 
@@ -52,7 +52,7 @@ func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc Resour
 
 }
 
-func runPrometheus(ctx context.Context, promAddr string, logger log.Logger) (err kv.Error) {
+func runPrometheus(ctx context.Context, promAddr string, logger *log.Logger) (err kv.Error) {
 	if len(promAddr) == 0 {
 		return nil
 	}
@@ -109,7 +109,7 @@ type ResourceAvailable interface {
 
 // monitoringExporter on a regular basis will invoke prometheus exporters inside our system
 //
-func monitoringExporter(ctx context.Context, getRsc ResourceAvailable, refreshInterval time.Duration, logger log.Logger) {
+func monitoringExporter(ctx context.Context, getRsc ResourceAvailable, refreshInterval time.Duration, logger *log.Logger) {
 
 	lastRefresh := time.Now()
 
