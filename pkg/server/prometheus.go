@@ -39,7 +39,15 @@ func GetPrometheusPort() (port int) {
 
 // StartPrometheusExporter loops doing prometheus exports for resource consumption statistics etc
 // on a regular basis
-func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc ResourceAvailable, update time.Duration, logger *log.Logger) {
+//
+// The update interval must be equal to or large than five seconds or an error will be returned
+//
+func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc ResourceAvailable, update time.Duration, logger *log.Logger) (err kv.Error) {
+
+	// Restrict the rate at which prometheus updates can be done to reduce overhead
+	if update < time.Duration(5*time.Second) {
+		return kv.NewError("update interval must be larger or equal to 5 seconds")
+	}
 
 	go monitoringExporter(ctx, getRsc, update, logger)
 
@@ -49,7 +57,7 @@ func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc Resour
 			logger.Warn(fmt.Sprint(err, stack.Trace().TrimRuntime()))
 		}
 	}()
-
+	return nil
 }
 
 func runPrometheus(ctx context.Context, promAddr string, logger *log.Logger) (err kv.Error) {
@@ -114,23 +122,25 @@ func monitoringExporter(ctx context.Context, getRsc ResourceAvailable, refreshIn
 	lastRefresh := time.Now()
 
 	resourceMonitor.Do(func() {
-		refresh := time.NewTicker(30 * time.Second)
-		defer refresh.Stop()
+		go func() {
+			refresh := time.NewTicker(30 * time.Second)
+			defer refresh.Stop()
 
-		lastMsg := ""
-		for {
-			select {
-			case <-refresh.C:
-				msg := getRsc.FetchMachineResources().String()
-				if lastMsg != msg || time.Since(lastRefresh) > time.Duration(20*time.Minute) {
-					lastRefresh = time.Now()
-					logger.Info("capacity", "available", msg)
-					lastMsg = msg
+			lastMsg := ""
+			for {
+				select {
+				case <-refresh.C:
+					msg := getRsc.FetchMachineResources().String()
+					if lastMsg != msg || time.Since(lastRefresh) > time.Duration(20*time.Minute) {
+						lastRefresh = time.Now()
+						logger.Info("capacity", "available", msg)
+						lastMsg = msg
+					}
+				case <-ctx.Done():
+					return
 				}
-			case <-ctx.Done():
-				return
 			}
-		}
+		}()
 	})
 
 	refresh := time.NewTicker(refreshInterval)
