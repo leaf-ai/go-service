@@ -9,8 +9,8 @@ import (
 
 	"github.com/rs/xid"
 
-	"github.com/leaf-ai/go-service/pkg/server"
-	"github.com/leaf-ai/go-service/pkg/types"
+	"github.com/andreidenissov-cog/go-service/pkg/server"
+	"github.com/andreidenissov-cog/go-service/pkg/types"
 
 	"github.com/go-stack/stack"
 	"github.com/jjeffery/kv" // MIT License

@@ -15,7 +15,7 @@ import (
 	"github.com/jjeffery/kv"
 	"github.com/karlmutch/envflag"
 
-	"github.com/leaf-ai/go-service/pkg/log"
+	"github.com/andreidenissov-cog/go-service/pkg/log"
 )
 
 var (

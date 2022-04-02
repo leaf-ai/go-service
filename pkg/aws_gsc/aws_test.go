@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-test/deep"
 
-	"github.com/leaf-ai/go-service/pkg/log"
+	"github.com/andreidenissov-cog/go-service/pkg/log"
 
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/envflag"
