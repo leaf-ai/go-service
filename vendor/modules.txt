@@ -55,8 +55,6 @@ github.com/davecgh/go-spew/spew
 # github.com/dustin/go-humanize v1.0.0
 ## explicit
 github.com/dustin/go-humanize
-# github.com/ericchiang/k8s v1.2.0
-## explicit
 # github.com/go-logr/logr v1.2.1
 ## explicit; go 1.16
 github.com/go-logr/logr
@@ -130,7 +128,7 @@ github.com/karlmutch/kv
 github.com/karlmutch/kv/internal/logfmt
 github.com/karlmutch/kv/internal/parse
 github.com/karlmutch/kv/internal/pool
-# github.com/karlmutch/logxi v0.0.0-20211230183642-c324f015c3e6
+# github.com/karlmutch/logxi v0.0.0-20220617052525-10dee3b1fe0c
 ## explicit; go 1.16
 github.com/karlmutch/logxi/v1
 # github.com/klauspost/compress v1.13.5

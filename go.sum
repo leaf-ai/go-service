@@ -7,8 +7,6 @@ github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRF
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk541a8SKzHPHnH3zbiI+7dagKZ0cgpgrD7Fyho=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/aws/aws-sdk-go v1.42.32 h1:YRe7du5KeSa2jHKEccOSL6/1fNM1Qaj0JqSGTdmtaws=
-github.com/aws/aws-sdk-go v1.42.32/go.mod h1:OGr6lGMAKGlG9CVrYnWYDKIyb829c6EVBRjxqjmPepc=
 github.com/aws/aws-sdk-go v1.42.34 h1:fqGAiKmCSRY1rEa4G9VqgkKKbNmLKYq5dKmLtQkvYi8=
 github.com/aws/aws-sdk-go v1.42.34/go.mod h1:OGr6lGMAKGlG9CVrYnWYDKIyb829c6EVBRjxqjmPepc=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
@@ -38,8 +36,6 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021/go.mod h1:AFq3mo9L8Lqqiid3OhADV3RfLJnjiw63cSpi+fDTRC0=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/ericchiang/k8s v1.2.0 h1:vxrMwEzY43oxu8aZyD/7b1s8tsBM+xoUoxjWECWFbPI=
-github.com/ericchiang/k8s v1.2.0/go.mod h1:/OmBgSq2cd9IANnsGHGlEz27nwMZV2YxlpXuQtU3Bz4=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
@@ -112,16 +108,12 @@ github.com/karlmutch/envflag v0.0.0-20211229205350-9dc3b5cc21e3 h1:Iq8sfbTccD5mI
 github.com/karlmutch/envflag v0.0.0-20211229205350-9dc3b5cc21e3/go.mod h1:HCSJtRcU+YI1lWzCbrzb+9uAbwuAjGQ+g73Xznrnm/4=
 github.com/karlmutch/go-fqdn v0.0.0-20160909083404-2501cdd51ef4 h1:fx6m3mMgH4A/IvezQ4a2EH9IPIbv/57aa6Pb7NQvGys=
 github.com/karlmutch/go-fqdn v0.0.0-20160909083404-2501cdd51ef4/go.mod h1:ayRGFUbEavzxyY7Ksvs2rv9aydiNM86YkmXXta08aqE=
-github.com/karlmutch/k8s v1.2.0 h1:F4clydyHqZWAs/Ltus/RoPhAdUVy+w0RVHAux6LusLM=
-github.com/karlmutch/k8s v1.2.0/go.mod h1:ppgWx6jcPy08paAKv1Fv2jurfa5+nFOh+/Nq85St4zE=
-github.com/karlmutch/k8s v1.2.1 h1:lyXToCLrZmA8Pw7evUl6up3fEQeGNCSBKfxQUcHmwbY=
-github.com/karlmutch/k8s v1.2.1/go.mod h1:bWAFqAM5ZDNun7BlVB0UNRkyuJeEpLbPhnAUKK7L9jI=
 github.com/karlmutch/k8s v1.2.2 h1:GcwIXMhP8hHw4Lb/iuRafpGamYhuaDl9qEx+7/5UtnA=
 github.com/karlmutch/k8s v1.2.2/go.mod h1:bWAFqAM5ZDNun7BlVB0UNRkyuJeEpLbPhnAUKK7L9jI=
 github.com/karlmutch/kv v0.8.2 h1:HFQPy4oOm/G6AoAoFU0RKecqJkeN0QzVrIVcyt4s5es=
 github.com/karlmutch/kv v0.8.2/go.mod h1:bMb9I0DVpykILhrcRK8xQ/x9HYYe2s5hvNa5rSCDdWs=
-github.com/karlmutch/logxi v0.0.0-20211230183642-c324f015c3e6 h1:4diqI2apsG7Bb0nkwHyMJb4CR2R+YNSRiwjv6BaNVvU=
-github.com/karlmutch/logxi v0.0.0-20211230183642-c324f015c3e6/go.mod h1:yozMr5Xgvq7CItSgWRdqerl3tUYunVr0WsvXJrOhSdc=
+github.com/karlmutch/logxi v0.0.0-20220617052525-10dee3b1fe0c h1:4FsU8T4pESGveFcw/4KS3WIkhURhiFOUm3nORSb7aso=
+github.com/karlmutch/logxi v0.0.0-20220617052525-10dee3b1fe0c/go.mod h1:yozMr5Xgvq7CItSgWRdqerl3tUYunVr0WsvXJrOhSdc=
 github.com/klauspost/compress v1.13.5 h1:9O69jUPDcsT9fEm74W92rZL9FQY7rCdaXVneq+yyzl4=
 github.com/klauspost/compress v1.13.5/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
 github.com/klauspost/cpuid v1.2.3/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
@@ -145,8 +137,6 @@ github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d h1:5PJl274Y63IEHC+7izoQ
 github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d/go.mod h1:01TrycV0kFyexm33Z7vhZRXopbI8J3TDReVlkTgMUxE=
 github.com/minio/md5-simd v1.1.0 h1:QPfiOqlZH+Cj9teu0t9b1nTBfPbyTl16Of5MeuShdK4=
 github.com/minio/md5-simd v1.1.0/go.mod h1:XpBqgZULrMYD3R+M28PcmP0CkI7PEMzB3U77ZrKZ0Gw=
-github.com/minio/minio-go/v7 v7.0.20 h1:0+Xt1SkCKDgcx5cmo3UxXcJ37u5Gy+/2i/+eQYqmYJw=
-github.com/minio/minio-go/v7 v7.0.20/go.mod h1:ei5JjmxwHaMrgsMrn4U/+Nmg+d8MKS1U2DAn1ou4+Do=
 github.com/minio/minio-go/v7 v7.0.21 h1:xrc4BQr1Fa4s5RwY0xfMjPZFJ1bcYBCCHYlngBdWV+k=
 github.com/minio/minio-go/v7 v7.0.21/go.mod h1:ei5JjmxwHaMrgsMrn4U/+Nmg+d8MKS1U2DAn1ou4+Do=
 github.com/minio/sha256-simd v0.1.1 h1:5QHSlgo3nt5yKOJrC7W8w7X+NFl8cMPZm96iu8kKUJU=
@@ -254,8 +244,6 @@ golang.org/x/net v0.0.0-20200625001655-4c5254603344/go.mod h1:/O7V0waA8r7cgGh81R
 golang.org/x/net v0.0.0-20200822124328-c89045814202/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
 golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4/go.mod h1:p54w0d4576C0XHj96bSt6lcn1PtDYWL6XObtHCRCNQM=
 golang.org/x/net v0.0.0-20211216030914-fe4d6282115f/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
-golang.org/x/net v0.0.0-20220111093109-d55c255bac03 h1:0FB83qp0AzVJm+0wcIlauAjJ+tNdh7jLuacRYCIVv7s=
-golang.org/x/net v0.0.0-20220111093109-d55c255bac03/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d h1:1n1fc535VhN8SYtD4cDUyNlfpAF2ROMM9+11equK3hs=
 golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=

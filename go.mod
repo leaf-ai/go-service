@@ -13,7 +13,7 @@ require (
 	github.com/karlmutch/go-fqdn v0.0.0-20160909083404-2501cdd51ef4
 	github.com/karlmutch/k8s v1.2.2
 	github.com/karlmutch/kv v0.8.2
-	github.com/karlmutch/logxi v0.0.0-20211230183642-c324f015c3e6
+	github.com/karlmutch/logxi v0.0.0-20220617052525-10dee3b1fe0c
 	github.com/lthibault/jitterbug v2.0.0+incompatible
 	github.com/minio/minio-go/v7 v7.0.21
 	github.com/prometheus/client_golang v1.11.0
@@ -32,7 +32,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
-	github.com/ericchiang/k8s v1.2.0 // indirect
 	github.com/go-logr/logr v1.2.1 // indirect
 	github.com/go-logr/stdr v1.2.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
