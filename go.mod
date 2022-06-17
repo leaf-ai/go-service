@@ -25,7 +25,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.7.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/net v0.0.0-20220615171555-694bf12d69de
-	google.golang.org/grpc v1.46.0
+	google.golang.org/grpc v1.47.0
 )
 
 require (
