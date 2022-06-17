@@ -142,9 +142,11 @@ func (l *Logger) Trace(msg string, args ...interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	allArgs = append(allArgs, l.labels)
+	for _, label := range l.labels {
+		allArgs = append(allArgs, label)
+	}
 
-	l.log.Trace(msg, allArgs)
+	l.log.Trace(msg, allArgs...)
 }
 
 // Debug is a method for output of debugging level messages
@@ -166,9 +168,11 @@ func (l *Logger) Debug(msg string, args ...interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	allArgs = append(allArgs, l.labels)
+	for _, label := range l.labels {
+		allArgs = append(allArgs, label)
+	}
 
-	l.log.Debug(msg, allArgs)
+	l.log.Debug(msg, allArgs...)
 }
 
 // Info is a method for output of informational level messages
@@ -190,9 +194,11 @@ func (l *Logger) Info(msg string, args ...interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	allArgs = append(allArgs, l.labels)
+	for _, label := range l.labels {
+		allArgs = append(allArgs, label)
+	}
 
-	l.log.Info(msg, allArgs)
+	l.log.Info(msg, allArgs...)
 }
 
 // Warn is a method for output of warning level messages
@@ -214,9 +220,11 @@ func (l *Logger) Warn(msg string, args ...interface{}) error {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	allArgs = append(allArgs, l.labels)
+	for _, label := range l.labels {
+		allArgs = append(allArgs, label)
+	}
 
-	return l.log.Warn(msg, allArgs)
+	return l.log.Warn(msg, allArgs...)
 }
 
 // Error is a method for output of error level messages
@@ -233,9 +241,11 @@ func (l *Logger) Error(msg string, args ...interface{}) error {
 	allArgs = append(allArgs, "stack")
 	allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 
-	allArgs = append(allArgs, l.labels)
+	for _, label := range l.labels {
+		allArgs = append(allArgs, label)
+	}
 
-	return l.log.Error(msg, allArgs)
+	return l.log.Error(msg, allArgs...)
 }
 
 // Fatal is a method for output of fatal level messages
@@ -251,9 +261,11 @@ func (l *Logger) Fatal(msg string, args ...interface{}) {
 	allArgs = append(allArgs, "stack")
 	allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 
-	allArgs = append(allArgs, l.labels)
+	for _, label := range l.labels {
+		allArgs = append(allArgs, label)
+	}
 
-	l.log.Fatal(msg, allArgs)
+	l.log.Fatal(msg, allArgs...)
 }
 
 // Log is a method for output of parameterized level messages
@@ -271,7 +283,9 @@ func (l *Logger) Log(level int, msg string, args []interface{}) {
 		allArgs = append(allArgs, stack.Trace()[1:].TrimRuntime())
 	}
 
-	allArgs = append(allArgs, l.labels)
+	for _, label := range l.labels {
+		allArgs = append(allArgs, label)
+	}
 
 	l.log.Log(level, msg, allArgs)
 }
