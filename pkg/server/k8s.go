@@ -1,4 +1,4 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package server // import "github.com/leaf-ai/go-service/pkg/server"
 
@@ -16,6 +16,7 @@ package server // import "github.com/leaf-ai/go-service/pkg/server"
 import (
 	"context"
 	"fmt"
+	"github.com/andreidenissov-cog/go-service/pkg/log"
 	"os"
 	"sync"
 	"time"
@@ -29,7 +30,7 @@ import (
 
 	"github.com/jjeffery/kv" // MIT License
 
-	"github.com/leaf-ai/go-service/pkg/types"
+	"github.com/andreidenissov-cog/go-service/pkg/types"
 )
 
 var (
@@ -220,6 +221,14 @@ type K8sStateUpdate struct {
 	State types.K8sState
 }
 
+// K8sConfigUpdate encapsulates an update for some config map in the scope of server run-time environment.
+//
+type K8sConfigUpdate struct {
+	NameSpace string
+	Name      string
+	State     map[string]string
+}
+
 // ListenK8s will register a listener to watch for pod specific configMaps in k8s
 // and will relay state changes to a channel,  the global state map should exist
 // at the bare minimum.  A state change in either map superseded any previous
@@ -228,7 +237,7 @@ type K8sStateUpdate struct {
 // This is a blocking function that will return either upon an error in API calls
 // to the cluster API or when the ctx is Done().
 //
-func ListenK8s(ctx context.Context, namespace string, globalMap string, podMap string, updateC chan<- K8sStateUpdate, errC chan<- kv.Error) (err kv.Error) {
+func ListenK8s(ctx context.Context, namespace string, globalMap string, podMap string, updateC chan<- K8sStateUpdate, errC chan<- kv.Error, logger *log.Logger) (err kv.Error) {
 
 	// If k8s is not being used ignore this feature
 	if err = IsAliveK8s(); err != nil {
@@ -270,8 +279,76 @@ func ListenK8s(ctx context.Context, namespace string, globalMap string, podMap s
 				fmt.Println("k8s watcher channel closed", namespace)
 				return
 			}
+
+			if logger != nil {
+				logger.Debug("DETECTED ConfigMap update: ", "configMap: ", *cm)
+			}
+
 			if *cm.Metadata.Namespace == namespace && (*cm.Metadata.Name == globalMap || *cm.Metadata.Name == podMap) {
 				currentState = processState(cm, currentState, updateC, errC)
+			}
+		}
+	}
+}
+
+// ListenK8sConfigMaps will register a listener to watch for k8s config maps updates in a specified namespace
+// and will relay these changes to a channel.
+//
+// This is a blocking function that will return either upon an error in API calls
+// to the cluster API or when the ctx is Done().
+//
+func ListenK8sConfigMaps(ctx context.Context, namespace string, updateC chan<- K8sConfigUpdate, errC chan<- kv.Error, logger *log.Logger) (err kv.Error) {
+
+	// If k8s is not being used ignore this feature
+	if err = IsAliveK8s(); err != nil {
+		return err
+	}
+
+	hasUpdate := false
+	lastConfigUpdate := K8sConfigUpdate{}
+
+	// Start the k8s configMap watcher
+	cmChanges, err := watchCMaps(ctx, namespace)
+	if err != nil {
+		// The implication of an error here is that we will never get updates from k8s
+		return err
+	}
+
+	logger.Info("k8s config watcher starting in namespace", namespace)
+	defer logger.Info("k8s config watcher stopping for namespace", namespace)
+
+	// Once every 2 minutes or so we will force the state propagation
+	// to ensure that modules started after this module has started see something
+	refresh := jitterbug.New(time.Minute*2, &jitterbug.Norm{Stdev: time.Second * 15})
+	defer refresh.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-refresh.C:
+			// Try resending the latest update to listeners to refresh things
+			if hasUpdate {
+				select {
+				case updateC <- lastConfigUpdate:
+				case <-time.After(2 * time.Second):
+				}
+			}
+		case cm := <-cmChanges:
+			if cm == nil {
+				logger.Info("k8s config watcher channel closed", namespace)
+				return
+			}
+			logger.Debug("RECEIVED ConfigMap update: ", "configMap: ", *cm)
+			lastConfigUpdate = K8sConfigUpdate{
+				NameSpace: namespace,
+				Name:      *cm.Metadata.Name,
+				State:     cm.Data,
+			}
+			hasUpdate = true
+			select {
+			case updateC <- lastConfigUpdate:
+			case <-time.After(2 * time.Second):
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package server // import "github.com/leaf-ai/go-service/pkg/server"
 
@@ -16,19 +16,19 @@ import (
 // based on subscriptions.
 //
 
-// Listeners is used to handle the broadcasting of cluster events when Kubernetes is
+// ConfigListeners are used to handle the broadcasting of cluster events when Kubernetes is
 // being used
-type Listeners struct {
-	Master    chan K8sStateUpdate
-	listeners map[xid.ID]chan<- K8sStateUpdate
+type ConfigListeners struct {
+	Master    chan K8sConfigUpdate
+	listeners map[xid.ID]chan<- K8sConfigUpdate
 	sync.Mutex
 }
 
-// NewStateBroadcast is used to instantiate a Kubernetes event broadcaster
-func NewStateBroadcast(ctx context.Context, errorC chan<- kv.Error) (l *Listeners) {
-	l = &Listeners{
-		Master:    make(chan K8sStateUpdate, 1),
-		listeners: map[xid.ID]chan<- K8sStateUpdate{},
+// NewConfigBroadcast is used to instantiate a Kubernetes config maps update broadcaster
+func NewConfigBroadcast(ctx context.Context, errorC chan<- kv.Error) (l *ConfigListeners) {
+	l = &ConfigListeners{
+		Master:    make(chan K8sConfigUpdate, 1),
+		listeners: map[xid.ID]chan<- K8sConfigUpdate{},
 	}
 
 	go l.run(ctx, errorC)
@@ -36,14 +36,32 @@ func NewStateBroadcast(ctx context.Context, errorC chan<- kv.Error) (l *Listener
 	return l
 }
 
-func (l *Listeners) run(ctx context.Context, errorC chan<- kv.Error) {
+// Add is used when a running thread wishes to add a channel to the broadcaster
+// on which Kubernetes config maps updates will be received
+func (l *ConfigListeners) Add(listen chan<- K8sConfigUpdate) (id xid.ID, err kv.Error) {
+	id = xid.New()
+	l.Lock()
+	l.listeners[id] = listen
+	l.Unlock()
+	return id, nil
+}
+
+// Delete is used when a running thread wishes to drop a channel from the broadcaster
+// on which Kubernetes events will be received
+func (l *ConfigListeners) Delete(id xid.ID) {
+	l.Lock()
+	delete(l.listeners, id)
+	l.Unlock()
+}
+
+func (l *ConfigListeners) run(ctx context.Context, errorC chan<- kv.Error) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case state := <-l.Master:
 
-			clients := make([]chan<- K8sStateUpdate, 0, len(l.listeners))
+			clients := make([]chan<- K8sConfigUpdate, 0, len(l.listeners))
 
 			// Make a consistent copy of all the channels that the update will be sent down
 			// so that we retain the values at this moment in time
@@ -71,26 +89,4 @@ func (l *Listeners) run(ctx context.Context, errorC chan<- kv.Error) {
 			}
 		}
 	}
-}
-
-// Add is used when a running thread wishes to add a channel to the broadcaster
-// on which Kubernetes events will be received
-func (l *Listeners) Add(listen chan<- K8sStateUpdate) (id xid.ID, err kv.Error) {
-
-	id = xid.New()
-
-	l.Lock()
-	l.listeners[id] = listen
-	l.Unlock()
-
-	return id, nil
-}
-
-// Delete is used when a running thread wishes to drop a channel from the broadcaster
-// on which Kubernetes events will be received
-func (l *Listeners) Delete(id xid.ID) {
-
-	l.Lock()
-	delete(l.listeners, id)
-	l.Unlock()
 }
