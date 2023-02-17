@@ -16,7 +16,7 @@ package server // import "github.com/leaf-ai/go-service/pkg/server"
 import (
 	"context"
 	"fmt"
-	"github.com/andreidenissov-cog/go-service/pkg/log"
+	"github.com/leaf-ai/go-service/pkg/log"
 	"os"
 	"sync"
 	"time"
@@ -30,7 +30,7 @@ import (
 
 	"github.com/jjeffery/kv" // MIT License
 
-	"github.com/andreidenissov-cog/go-service/pkg/types"
+	"github.com/leaf-ai/go-service/pkg/types"
 )
 
 var (

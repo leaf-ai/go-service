@@ -11,9 +11,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/andreidenissov-cog/go-service/pkg/log"
-	"github.com/andreidenissov-cog/go-service/pkg/network"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/leaf-ai/go-service/pkg/log"
+	"github.com/leaf-ai/go-service/pkg/network"
 
 	"google.golang.org/grpc/credentials"
 
