@@ -10,8 +10,6 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/andreidenissov-cog/go-service/pkg/server"
-	"github.com/andreidenissov-cog/go-service/pkg/types"
-
 	"github.com/go-stack/stack"
 	"github.com/jjeffery/kv" // MIT License
 )
@@ -31,13 +29,13 @@ func TestBroadcast(t *testing.T) {
 
 	errorC := make(chan kv.Error, 1)
 
-	l := server.NewStateBroadcast(ctx, errorC)
+	l := server.NewConfigBroadcast(ctx, errorC)
 
 	// Create three listeners
-	listeners := []chan server.K8sStateUpdate{
-		make(chan server.K8sStateUpdate, 1),
-		make(chan server.K8sStateUpdate, 1),
-		make(chan server.K8sStateUpdate, 1),
+	listeners := []chan server.K8sConfigUpdate{
+		make(chan server.K8sConfigUpdate, 1),
+		make(chan server.K8sConfigUpdate, 1),
+		make(chan server.K8sConfigUpdate, 1),
 	}
 	for _, listener := range listeners {
 		if _, err := l.Add(listener); err != nil {
@@ -75,9 +73,10 @@ func TestBroadcast(t *testing.T) {
 
 	// send something out, let it be consumed and if it is not then we have an issue
 	select {
-	case l.Master <- server.K8sStateUpdate{
-		State: types.K8sRunning,
-		Name:  xid.New().String(),
+	case l.Master <- server.K8sConfigUpdate{
+		State:     map[string]string{},
+		Name:      xid.New().String(),
+		NameSpace: xid.New().String(),
 	}:
 	case <-ctx.Done():
 		t.Fatal(kv.NewError("the master channel could not be used to send a broadcast").With("stack", stack.Trace().TrimRuntime()))
