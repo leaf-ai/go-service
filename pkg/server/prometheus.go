@@ -42,7 +42,7 @@ func GetPrometheusPort() (port int) {
 //
 // The update interval must be equal to or large than five seconds or an error will be returned
 //
-func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc ResourceAvailable, update time.Duration, logger *log.Logger) (err kv.Error) {
+func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc ResourceAvailable, update time.Duration, logger log.Logger) (err kv.Error) {
 
 	// Restrict the rate at which prometheus updates can be done to reduce overhead
 	if update < time.Duration(5*time.Second) {
@@ -60,7 +60,7 @@ func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc Resour
 	return nil
 }
 
-func runPrometheus(ctx context.Context, promAddr string, logger *log.Logger) (err kv.Error) {
+func runPrometheus(ctx context.Context, promAddr string, logger log.Logger) (err kv.Error) {
 	if len(promAddr) == 0 {
 		return nil
 	}
@@ -117,7 +117,7 @@ type ResourceAvailable interface {
 
 // monitoringExporter on a regular basis will invoke prometheus exporters inside our system
 //
-func monitoringExporter(ctx context.Context, getRsc ResourceAvailable, refreshInterval time.Duration, logger *log.Logger) {
+func monitoringExporter(ctx context.Context, getRsc ResourceAvailable, refreshInterval time.Duration, logger log.Logger) {
 
 	lastRefresh := time.Now()
 
