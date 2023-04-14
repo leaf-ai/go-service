@@ -23,8 +23,8 @@ func init() {
 
 type Logger interface {
 	Label(key string, value string)
-	IncludeStack(included bool) (log *Logger)
-	HostName(hostName string) (log *Logger)
+	IncludeStack(included bool) (log Logger)
+	HostName(hostName string) (log Logger)
 
 	Trace(msg string, args ...interface{})
 	Debug(msg string, args ...interface{})
