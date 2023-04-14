@@ -127,7 +127,7 @@ func (l *LoggerService) Label(key string, value string) {
 }
 
 // IncludeStack is used to enable a small function call stack to be included with messages
-func (l *LoggerService) IncludeStack(included bool) (log *LoggerService) {
+func (l *LoggerService) IncludeStack(included bool) (log Logger) {
 	l.Lock()
 	defer l.Unlock()
 
@@ -136,7 +136,7 @@ func (l *LoggerService) IncludeStack(included bool) (log *LoggerService) {
 }
 
 // HostName is used to add an optional host name to messages, if empty then the host name will not be output
-func (l *LoggerService) HostName(hostName string) (log *LoggerService) {
+func (l *LoggerService) HostName(hostName string) (log Logger) {
 	l.Label("hostName", hostName)
 	return l
 }
