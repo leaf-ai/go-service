@@ -11,16 +11,14 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/envflag"
 	"github.com/karlmutch/kv"
-
-	"github.com/karlmutch/go-service/pkg/log"
 )
 
 var (
-	logger = log.NewLogger("minio_test")
-
 	topDir = flag.String("top-dir", "../..", "The location of the top level source directory for locating test files")
 )
 
@@ -81,7 +79,7 @@ func TestMinioLifecycle(t *testing.T) {
 					if mts.ProcessState == nil {
 						break
 					}
-					logger.Debug("minio process state is available", "stack", stack.Trace().TrimRuntime())
+					slog.Debug("minio process state is available", "stack", stack.Trace().TrimRuntime())
 					started = true
 				}
 			}

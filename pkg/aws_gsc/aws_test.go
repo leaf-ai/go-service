@@ -1,4 +1,4 @@
-// Copyright 2018-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2023 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package aws_gsc
 
@@ -9,16 +9,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-test/deep"
+	"golang.org/x/exp/slog"
 
-	"github.com/karlmutch/go-service/pkg/log"
+	"github.com/go-test/deep"
 
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/envflag"
 )
 
 var (
-	logger = log.NewLogger("runner")
+	logger = slog.Default()
 )
 
 func TestMain(m *testing.M) {

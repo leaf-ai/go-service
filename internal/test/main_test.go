@@ -12,13 +12,9 @@ import (
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/envflag"
 	"github.com/karlmutch/kv"
-
-	"github.com/karlmutch/go-service/pkg/log"
 )
 
 var (
-	logger = log.NewLogger("go-service")
-
 	topDir = flag.String("top-dir", "../..", "The location of the top level source directory for locating test files")
 
 	// TestOptions are externally visible symbols that this package is asking the unit test suite to pickup and use

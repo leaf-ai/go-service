@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/karlmutch/go-service/pkg/log"
 	"github.com/karlmutch/go-service/pkg/network"
+	"golang.org/x/exp/slog"
 
 	"google.golang.org/grpc/credentials"
 
@@ -65,7 +65,7 @@ type StartTelemetryOpts struct {
 // StartTelemetry is used to initialize OpenTelemetry tracing, the ctx (context) is used to
 // close the root span when the sever closes the channel.  The options structure contains
 // parameters for the OTel code.
-func StartTelemetry(ctx context.Context, options StartTelemetryOpts, logger log.Logger) (newCtx context.Context, err kv.Error) {
+func StartTelemetry(ctx context.Context, options StartTelemetryOpts, logger slog.Logger) (newCtx context.Context, err kv.Error) {
 
 	endpoint := options.ApiEndpoint
 	if len(endpoint) == 0 {

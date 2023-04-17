@@ -31,7 +31,6 @@ var (
 
 // setNamedState will change the state parameter in a named config map within the
 // current pod namespace
-//
 func setNamedState(ctx context.Context, name string, namespace string, state types.K8sState) (err kv.Error) {
 	// K8s API receiver to be used to manipulate the config maps we are testing
 	client, errGo := k8s.NewInClusterClient()
@@ -81,7 +80,6 @@ func setLocalState(ctx context.Context, namespace string, state types.K8sState) 
 
 // Test0InitK8s is used to validate the test environments secrets for
 // message encryption if Kubernetes is present
-//
 func Test0InitK8s(t *testing.T) {
 
 	if err := server.IsAliveK8s(); err != nil && !*useK8s {
@@ -97,7 +95,6 @@ func Test0InitK8s(t *testing.T) {
 // map changes within Kubernetes are observed by the runner.  This is a live test that
 // exercises the k8s functionality as well as the runners internal listener
 // functionality.
-//
 func TestK8sConfigNode(t *testing.T) {
 
 	if err := server.IsAliveK8s(); err != nil && !*useK8s {
@@ -136,8 +133,7 @@ func TestK8sConfigNode(t *testing.T) {
 
 		id, err := server.K8sStateUpdates().Add(stateC)
 		if err != nil {
-			logger.Fatal(err.Error())
-			return
+			t.Fatal(err.Error())
 		}
 		defer server.K8sStateUpdates().Delete(id)
 
