@@ -46,12 +46,14 @@ cd src/github.com/karlmutch
 git clone https://github.com/karlmutch/go-service.git
 cd go-service
 mkdir -p $GOPATH/bin
-wget -O $GOPATH/bin/semver https://github.com/karlmutch/duat/releases/download/0.16.0/semver-linux-amd64
-wget -O $GOPATH/bin/stencil https://github.com/karlmutch/duat/releases/download/0.16.0/stencil-linux-amd64
+wget -O $GOPATH/bin/semver https://github.com/karlmutch/duat/releases/download/0.17.0-rc.8/semver_0.17.0-rc.8_linux-amd64
+wget -O $GOPATH/bin/stencil https://github.com/karlmutch/duat/releases/download/0.17.0-rc.8/stencil_0.17.0-rc.8_linux-amd64
 chmod +x $GOPATH/bin/semver
 chmod +x $GOPATH/bin/stencil
 go get github.com/alvaroloes/enumer@455e9a94796c0e108c38e253b67307736fc4b200
 ----
+
+stencil -supress-warnings < Dockerfile | docker build --network=host -
 
 == Developer tooling
 
@@ -64,4 +66,4 @@ trvy
 Fairwindows Pluto
 
 
-Copyright © 2021-2022 The Go Service Components Authors. All rights reserved. Issued under the Apache 2.0 License.
+Copyright © 2021-2023 The Go Service Components Authors. All rights reserved. Issued under the Apache 2.0 License.
