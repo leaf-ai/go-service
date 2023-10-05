@@ -1,4 +1,4 @@
-// Copyright 2018-2021 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2018-2023 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package aws_gsc
 
@@ -26,7 +26,6 @@ import (
 )
 
 // IsAWS can detect if pods running within a Kubernetes cluster are actually being hosted on an EC2 instance
-//
 func IsAWS() (aws bool, err kv.Error) {
 	fn := "/sys/devices/virtual/dmi/id/product_uuid"
 	uuidFile, errGo := os.Open(fn)
@@ -48,7 +47,7 @@ func IsAWS() (aws bool, err kv.Error) {
 			With("stack", stack.Trace().TrimRuntime())
 	}
 
-	return 0 == bytes.Compare(buffer, signature), nil
+	return bytes.Equal(buffer, signature), nil
 }
 
 // GetCredentials is used to extract the AWS credentials using the AWS standard mechanisims for specification of
@@ -74,7 +73,6 @@ func GetCredentials() (creds *credentials.Value, err kv.Error) {
 
 // AWSCred is used to encapsulate the credentials that are to be used to access an AWS resource
 // such as an S3 bucket for example.
-//
 type AWSCred struct {
 	Project string
 	Region  string
@@ -85,7 +83,6 @@ type AWSCred struct {
 // credentials files typically found in the ~/.aws directory by AWS clients
 //
 // This is a deprecated function
-//
 func AWSExtractCreds(filenames []string, profile string) (cred *AWSCred, err kv.Error) {
 
 	cred = &AWSCred{

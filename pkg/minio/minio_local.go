@@ -15,7 +15,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -38,7 +37,6 @@ import (
 
 // MinioTestServer encapsulates all of the data needed to run
 // a test minio server instance
-//
 type MinioTestServer struct {
 	AccessKeyId       string
 	SecretAccessKeyId string
@@ -61,7 +59,6 @@ func NewMinioTest() (minioTest *MinioTestServer) {
 
 // MinioCfgJson stores configuration information to be written to a disk based configuration
 // file prior to starting a test minio instance
-//
 type MinioCfgJson struct {
 	Version    string `json:"version"`
 	Credential struct {
@@ -94,7 +91,7 @@ var (
 // was generated in along with its name
 func TmpDirFile(size int64) (dir string, fn string, err kv.Error) {
 
-	tmpDir, errGo := ioutil.TempDir("", xid.New().String())
+	tmpDir, errGo := os.MkdirTemp("", xid.New().String())
 	if errGo != nil {
 		return "", "", kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
@@ -115,7 +112,6 @@ func TmpDirFile(size int64) (dir string, fn string, err kv.Error) {
 
 // UploadTestFile will create and upload a file of a given size to the MinioTest server to
 // allow test cases to exercise functionality based on S3
-//
 func (mts *MinioTestServer) UploadTestFile(bucket string, key string, size int64) (err kv.Error) {
 	tmpDir, fn, err := TmpDirFile(size)
 	if err != nil {
@@ -133,7 +129,6 @@ func (mts *MinioTestServer) UploadTestFile(bucket string, key string, size int64
 }
 
 // SetPublic can be used to enable public access to a bucket
-//
 func (mts *MinioTestServer) SetPublic(bucket string) (err kv.Error) {
 	if !mts.Ready.Load() {
 		return kv.NewError("server not ready").With("host", mts.Address).With("bucket", bucket).With("stack", stack.Trace().TrimRuntime())
@@ -167,7 +162,6 @@ func (mts *MinioTestServer) SetPublic(bucket string) (err kv.Error) {
 
 // RemoveBucketAll empties the identified bucket on the minio test server
 // identified by the mtx receiver variable
-//
 func (mts *MinioTestServer) RemoveBucketAll(bucket string) (errs []kv.Error) {
 
 	if !mts.Ready.Load() {
@@ -244,7 +238,6 @@ func (mts *MinioTestServer) RemoveBucketAll(bucket string) (errs []kv.Error) {
 
 // Upload will take the nominated file, file parameter, and will upload it to the bucket and key
 // pair on the server identified by the mtx receiver variable
-//
 func (mts *MinioTestServer) Upload(bucket string, key string, file string) (err kv.Error) {
 
 	if !mts.Ready.Load() {
@@ -287,7 +280,7 @@ func (mts *MinioTestServer) writeCfg() (cfgDir string, err kv.Error) {
 	// Initialize a configuration directory for the minio server
 	// complete with the json configuration containing the credentials
 	// for the test server
-	cfgDir, errGo := ioutil.TempDir("", xid.New().String())
+	cfgDir, errGo := os.MkdirTemp("", xid.New().String())
 	if errGo != nil {
 		return "", kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
@@ -301,7 +294,7 @@ func (mts *MinioTestServer) writeCfg() (cfgDir string, err kv.Error) {
 	if errGo != nil {
 		return "", kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
-	if errGo = ioutil.WriteFile(path.Join(cfgDir, "config.json"), result, 0600); errGo != nil {
+	if errGo = os.WriteFile(path.Join(cfgDir, "config.json"), result, 0600); errGo != nil {
 		return "", kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
 	return cfgDir, nil
@@ -310,7 +303,6 @@ func (mts *MinioTestServer) writeCfg() (cfgDir string, err kv.Error) {
 // startLocalMinio will fork off a running minio server with an empty data store
 // that can be used for testing purposes.  This function does not block,
 // however it does start a go routine
-//
 func (mts *MinioTestServer) startLocalMinio(ctx context.Context, retainWorkingDirs bool, errC chan kv.Error) {
 
 	// Default to the case that another pod for external host has a running minio server for us
@@ -349,7 +341,7 @@ func (mts *MinioTestServer) startLocalMinio(ctx context.Context, retainWorkingDi
 		mts.Address = fmt.Sprintf("127.0.0.1:%d", port)
 
 		// Initialize the data directory for the file server
-		storageDir, errGo := ioutil.TempDir("", xid.New().String())
+		storageDir, errGo := os.MkdirTemp("", xid.New().String())
 		if errGo != nil {
 			errC <- kv.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 			return
@@ -462,7 +454,6 @@ func (mts *MinioTestServer) startMinioClient(ctx context.Context, errC chan kv.E
 }
 
 // IsAlive is used to test if the expected minio local test server is alive
-//
 func (mts *MinioTestServer) IsAlive(ctx context.Context) (alive bool, err kv.Error) {
 
 	if mts == nil {
@@ -492,7 +483,6 @@ func (mts *MinioTestServer) IsAlive(ctx context.Context) (alive bool, err kv.Err
 // InitTestingMinio will fork a minio server that can he used for staging and test
 // in a manner that also wraps an error reporting channel and a means of
 // stopping it
-//
 func InitTestingMinio(ctx context.Context, retainWorkingDirs bool) (mts *MinioTestServer, errC chan kv.Error) {
 	errC = make(chan kv.Error, 5)
 

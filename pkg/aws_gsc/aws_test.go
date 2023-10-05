@@ -4,21 +4,15 @@ package aws_gsc
 
 import (
 	"flag"
-	"io/ioutil"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"golang.org/x/exp/slog"
 
 	"github.com/go-test/deep"
 
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/envflag"
-)
-
-var (
-	logger = slog.Default()
 )
 
 func TestMain(m *testing.M) {
@@ -56,13 +50,13 @@ aws_secret_access_key=test_aws_secret_access_key
 	}
 
 	// Write test cred files
-	tmpDir, errGo := ioutil.TempDir("", "TestAWSExtractCreds")
+	tmpDir, errGo := os.MkdirTemp("", "TestAWSExtractCreds")
 	if errGo != nil {
 		t.Fatal(errGo.Error(), "stack", stack.Trace().TrimRuntime())
 	}
 	defer func() {
 		if errGo := os.RemoveAll(tmpDir); errGo != nil {
-			logger.Warn(errGo.Error(), "stack", stack.Trace().TrimRuntime())
+			slog.Warn(errGo.Error(), "stack", stack.Trace().TrimRuntime())
 		}
 	}()
 	if errGo := os.Chmod(tmpDir, 0700); errGo != nil {
@@ -73,11 +67,11 @@ aws_secret_access_key=test_aws_secret_access_key
 	credsFN := filepath.Join(tmpDir, "credentials")
 	fNames := []string{configFN, credsFN}
 
-	if errGo := ioutil.WriteFile(configFN, []byte(configs[0]), 0600); errGo != nil {
+	if errGo := os.WriteFile(configFN, []byte(configs[0]), 0600); errGo != nil {
 		t.Fatal(errGo.Error(), "fn", configFN, "stack", stack.Trace().TrimRuntime())
 	}
 
-	if errGo := ioutil.WriteFile(credsFN, []byte(creds[0]), 0600); errGo != nil {
+	if errGo := os.WriteFile(credsFN, []byte(creds[0]), 0600); errGo != nil {
 		t.Fatal(errGo.Error(), "fn", configFN, "stack", stack.Trace().TrimRuntime())
 	}
 
@@ -87,6 +81,9 @@ aws_secret_access_key=test_aws_secret_access_key
 		t.Fatal(err.Error(), "stack", stack.Trace().TrimRuntime())
 	}
 	extractCreds, errGo := cred.Creds.Get()
+	if errGo != nil {
+		t.Fatal(errGo.Error(), "stack", stack.Trace().TrimRuntime())
+	}
 	if diff := deep.Equal(extractCreds.AccessKeyID, "default_aws_access_key_id"); diff != nil {
 		t.Fatal(diff, "stack", stack.Trace().TrimRuntime())
 	}
@@ -95,11 +92,11 @@ aws_secret_access_key=test_aws_secret_access_key
 	}
 
 	// Stock non default
-	if errGo := ioutil.WriteFile(configFN, []byte(configs[0]+configs[1]), 0600); errGo != nil {
+	if errGo := os.WriteFile(configFN, []byte(configs[0]+configs[1]), 0600); errGo != nil {
 		t.Fatal(errGo.Error(), "fn", configFN, "stack", stack.Trace().TrimRuntime())
 	}
 
-	if errGo := ioutil.WriteFile(credsFN, []byte(creds[0]+creds[1]), 0600); errGo != nil {
+	if errGo := os.WriteFile(credsFN, []byte(creds[0]+creds[1]), 0600); errGo != nil {
 		t.Fatal(errGo.Error(), "fn", configFN, "stack", stack.Trace().TrimRuntime())
 	}
 
@@ -108,6 +105,9 @@ aws_secret_access_key=test_aws_secret_access_key
 		t.Fatal(err.Error(), "stack", stack.Trace().TrimRuntime())
 	}
 	extractCreds, errGo = cred.Creds.Get()
+	if errGo != nil {
+		t.Fatal(errGo.Error(), "stack", stack.Trace().TrimRuntime())
+	}
 	if diff := deep.Equal(extractCreds.AccessKeyID, "default_aws_access_key_id"); diff != nil {
 		t.Fatal(diff, "stack", stack.Trace().TrimRuntime())
 	}
@@ -120,6 +120,9 @@ aws_secret_access_key=test_aws_secret_access_key
 		t.Fatal(err.Error(), "stack", stack.Trace().TrimRuntime())
 	}
 	extractCreds, errGo = cred.Creds.Get()
+	if errGo != nil {
+		t.Fatal(errGo.Error(), "stack", stack.Trace().TrimRuntime())
+	}
 	if diff := deep.Equal(extractCreds.AccessKeyID, "test_aws_access_key_id"); diff != nil {
 		t.Fatal(diff, "stack", stack.Trace().TrimRuntime())
 	}

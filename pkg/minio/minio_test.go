@@ -1,4 +1,4 @@
-// Copyright 2021-2022 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
+// Copyright 2021-2023 (c) The Go Service Components authors. All rights reserved. Issued under the Apache 2.0 License.
 
 package minio_local
 
@@ -6,12 +6,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
-
-	"golang.org/x/exp/slog"
 
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/envflag"
@@ -79,7 +78,7 @@ func TestMinioLifecycle(t *testing.T) {
 					if mts.ProcessState == nil {
 						break
 					}
-					slog.Debug("minio process state is available", "stack", stack.Trace().TrimRuntime())
+					slog.DebugContext(ctx, "minio process state is available", "stack", stack.Trace().TrimRuntime())
 					started = true
 				}
 			}

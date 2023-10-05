@@ -5,10 +5,9 @@ package server // import "github.com/karlmutch/go-service/pkg/server"
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
-
-	"golang.org/x/exp/slog"
 
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/kv" // MIT License
@@ -23,7 +22,8 @@ func K8sStateUpdates() (l *Listeners) {
 }
 
 // initiateK8s runs until either ctx is Done or the listener is running successfully
-func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC chan struct{}, staleMsg time.Duration, logger slog.Logger, errorC chan kv.Error) {
+func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC chan struct{}, staleMsg time.Duration,
+	logger slog.Logger, errorC chan kv.Error) {
 
 	// If the user did specify the k8s parameters then we need to process the k8s configs
 	if len(namespace) == 0 || len(cfgMap) == 0 {
@@ -57,7 +57,7 @@ func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC ch
 			// states being set in the k8s config map or within a config map
 			// that matches our pod/hostname
 			if err := ListenK8s(ctx, namespace, cfgMap, podMap, listeners.Master, errorC); err != nil {
-				logger.Warn("k8s monitoring offline", "error", err.Error())
+				logger.WarnContext(ctx, "k8s monitoring offline", "error", err, "stack", stack.Trace().TrimRuntime())
 			}
 		case <-ctx.Done():
 			return
@@ -66,19 +66,19 @@ func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC ch
 }
 
 func k8sStateLogger(ctx context.Context, refreshMsg time.Duration, logger slog.Logger) {
-	logger.Info("k8sStateLogger starting")
+	logger.InfoContext(ctx, "k8sStateLogger starting", "stack", stack.Trace().TrimRuntime())
 
 	listener := make(chan K8sStateUpdate, 1)
 
 	id, err := listeners.Add(listener)
 
 	if err != nil {
-		logger.Warn(err.Error())
+		logger.WarnContext(ctx, "unable to add listening ports", "error", err, "stack", stack.Trace().TrimRuntime())
 		return
 	}
 
 	defer func() {
-		logger.Warn("k8sStateLogger stopping")
+		logger.WarnContext(ctx, "k8sStateLogger stopping", "stack", stack.Trace().TrimRuntime())
 		listeners.Delete(id)
 	}()
 
@@ -101,7 +101,7 @@ func k8sStateLogger(ctx context.Context, refreshMsg time.Duration, logger slog.L
 				lastMsg = msg
 				nextTime = time.Now().Add(refreshMsg)
 			}
-			logger.Info(msg)
+			logger.InfoContext(ctx, msg, "k8sState", state.State, "stack", stack.Trace().TrimRuntime())
 		}
 	}
 }

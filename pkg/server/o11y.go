@@ -7,11 +7,11 @@ package server // import "github.com/karlmutch/go-service/pkg/server"
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/karlmutch/go-service/pkg/network"
-	"golang.org/x/exp/slog"
 
 	"google.golang.org/grpc/credentials"
 
@@ -109,7 +109,7 @@ func StartTelemetry(ctx context.Context, options StartTelemetryOpts, logger slog
 		if member, errGo := baggage.NewMember(hostKey, hostName); errGo == nil {
 			members = append(members, member)
 		} else {
-			logger.Warn(errGo.Error())
+			logger.WarnContext(ctx, "error", errGo)
 		}
 	}
 	if len(options.NodeName) != 0 {
@@ -117,14 +117,14 @@ func StartTelemetry(ctx context.Context, options StartTelemetryOpts, logger slog
 		if member, errGo := baggage.NewMember(nodeKey, options.NodeName); errGo == nil {
 			members = append(members, member)
 		} else {
-			logger.Warn(errGo.Error())
+			logger.WarnContext(ctx, "error", errGo)
 		}
 	}
 
-	bag := baggage.Baggage{}
+	var bag baggage.Baggage
 	if nil == options.Bag {
 		if bag, errGo = baggage.New(); errGo != nil {
-			logger.Warn(errGo.Error())
+			logger.WarnContext(ctx, "error", errGo)
 		}
 	} else {
 		bag = *options.Bag
@@ -132,7 +132,7 @@ func StartTelemetry(ctx context.Context, options StartTelemetryOpts, logger slog
 
 	for _, member := range members {
 		if bag, errGo = bag.SetMember(member); errGo != nil {
-			logger.Warn(errGo.Error())
+			logger.WarnContext(ctx, "error", errGo)
 		}
 	}
 	ctx = baggage.ContextWithBaggage(ctx, bag)
@@ -157,7 +157,7 @@ func StartTelemetry(ctx context.Context, options StartTelemetryOpts, logger slog
 		defer cancel()
 
 		if errGo := tp.Shutdown(shutCtx); errGo != nil {
-			logger.Error(errGo.Error())
+			logger.WarnContext(ctx, "error", errGo)
 		}
 	}()
 

@@ -8,13 +8,12 @@ package server // import "github.com/karlmutch/go-service/pkg/server"
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
-
-	"golang.org/x/exp/slog"
 
 	"github.com/karlmutch/go-service/pkg/network"
 
@@ -54,7 +53,7 @@ func StartPrometheusExporter(ctx context.Context, promAddr string, getRsc Resour
 	// start the prometheus http server for metrics
 	go func() {
 		if err := runPrometheus(ctx, promAddr, logger); err != nil {
-			logger.Warn(fmt.Sprint(err, stack.Trace().TrimRuntime()))
+			logger.WarnContext(ctx, "error", err, "stack", stack.Trace().TrimRuntime())
 		}
 	}()
 	return nil
@@ -96,15 +95,16 @@ func runPrometheus(ctx context.Context, promAddr string, logger slog.Logger) (er
 	}
 
 	go func() {
-		logger.Info(fmt.Sprintf("prometheus listening on %s", h.Addr), "stack", stack.Trace().TrimRuntime())
+		logger.InfoContext(ctx, "prometheus listening", "address", h.Addr, "stack", stack.Trace().TrimRuntime())
 
-		logger.Warn(fmt.Sprint(h.ListenAndServe(), "stack", stack.Trace().TrimRuntime()))
+		errGo := h.ListenAndServe()
+		logger.WarnContext(ctx, "server stopped", "error", errGo, "stack", stack.Trace().TrimRuntime())
 	}()
 
 	go func() {
 		<-ctx.Done()
 		if err := h.Shutdown(context.Background()); err != nil {
-			logger.Warn(fmt.Sprint("stopping due to signal", err), "stack", stack.Trace().TrimRuntime())
+			logger.WarnContext(ctx, "stopping due to signal", "error", err, "stack", stack.Trace().TrimRuntime())
 		}
 	}()
 
@@ -132,7 +132,7 @@ func monitoringExporter(ctx context.Context, getRsc ResourceAvailable, refreshIn
 					msg := getRsc.FetchMachineResources().String()
 					if lastMsg != msg || time.Since(lastRefresh) > time.Duration(20*time.Minute) {
 						lastRefresh = time.Now()
-						logger.Info("capacity", "available", msg)
+						logger.DebugContext(ctx, "capacity report", "available", msg)
 						lastMsg = msg
 					}
 				case <-ctx.Done():
