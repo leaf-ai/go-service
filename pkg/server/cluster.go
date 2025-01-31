@@ -37,11 +37,8 @@ func InitiateK8s(ctx context.Context, namespace string, cfgMap string, readyC ch
 	// Watch for k8s API connectivity events that are of interest and use the errorC to surface them
 	go MonitorK8s(ctx, errorC)
 
-	// The convention exists that the per machine configmap name is simply the hostname
-	//podMap := os.Getenv("HOSTNAME")
-
-	// In the event that initializing the k8s listener fails we try once every 30 seconds to get it working
-	tick := time.NewTicker(30 * time.Second)
+	// In the event that initializing the k8s listener fails we try once every 300 seconds to get it working
+	tick := time.NewTicker(300 * time.Second)
 	defer tick.Stop()
 
 	for {
