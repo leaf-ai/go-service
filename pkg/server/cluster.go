@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/andreidenissov-cog/go-service/pkg/log"
+	"github.com/leaf-ai/go-service/pkg/log"
 
 	"github.com/jjeffery/kv" // MIT License
 )

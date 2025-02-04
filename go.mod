@@ -1,4 +1,4 @@
-module github.com/andreidenissov-cog/go-service
+module github.com/leaf-ai/go-service
 
 go 1.21.11
 
